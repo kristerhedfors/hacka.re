@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/hacka-re/cli/internal/app"
@@ -15,7 +14,7 @@ import (
 	"github.com/hacka-re/cli/internal/integration"
 	"github.com/hacka-re/cli/internal/logger"
 	"github.com/hacka-re/cli/internal/share"
-	"golang.org/x/term"
+	"github.com/hacka-re/cli/internal/utils"
 )
 
 func main() {
@@ -175,8 +174,8 @@ func showMainHelp() {
 func handleJSONDump(arg string) {
 	// Ask for password (to stderr so it doesn't interfere with JSON output)
 	fmt.Fprint(os.Stderr, "Enter password: ")
-	
-	password, err := getPasswordSilent()
+
+	password, err := utils.GetPasswordSilent()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
 		os.Exit(1)
@@ -219,7 +218,7 @@ func handleURLArgument(arg string) {
 	fmt.Println()
 
 	// Ask for password
-	password, err := getPassword("Enter password for shared configuration: ")
+	password, err := utils.GetPassword("Enter password for shared configuration: ")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
 		os.Exit(1)
@@ -246,7 +245,7 @@ func handleURLArgument(arg string) {
 	// Display loaded configuration
 	fmt.Println("✓ Configuration loaded successfully!")
 	fmt.Println()
-	displayConfig(cfg)
+	utils.DisplayConfig(cfg)
 
 	// Save configuration automatically
 	configPath := config.GetConfigPath()
@@ -280,106 +279,6 @@ func showMainMenu() {
 	}
 }
 
-// getPassword securely reads a password from stdin
-func getPassword(prompt string) (string, error) {
-	fmt.Print(prompt)
-
-	// Try to read password without echo
-	if term.IsTerminal(int(syscall.Stdin)) {
-		bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-		fmt.Println() // Print newline after password input
-		if err != nil {
-			return "", err
-		}
-		return string(bytePassword), nil
-	}
-
-	// Fallback to regular input (for non-terminal environments)
-	reader := bufio.NewReader(os.Stdin)
-	password, err := reader.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(password), nil
-}
-
-// getPasswordSilent securely reads a password from stdin without printing newline
-func getPasswordSilent() (string, error) {
-	// Try to read password without echo
-	if term.IsTerminal(int(syscall.Stdin)) {
-		bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-		fmt.Fprintln(os.Stderr) // Print newline to stderr after password input
-		if err != nil {
-			return "", err
-		}
-		return string(bytePassword), nil
-	}
-
-	// Fallback to regular input (for non-terminal environments)
-	reader := bufio.NewReader(os.Stdin)
-	password, err := reader.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(password), nil
-}
-
-// displayConfig shows the loaded configuration
-func displayConfig(cfg *config.Config) {
-	fmt.Println("┌─ Configuration ─────────────────────────────┐")
-	
-	if cfg.Provider != "" {
-		info := config.Providers[cfg.Provider]
-		fmt.Printf("│ Provider:     %s %s\n", info.Flag, info.Name)
-	}
-	
-	if cfg.BaseURL != "" {
-		fmt.Printf("│ Base URL:     %s\n", truncate(cfg.BaseURL, 30))
-	}
-	
-	if cfg.APIKey != "" {
-		masked := maskAPIKey(cfg.APIKey)
-		fmt.Printf("│ API Key:      %s\n", masked)
-	}
-	
-	if cfg.Model != "" {
-		fmt.Printf("│ Model:        %s\n", cfg.Model)
-	}
-	
-	if cfg.SystemPrompt != "" {
-		fmt.Printf("│ System Prompt: %s\n", truncate(cfg.SystemPrompt, 28))
-	}
-	
-	if len(cfg.Functions) > 0 {
-		fmt.Printf("│ Functions:    %d loaded\n", len(cfg.Functions))
-	}
-	
-	if len(cfg.Prompts) > 0 {
-		fmt.Printf("│ Prompts:      %d loaded\n", len(cfg.Prompts))
-	}
-	
-	if cfg.RAGEnabled {
-		fmt.Printf("│ RAG:          Enabled (%d docs)\n", len(cfg.RAGDocuments))
-	}
-	
-	fmt.Println("└─────────────────────────────────────────────┘")
-}
-
-// truncate shortens a string to max length with ellipsis
-func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
-}
-
-// maskAPIKey masks an API key for display
-func maskAPIKey(key string) string {
-	if len(key) <= 8 {
-		return "****"
-	}
-	return key[:4] + "..." + key[len(key)-4:]
-}
 
 // saveConfiguration saves the configuration to a file
 func saveConfiguration(cfg *config.Config) {
@@ -402,21 +301,9 @@ func generateQRCode(cfg *config.Config, password string) {
 	if password == "" {
 		// Ask for a password for the share link
 		var err error
-		password, err = getPassword("Enter password for share link: ")
+		password, err = utils.GetPasswordWithConfirmation("Enter password for share link: ", "Confirm password: ")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
-			return
-		}
-		
-		// Confirm password
-		confirm, err := getPassword("Confirm password: ")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
-			return
-		}
-		
-		if password != confirm {
-			fmt.Println("Passwords do not match!")
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			return
 		}
 	}
@@ -449,7 +336,7 @@ func startChatSession(args []string) {
 		fmt.Println("Loading configuration from URL...")
 		
 		// Ask for password
-		password, err := getPassword("Enter password for shared configuration: ")
+		password, err := utils.GetPassword("Enter password for shared configuration: ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
 			os.Exit(1)

@@ -9,6 +9,7 @@ import (
 	"github.com/hacka-re/cli/internal/config"
 	"github.com/hacka-re/cli/internal/integration"
 	"github.com/hacka-re/cli/internal/share"
+	"github.com/hacka-re/cli/internal/utils"
 )
 
 // ChatCommand handles the chat subcommand
@@ -99,7 +100,7 @@ func startChatWithArgs(args []string) {
 		fmt.Printf("Loading session from %s...\n", sessionSource)
 
 		// Ask for password
-		password, err := getPassword("Enter password for session: ")
+		password, err := utils.GetPassword("Enter password for session: ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
 			os.Exit(1)

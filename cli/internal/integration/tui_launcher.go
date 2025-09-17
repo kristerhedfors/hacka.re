@@ -1,17 +1,15 @@
 package integration
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
-	"syscall"
+	"os/exec"
 
 	"github.com/hacka-re/cli/internal/chat"
 	"github.com/hacka-re/cli/internal/config"
 	"github.com/hacka-re/cli/internal/share"
 	"github.com/hacka-re/cli/internal/tui/pkg/tui"
-	"golang.org/x/term"
+	"github.com/hacka-re/cli/internal/utils"
 )
 
 // LaunchTUI launches the hackare-tui interface with CLI integration
@@ -27,15 +25,33 @@ func LaunchTUI(cfg *config.Config) error {
 		},
 
 		OnBrowse: func(configInterface interface{}) error {
-			// TODO: Integrate with CLI browse command
-			fmt.Println("Browse functionality will be available in future version")
-			return nil
+			// Launch browse command with current configuration
+			fmt.Println("Starting web server and opening browser...")
+			// Save config first to ensure it's available for the browse command
+			configPath := config.GetConfigPath()
+			if err := cfg.SaveToFile(configPath); err != nil {
+				return fmt.Errorf("failed to save config: %w", err)
+			}
+			// Execute browse command in a new process
+			cmd := exec.Command(os.Args[0], "browse")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Start()
 		},
 
 		OnServe: func(configInterface interface{}) error {
-			// TODO: Integrate with CLI serve command
-			fmt.Println("Serve functionality will be available in future version")
-			return nil
+			// Launch serve command with current configuration
+			fmt.Println("Starting web server...")
+			// Save config first to ensure it's available for the serve command
+			configPath := config.GetConfigPath()
+			if err := cfg.SaveToFile(configPath); err != nil {
+				return fmt.Errorf("failed to save config: %w", err)
+			}
+			// Execute serve command in a new process
+			cmd := exec.Command(os.Args[0], "serve")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Start()
 		},
 
 		OnShareLink: func(configInterface interface{}) (string, error) {
@@ -43,7 +59,7 @@ func LaunchTUI(cfg *config.Config) error {
 			sharedConfig := cfg.ToSharedConfig()
 
 			// Get password from user
-			password, err := getPassword("Enter password for share link: ")
+			password, err := utils.GetPassword("Enter password for share link: ")
 			if err != nil {
 				return "", fmt.Errorf("failed to read password: %w", err)
 			}
@@ -69,7 +85,7 @@ func LaunchTUI(cfg *config.Config) error {
 		},
 
 		OnPasswordPrompt: func(prompt string) (string, error) {
-			return getPassword(prompt)
+			return utils.GetPassword(prompt)
 		},
 
 		OnGetModels: func(provider string) ([]string, error) {
@@ -135,7 +151,7 @@ func createCallbacks(cfg *config.Config) *tui.Callbacks {
 		OnShareLink: func(configInterface interface{}) (string, error) {
 			sharedConfig := cfg.ToSharedConfig()
 			// Get password from user
-			password, err := getPassword("Enter password for share link: ")
+			password, err := utils.GetPassword("Enter password for share link: ")
 			if err != nil {
 				return "", fmt.Errorf("failed to read password: %w", err)
 			}
@@ -157,7 +173,7 @@ func createCallbacks(cfg *config.Config) *tui.Callbacks {
 		},
 
 		OnPasswordPrompt: func(prompt string) (string, error) {
-			return getPassword(prompt)
+			return utils.GetPassword(prompt)
 		},
 
 		OnGetModels: func(provider string) ([]string, error) {
@@ -176,30 +192,6 @@ func isDebugMode() bool {
 	return logLevel == "DEBUG" || logLevel == "debug"
 }
 
-// getPassword prompts for password input with terminal echo disabled
-func getPassword(prompt string) (string, error) {
-	fmt.Print(prompt)
-
-	// Check if stdin is a terminal
-	if !term.IsTerminal(int(syscall.Stdin)) {
-		// Not a terminal, read normally
-		reader := bufio.NewReader(os.Stdin)
-		password, err := reader.ReadString('\n')
-		if err != nil {
-			return "", err
-		}
-		return strings.TrimSpace(password), nil
-	}
-
-	// Read password with echo disabled
-	bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-	fmt.Println() // Print newline after password input
-	if err != nil {
-		return "", err
-	}
-
-	return string(bytePassword), nil
-}
 
 // getStaticModels returns static model lists for now
 // TODO: Replace with dynamic API fetching

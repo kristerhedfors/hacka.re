@@ -1,20 +1,18 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"net/url"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/hacka-re/cli/internal/share"
+	"github.com/hacka-re/cli/internal/utils"
 	"github.com/hacka-re/cli/internal/web"
-	"golang.org/x/term"
 )
 
 // ServeCommand handles the serve subcommand
@@ -147,7 +145,7 @@ func ServeCommand(args []string) {
 		fmt.Printf("Processing session from %s...\n", sessionSource)
 
 		// Ask for password
-		password, err := getPasswordServe("Enter password for session: ")
+		password, err := utils.GetPassword("Enter password for session: ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
 			os.Exit(1)
@@ -258,25 +256,3 @@ func createFragmentFromConfigServe(sharedConfig *share.SharedConfig, password st
 	return fragment, nil
 }
 
-// getPasswordServe securely reads a password from stdin
-func getPasswordServe(prompt string) (string, error) {
-	fmt.Print(prompt)
-
-	// Try to read password without echo
-	if term.IsTerminal(int(syscall.Stdin)) {
-		bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-		fmt.Println() // Print newline after password input
-		if err != nil {
-			return "", err
-		}
-		return string(bytePassword), nil
-	}
-
-	// Fallback to regular input (for non-terminal environments)
-	reader := bufio.NewReader(os.Stdin)
-	password, err := reader.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(password), nil
-}

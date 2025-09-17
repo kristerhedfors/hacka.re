@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,13 +9,12 @@ import (
 	"os/exec"
 	"os/signal"
 	"runtime"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/hacka-re/cli/internal/share"
+	"github.com/hacka-re/cli/internal/utils"
 	"github.com/hacka-re/cli/internal/web"
-	"golang.org/x/term"
 )
 
 // BrowseCommand handles the browse subcommand
@@ -121,7 +119,7 @@ func BrowseCommand(args []string) {
 		fmt.Printf("Processing session from %s...\n", sessionSource)
 
 		// Ask for password
-		password, err := getPasswordBrowse("Enter password for session: ")
+		password, err := utils.GetPassword("Enter password for session: ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
 			os.Exit(1)
@@ -154,11 +152,7 @@ func BrowseCommand(args []string) {
 	}
 	
 	// Print banner
-	fmt.Println("╔════════════════════════════════════════════╗")
-	fmt.Println("║        hacka.re: serverless agency         ║")
-	fmt.Println("╠════════════════════════════════════════════╣")
-	fmt.Println("║  Starting local web server...              ║")
-	fmt.Println("╚════════════════════════════════════════════╝")
+	utils.PrintBannerWithMessage("Starting local web server...")
 	fmt.Println()
 	
 	// Create and start ZIP-based server
@@ -259,25 +253,3 @@ func createFragmentFromConfig(sharedConfig *share.SharedConfig, password string)
 	return fragment, nil
 }
 
-// getPassword securely reads a password from stdin (duplicated for browse command)
-func getPasswordBrowse(prompt string) (string, error) {
-	fmt.Print(prompt)
-
-	// Try to read password without echo
-	if term.IsTerminal(int(syscall.Stdin)) {
-		bytePassword, err := term.ReadPassword(int(syscall.Stdin))
-		fmt.Println() // Print newline after password input
-		if err != nil {
-			return "", err
-		}
-		return string(bytePassword), nil
-	}
-
-	// Fallback to regular input (for non-terminal environments)
-	reader := bufio.NewReader(os.Stdin)
-	password, err := reader.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(password), nil
-}
