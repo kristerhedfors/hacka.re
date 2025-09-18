@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/models"
 	"github.com/hacka-re/cli/internal/tui/internal/prompts"
 	"github.com/hacka-re/cli/internal/tui/internal/components"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
@@ -225,8 +226,15 @@ func (pp *PromptsReadOnlyPage) updateTokenUsage() {
 		}
 	}
 
+	// Get the actual model's token limit
+	cfg := pp.config.Get()
+	provider := cfg.Provider
+	model := cfg.Model
+
+	// Get max tokens based on the model
+	maxTokens := models.GetSystemPromptMaxTokens(provider, model)
+
 	// Update the token usage bar
-	maxTokens := 2048 // Typical system prompt allocation
 	pp.tokenUsageBar.SetTokens(totalTokens, maxTokens)
 }
 
