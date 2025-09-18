@@ -25,6 +25,7 @@ type Page interface {
 	// Core lifecycle methods
 	Draw()
 	HandleInput(ev *tcell.EventKey) bool
+	HandleMouse(event *core.MouseEvent) bool
 	OnActivate()
 	OnDeactivate()
 
@@ -96,6 +97,12 @@ func (p *BasePage) Save() error {
 	// Default implementation - override in subclasses
 	p.dirty = false
 	return nil
+}
+
+// HandleMouse handles mouse events for the page
+func (p *BasePage) HandleMouse(event *core.MouseEvent) bool {
+	// Default implementation - override in subclasses
+	return false
 }
 
 // Common drawing helpers

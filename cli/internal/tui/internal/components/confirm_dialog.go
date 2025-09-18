@@ -2,6 +2,7 @@ package components
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // ConfirmDialog represents a modal confirmation dialog
@@ -246,4 +247,64 @@ func (d *ConfirmDialog) wrapText(text string, width int) []string {
 	}
 
 	return lines
+}
+
+// HandleMouse processes mouse events for the dialog
+func (d *ConfirmDialog) HandleMouse(event *core.MouseEvent) bool {
+	// Check if mouse is within dialog bounds
+	dialogHitTest := core.NewComponentHitTest(d.x, d.y, d.width, d.height)
+	if !dialogHitTest.ContainsEvent(event) {
+		// Click outside dialog could be treated as cancel
+		if event.Type == core.MouseEventClick {
+			// For safety, we don't auto-cancel on outside click
+			// User must explicitly click No or press ESC
+		}
+		return false
+	}
+
+	// Calculate button positions
+	buttonY := d.y + d.height - 3
+	buttonWidth := 8
+	spacing := 4
+	totalWidth := buttonWidth*2 + spacing
+	startX := d.x + (d.width-totalWidth)/2
+
+	// Define hit areas for buttons
+	noButtonHitTest := core.NewComponentHitTest(startX, buttonY, buttonWidth, 1)
+	yesButtonHitTest := core.NewComponentHitTest(startX+buttonWidth+spacing, buttonY, buttonWidth, 1)
+
+	switch event.Type {
+	case core.MouseEventClick:
+		// Check if click is on No button
+		if noButtonHitTest.ContainsEvent(event) {
+			d.selected = false
+			// Auto-confirm on button click for better UX
+			return true // Signal that No was selected
+		}
+
+		// Check if click is on Yes button
+		if yesButtonHitTest.ContainsEvent(event) {
+			d.selected = true
+			// Auto-confirm on button click for better UX
+			return true // Signal that Yes was selected
+		}
+
+	case core.MouseEventHover:
+		// Update selection based on hover
+		if noButtonHitTest.ContainsEvent(event) {
+			d.selected = false
+			return true
+		} else if yesButtonHitTest.ContainsEvent(event) {
+			d.selected = true
+			return true
+		}
+	}
+
+	// Event was within dialog but not on a button
+	return true // Still handled to prevent pass-through
+}
+
+// IsConfirmed returns whether Yes is currently selected
+func (d *ConfirmDialog) IsConfirmed() bool {
+	return d.selected
 }

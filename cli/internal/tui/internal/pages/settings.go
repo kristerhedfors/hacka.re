@@ -1219,3 +1219,67 @@ func (sm *SettingsModal) drawText(x, y int, text string, style tcell.Style) {
 		sm.screen.SetContent(x+i, y, r, nil, style)
 	}
 }
+
+// HandleMouse processes mouse events for the settings modal
+func (sm *SettingsModal) HandleMouse(event *core.MouseEvent) bool {
+	// If dropdown selector is active, handle its mouse events
+	if sm.dropdownSelector != nil {
+		value, done := sm.dropdownSelector.HandleMouse(event)
+		if done && value != "" {
+			// Handle dropdown selection
+			if sm.editingItem != nil && sm.editingItem.field != nil {
+				// Update the field value
+				sm.editingItem.field.Value = value
+				// Save config (which will update all fields)
+				sm.save()
+			}
+			// Close dropdown
+			sm.dropdownSelector = nil
+			sm.editingField = false
+			sm.editingItem = nil
+			sm.updateMenuItems()
+			return true
+		} else if done {
+			// Cancelled
+			sm.dropdownSelector = nil
+			sm.editingField = false
+			sm.editingItem = nil
+			return true
+		}
+		return true // Dropdown is consuming events
+	}
+
+	// If we're editing a field, handle mouse events specially
+	if sm.editingField {
+		// Check for clicks outside the edit area to cancel editing
+		if event.Type == core.MouseEventClick {
+			// For now, any click cancels editing
+			sm.editingField = false
+			sm.editingItem = nil
+			return true
+		}
+	}
+
+	// Forward mouse events to the menu
+	if sm.menu != nil {
+		// Check if menu item was clicked to trigger editing
+		if event.Type == core.MouseEventClick {
+			selectedItem := sm.menu.GetSelectedItem()
+			if selectedItem != nil {
+				// Let menu handle the click first
+				if sm.menu.HandleMouse(event) {
+					// If it's a settings menu item, start editing
+					if settingsItem, ok := selectedItem.(*SettingsMenuItem); ok {
+						sm.startEditing(settingsItem)
+					}
+					return true
+				}
+			}
+		} else {
+			// For non-click events, just forward to menu
+			return sm.menu.HandleMouse(event)
+		}
+	}
+
+	return false
+}

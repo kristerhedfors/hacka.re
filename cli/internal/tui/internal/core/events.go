@@ -39,6 +39,14 @@ const (
 	EventFunctionAdded  EventType = "function_added"
 	EventFunctionRemoved EventType = "function_removed"
 	EventFunctionExecute EventType = "function_execute"
+
+	// Mouse Events
+	EventMouseClick      EventType = "mouse_click"
+	EventMouseDoubleClick EventType = "mouse_double_click"
+	EventMouseDrag       EventType = "mouse_drag"
+	EventMouseHover      EventType = "mouse_hover"
+	EventMouseScroll     EventType = "mouse_scroll"
+	EventMouseRelease    EventType = "mouse_release"
 )
 
 // Event represents an application event

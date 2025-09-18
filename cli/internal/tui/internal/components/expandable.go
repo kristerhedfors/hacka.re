@@ -2,6 +2,7 @@ package components
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // ExpandableGroup represents a collapsible/expandable UI group
@@ -155,4 +156,52 @@ func DrawText(screen tcell.Screen, x, y int, text string, style tcell.Style) {
 	for i, ch := range text {
 		screen.SetContent(x+i, y, ch, nil, style)
 	}
+}
+
+// HandleMouse processes mouse events for the expandable group
+func (eg *ExpandableGroup) HandleMouse(event *core.MouseEvent) bool {
+	// Check if click is on the header
+	headerHitTest := core.NewComponentHitTest(eg.X, eg.Y, eg.width, 1)
+
+	switch event.Type {
+	case core.MouseEventClick:
+		if headerHitTest.ContainsEvent(event) {
+			eg.Toggle()
+			return true
+		}
+
+		// If expanded, check if click is on an item with checkbox
+		if eg.isExpanded {
+			currentY := eg.Y + 1
+			for i, item := range eg.items {
+				if item.IsCheckbox {
+					itemX := eg.X + 2
+					if item.Indented {
+						itemX += 2
+					}
+
+					// Check if click is on this checkbox item
+					checkboxWidth := 3 + 1 + len(item.Text) // checkbox + space + text
+					itemHitTest := core.NewComponentHitTest(itemX, currentY, checkboxWidth, 1)
+
+					if itemHitTest.ContainsEvent(event) {
+						// Toggle checkbox state
+						item.IsChecked = !item.IsChecked
+						eg.items[i] = item
+						return true
+					}
+				}
+				currentY++
+			}
+		}
+
+	case core.MouseEventDoubleClick:
+		// Treat double-click same as single click on header
+		if headerHitTest.ContainsEvent(event) {
+			eg.Toggle()
+			return true
+		}
+	}
+
+	return false
 }

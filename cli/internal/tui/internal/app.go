@@ -12,10 +12,11 @@ import (
 
 // App represents the rich TUI application
 type App struct {
-	screen   tcell.Screen
-	config   *core.ConfigManager
-	state    *core.AppState
-	eventBus *core.EventBus
+	screen       tcell.Screen
+	config       *core.ConfigManager
+	state        *core.AppState
+	eventBus     *core.EventBus
+	mouseManager *core.MouseManager
 
 	mainMenu       *components.FilterableMenu
 	settingsModal  *pages.SettingsModal
@@ -76,6 +77,7 @@ func NewAppWithCallbacks(config *core.ConfigManager, state *core.AppState, event
 		config:       config,
 		state:        state,
 		eventBus:     eventBus,
+		mouseManager: core.NewMouseManager(),
 		currentPanel: PanelMainMenu,
 		needsRedraw:  true,
 	}
@@ -706,10 +708,89 @@ func (a *App) showAbout() error {
 
 // handleMouseEvent processes mouse input
 func (a *App) handleMouseEvent(ev *tcell.EventMouse) {
-	if a.currentPanel == PanelChat && a.chatPanel != nil {
-		// Pass mouse events to chat panel
-		a.chatPanel.HandleMouse(ev)
-		a.needsRedraw = true
+	// Process the raw event through the mouse manager
+	mouseEvent := a.mouseManager.ProcessEvent(ev)
+
+	// Publish mouse event to event bus for any interested components
+	a.eventBus.PublishAsync(core.EventType("mouse_"+string(mouseEvent.Type)), mouseEvent)
+
+	// Handle exit confirmation dialog if it's showing
+	if a.showConfirmExit && a.confirmDialog != nil {
+		if a.confirmDialog.HandleMouse(mouseEvent) {
+			// Check if a button was clicked (HandleMouse returns true for button clicks)
+			if mouseEvent.Type == core.MouseEventClick {
+				// Check which button was selected
+				if a.confirmDialog.IsConfirmed() {
+					// User clicked Yes
+					a.running = false
+				} else {
+					// User clicked No
+					a.showConfirmExit = false
+					a.confirmDialog = nil
+				}
+			}
+			a.needsRedraw = true
+			return
+		}
+	}
+
+	// Route mouse events to the appropriate panel
+	switch a.currentPanel {
+	case PanelMainMenu:
+		if a.mainMenu != nil {
+			if a.mainMenu.HandleMouse(mouseEvent) {
+				a.needsRedraw = true
+			}
+		}
+
+	case PanelSettings:
+		if a.settingsModal != nil {
+			if a.settingsModal.HandleMouse(mouseEvent) {
+				a.needsRedraw = true
+			}
+		}
+
+	case PanelChat:
+		if a.chatPanel != nil {
+			// Keep backward compatibility with raw event for now
+			a.chatPanel.HandleMouse(ev)
+			a.needsRedraw = true
+		}
+
+	case PanelPrompts:
+		if a.promptsPage != nil {
+			if a.promptsPage.HandleMouse(mouseEvent) {
+				a.needsRedraw = true
+			}
+		}
+
+	case PanelFunctions:
+		if a.functionsPage != nil {
+			if a.functionsPage.HandleMouse(mouseEvent) {
+				a.needsRedraw = true
+			}
+		}
+
+	case PanelMCP:
+		if a.mcpServersPage != nil {
+			if a.mcpServersPage.HandleMouse(mouseEvent) {
+				a.needsRedraw = true
+			}
+		}
+
+	case PanelRAG:
+		if a.ragPage != nil {
+			if a.ragPage.HandleMouse(mouseEvent) {
+				a.needsRedraw = true
+			}
+		}
+
+	case PanelShare:
+		if a.sharePage != nil {
+			if a.sharePage.HandleMouse(mouseEvent) {
+				a.needsRedraw = true
+			}
+		}
 	}
 }
 
