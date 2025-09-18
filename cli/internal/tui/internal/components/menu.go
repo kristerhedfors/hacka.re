@@ -138,6 +138,14 @@ func (m *FilterableMenu) drawBorder() {
 
 // drawBox draws a box with the given dimensions
 func (m *FilterableMenu) drawBox(x, y, w, h int, style tcell.Style) {
+	// Clear background to make it opaque
+	bgStyle := tcell.StyleDefault.Background(tcell.ColorBlack)
+	for row := 0; row < h; row++ {
+		for col := 0; col < w; col++ {
+			m.screen.SetContent(x+col, y+row, ' ', nil, bgStyle)
+		}
+	}
+
 	// Top border
 	m.screen.SetContent(x, y, '╔', nil, style)
 	for i := 1; i < w-1; i++ {

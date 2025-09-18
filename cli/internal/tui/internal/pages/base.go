@@ -149,6 +149,12 @@ func (p *BasePage) ClearLine(y int, style tcell.Style) {
 	}
 }
 
+// IsClickOutsideModal checks if a mouse click is outside modal bounds
+func (p *BasePage) IsClickOutsideModal(event *core.MouseEvent, modalX, modalY, modalWidth, modalHeight int) bool {
+	return event.X < modalX || event.X >= modalX+modalWidth ||
+		event.Y < modalY || event.Y >= modalY+modalHeight
+}
+
 // DrawCenteredText draws text centered horizontally
 func (p *BasePage) DrawCenteredText(y int, text string, style tcell.Style) {
 	w, _ := p.screen.Size()

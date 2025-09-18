@@ -2,424 +2,187 @@ package pages
 
 import (
 	"fmt"
-	"log"
-	"reflect"
-	"sort"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/hacka-re/cli/internal/models"
 	"github.com/hacka-re/cli/internal/tui/internal/components"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
-	"github.com/hacka-re/cli/internal/utils"
 )
 
-// FieldType represents the type of settings field
-type FieldType int
-
-const (
-	FieldTypeString FieldType = iota
-	FieldTypePassword
-	FieldTypeDropdown
-	FieldTypeNumber
-	FieldTypeFloat
-	FieldTypeBool
-	FieldTypeText // Multi-line text
-)
-
-// SettingsField represents a single settings field
-type SettingsField struct {
-	Label       string
-	Key         string
-	Type        FieldType
-	Value       interface{}
-	Options     []string // For dropdown
-	Description string
-	Validator   func(interface{}) error
-	Min, Max    float64 // For number fields
-}
-
-// SettingsMenuItem implements MenuItem for settings fields
-type SettingsMenuItem struct {
-	field  *SettingsField
-	number int
-	config *core.Config
-}
-
-func (s *SettingsMenuItem) GetID() string          { return s.field.Key }
-func (s *SettingsMenuItem) GetNumber() int         { return s.number }
-func (s *SettingsMenuItem) GetTitle() string       { return s.field.Label }
-func (s *SettingsMenuItem) GetDescription() string { return s.formatValue() }
-func (s *SettingsMenuItem) GetCategory() string    { return "" }
-func (s *SettingsMenuItem) IsEnabled() bool        { return true }
-
-func (s *SettingsMenuItem) GetInfo() string {
-	info := s.field.Description
-
-	// Add current value info
-	info += "\n\nCurrent setting: " + s.formatValue()
-
-	// Add type-specific help
-	switch s.field.Type {
-	case FieldTypeDropdown:
-		info += "\n\nOptions:\n"
-		for _, opt := range s.field.Options {
-			if opt == s.field.Value {
-				info += fmt.Sprintf("• %s (current)\n", opt)
-			} else {
-				info += fmt.Sprintf("• %s\n", opt)
-			}
-		}
-	case FieldTypeBool:
-		info += "\n\nPress Space or Enter to toggle"
-	case FieldTypeFloat:
-		if s.field.Min != 0 || s.field.Max != 0 {
-			info += fmt.Sprintf("\n\nRange: %.2f - %.2f", s.field.Min, s.field.Max)
-		}
-	case FieldTypeNumber:
-		if s.field.Min != 0 || s.field.Max != 0 {
-			info += fmt.Sprintf("\n\nRange: %d - %d", int(s.field.Min), int(s.field.Max))
-		}
-	case FieldTypePassword:
-		info += "\n\nYour password will be masked for security"
-	}
-
-	return info
-}
-
-func (s *SettingsMenuItem) formatValue() string {
-	switch s.field.Type {
-	case FieldTypePassword:
-		if val, ok := s.field.Value.(string); ok && val != "" {
-			if len(val) > 8 {
-				return val[:4] + "..." + val[len(val)-4:]
-			}
-			return strings.Repeat("*", len(val))
-		}
-		return "(not set)"
-	case FieldTypeBool:
-		if val, ok := s.field.Value.(bool); ok && val {
-			return "[x] Enabled"
-		}
-		return "[ ] Disabled"
-	case FieldTypeFloat:
-		if val, ok := s.field.Value.(float64); ok {
-			return fmt.Sprintf("%.2f", val)
-		}
-		return "0.00"
-	default:
-		return fmt.Sprintf("%v", s.field.Value)
-	}
-}
-
-// SettingsModal provides a filterable settings interface
+// SettingsModal provides a streamlined settings interface matching the web app
 type SettingsModal struct {
 	screen   tcell.Screen
 	config   *core.ConfigManager
-	state    *core.AppState  // For accessing callbacks
-	fields   []*SettingsField
-	menu     *components.FilterableMenu
-
-	// Edit state
-	editingField     bool
-	editBuffer       string
-	dropdownIndex    int
-	editingItem      *SettingsMenuItem
-	dropdownSelector *components.DropdownSelector
+	state    *core.AppState
+	eventBus *core.EventBus
 
 	// UI state
-	modified        bool
-	errorMessage    string
-	confirmingExit  bool
+	selectedIndex    int
+	items            []SettingsItem
+	editingField     bool
+	editBuffer       string
+	dropdownSelector *components.DropdownSelector
+	isLoadingModels  bool
+	errorMessage     string
 
-	// Paste detection for terminal paste (Cmd+V on macOS)
-	lastKeyTime     int64
-	rapidKeyCount   int
-
-	// Original state for restore
-	originalValues map[string]interface{}
+	// Original values for restore
+	originalConfig   *core.Config
 
 	// Callbacks
-	OnSave   func(*core.Config) error
-	OnCancel func()
+	OnSave         func(*core.Config) error
+	OnCancel       func()
+	OnOpenPrompts  func()
+	OnOpenNamespaceManager func()
 }
 
-// NewSettingsModal creates a new filterable settings modal
-func NewSettingsModal(screen tcell.Screen, config *core.ConfigManager, state *core.AppState) *SettingsModal {
+// SettingsItem represents a single settings item
+type SettingsItem struct {
+	Type        SettingsItemType
+	Label       string
+	Key         string
+	Value       interface{}
+	Options     []string // For dropdowns
+	StatusText  string   // Gray status text shown to the right
+	Handler     func() error // For action items like links
+}
+
+type SettingsItemType int
+
+const (
+	ItemTypeDropdown SettingsItemType = iota
+	ItemTypePassword
+	ItemTypeCheckbox
+	ItemTypeLink
+	ItemTypeAction
+)
+
+// NewSettingsModal creates a new streamlined settings modal
+func NewSettingsModal(screen tcell.Screen, config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus) *SettingsModal {
 	sm := &SettingsModal{
-		screen:         screen,
-		config:         config,
-		state:          state,
-		originalValues: make(map[string]interface{}),
+		screen:   screen,
+		config:   config,
+		state:    state,
+		eventBus: eventBus,
 	}
 
-	// Initialize fields
-	sm.initializeFields()
-
-	// Store original values for restore
-	sm.storeOriginalValues()
-
-	// Create filterable menu
-	sm.menu = components.NewFilterableMenu(screen, "Settings Configuration")
-
-	// Configure menu layout
-	w, h := screen.Size()
-	menuWidth := 50
-	menuHeight := min(20, h-10)
-	infoWidth := 40
-
-	sm.menu.SetDimensions(menuWidth, menuHeight)
-	sm.menu.SetPosition((w-menuWidth-infoWidth-2)/2, (h-menuHeight)/2)
-	sm.menu.SetInfoPanel(true, infoWidth)
-
-	// Add fields as menu items
-	for i, field := range sm.fields {
-		sm.menu.AddItem(&SettingsMenuItem{
-			field:  field,
-			number: i,
-			config: config.Get(),
-		})
+	// Save original config for restore
+	cfg := config.Get()
+	sm.originalConfig = &core.Config{
+		Provider: cfg.Provider,
+		APIKey: cfg.APIKey,
+		Model: cfg.Model,
+		YoloMode: cfg.YoloMode,
+		VoiceControl: cfg.VoiceControl,
 	}
 
+	sm.initializeItems()
 	return sm
 }
 
-// initializeFields sets up the settings fields (same as before)
-func (sm *SettingsModal) initializeFields() {
+// initializeItems creates the settings items in the correct order
+func (sm *SettingsModal) initializeItems() {
 	cfg := sm.config.Get()
 
-	sm.fields = []*SettingsField{
+	sm.items = []SettingsItem{
+		// API Provider dropdown
 		{
-			Label:       "API Provider",
-			Key:         "provider",
-			Type:        FieldTypeDropdown,
-			Value:       cfg.Provider,
-			Options:     []string{"openai", "groq", "ollama", "anthropic", "custom"},
-			Description: "Select your AI provider",
+			Type:    ItemTypeDropdown,
+			Label:   "API Provider",
+			Key:     "provider",
+			Value:   cfg.Provider,
+			Options: sm.getProviderOptions(),
 		},
+		// API Key field with auto-detection
 		{
-			Label:       "API Key",
-			Key:         "api_key",
-			Type:        FieldTypePassword,
-			Value:       cfg.APIKey,
-			Description: "Your API authentication key",
+			Type:       ItemTypePassword,
+			Label:      "API Key",
+			Key:        "api_key",
+			Value:      cfg.APIKey,
+			StatusText: sm.getAPIKeyStatus(cfg.APIKey),
 		},
+		// Model dropdown with refresh
 		{
-			Label:       "Base URL",
-			Key:         "base_url",
-			Type:        FieldTypeString,
-			Value:       cfg.BaseURL,
-			Description: "API endpoint URL",
+			Type:       ItemTypeDropdown,
+			Label:      "Model",
+			Key:        "model",
+			Value:      cfg.Model,
+			Options:    sm.getModelOptions(cfg.Provider),
+			StatusText: "[R] to refresh",
 		},
+		// System Prompts link
 		{
-			Label:       "Model",
-			Key:         "model",
-			Type:        FieldTypeDropdown,
-			Value:       cfg.Model,
-			Options:     sm.getModelOptions(cfg.Provider),
-			Description: "AI model to use",
+			Type:    ItemTypeLink,
+			Label:   "System Prompt",
+			Key:     "system_prompt",
+			Value:   "Open System Prompt Menu →",
+			Handler: sm.openSystemPrompts,
 		},
+		// YOLO Mode checkbox
 		{
-			Label:       "Temperature",
-			Key:         "temperature",
-			Type:        FieldTypeFloat,
-			Value:       cfg.Temperature,
-			Min:         0.0,
-			Max:         2.0,
-			Description: "Response randomness (0=deterministic, 2=creative)",
+			Type:       ItemTypeCheckbox,
+			Label:      "YOLO mode",
+			Key:        "yolo_mode",
+			Value:      cfg.YoloMode,
+			StatusText: sm.getYoloModeStatus(cfg.YoloMode),
 		},
+		// Voice Control checkbox
 		{
-			Label:       "Max Tokens",
-			Key:         "max_tokens",
-			Type:        FieldTypeNumber,
-			Value:       cfg.MaxTokens,
-			Min:         1,
-			Max:         128000,
-			Description: "Maximum response length in tokens",
+			Type:       ItemTypeCheckbox,
+			Label:      "Microphone / Voice Control",
+			Key:        "voice_control",
+			Value:      cfg.VoiceControl,
+			StatusText: sm.getVoiceControlStatus(cfg.VoiceControl, cfg.Provider),
 		},
+		// Delete namespace action
 		{
-			Label:       "Stream Mode",
-			Key:         "stream_mode",
-			Type:        FieldTypeBool,
-			Value:       cfg.StreamMode,
-			Description: "Enable streaming responses for real-time output",
-		},
-		{
-			Label:       "YOLO Mode",
-			Key:         "yolo_mode",
-			Type:        FieldTypeBool,
-			Value:       cfg.YoloMode,
-			Description: "Auto-execute functions without confirmation (use with caution!)",
-		},
-		{
-			Label:       "Voice Control",
-			Key:         "voice_control",
-			Type:        FieldTypeBool,
-			Value:       cfg.VoiceControl,
-			Description: "Enable voice input/output for hands-free interaction",
-		},
-		{
-			Label:       "System Prompt",
-			Key:         "system_prompt",
-			Type:        FieldTypeText,
-			Value:       cfg.SystemPrompt,
-			Description: "Initial system message to set AI behavior and context",
-		},
-		{
-			Label:       "Theme",
-			Key:         "theme",
-			Type:        FieldTypeDropdown,
-			Value:       cfg.Theme,
-			Options:     []string{"dark", "light", "auto"},
-			Description: "UI color theme preference",
-		},
-		{
-			Label:       "Namespace",
-			Key:         "namespace",
-			Type:        FieldTypeString,
-			Value:       cfg.Namespace,
-			Description: "Storage namespace for data isolation",
+			Type:    ItemTypeAction,
+			Label:   "Delete current namespace and settings",
+			Key:     "delete_namespace",
+			Handler: sm.deleteNamespace,
 		},
 	}
 }
 
-// callGetModels uses reflection to call OnGetModels callback
-// This avoids import cycle with pkg/tui
-func (sm *SettingsModal) callGetModels(callbacks interface{}, provider string) []string {
-	val := reflect.ValueOf(callbacks)
-	if val.Kind() == reflect.Ptr && !val.IsNil() {
-		val = val.Elem()
+// getProviderOptions returns the list of available providers
+func (sm *SettingsModal) getProviderOptions() []string {
+	return []string{
+		"openai",
+		"berget",
+		"groq",
+		"ollama",
+		"llamafile",
+		"gpt4all",
+		"lmstudio",
+		"localai",
+		"custom",
 	}
-
-	// Look for OnGetModels field
-	field := val.FieldByName("OnGetModels")
-	if field.IsValid() && field.Kind() == reflect.Func && !field.IsNil() {
-		// Call the function
-		results := field.Call([]reflect.Value{reflect.ValueOf(provider)})
-		if len(results) == 2 {
-			// Extract []string and error
-			if !results[1].IsNil() {
-				// Error occurred
-				return nil
-			}
-			if results[0].Kind() == reflect.Slice {
-				// Convert to []string
-				models := results[0].Interface().([]string)
-				if len(models) > 0 {
-					return models
-				}
-			}
-		}
-	}
-	return nil
 }
 
-// getModelOptions returns model options based on provider
+// getModelOptions returns available models for a provider
 func (sm *SettingsModal) getModelOptions(provider string) []string {
-	// Try to get models from callback if available (for API refresh)
-	if sm.state != nil {
-		if callbacks := sm.state.GetCallbacks(); callbacks != nil {
-			// Use reflection to call OnGetModels if available
-			// This avoids import cycle with pkg/tui
-			if apiModels := sm.callGetModels(callbacks, provider); apiModels != nil && len(apiModels) > 0 {
-				// Get priority models for this provider
-				priorityModels := sm.getPriorityModels(provider)
-				prioritySet := make(map[string]bool)
-				for _, pm := range priorityModels {
-					prioritySet[pm] = true
-				}
-
-				// Separate priority and non-priority models
-				var priorityList, regularList []string
-				modelSet := make(map[string]bool)
-
-				// Process API models
-				for _, model := range apiModels {
-					if !modelSet[model] {
-						modelSet[model] = true
-						if prioritySet[model] {
-							// Add to priority list in the order defined
-							priorityList = append(priorityList, model)
-						} else {
-							regularList = append(regularList, model)
-						}
-					}
-				}
-
-				// Add our known models that aren't already in the list
-				if providerModels, ok := models.ModelsData[provider]; ok {
-					for modelName := range providerModels {
-						if !modelSet[modelName] {
-							modelSet[modelName] = true
-							if prioritySet[modelName] {
-								priorityList = append(priorityList, modelName)
-							} else {
-								regularList = append(regularList, modelName)
-							}
-						}
-					}
-				}
-
-				// Sort regular models alphabetically for consistency
-				sort.Strings(regularList)
-
-				// Build final result: priority models first (in defined order), then regular models (alphabetically)
-				result := []string{}
-
-				// Add priority models in the order they appear in getPriorityModels
-				for _, pm := range priorityModels {
-					for _, model := range priorityList {
-						if model == pm {
-							result = append(result, model)
-							break
-						}
-					}
-				}
-
-				// Add remaining regular models
-				result = append(result, regularList...)
-
-				return result
-			}
-		}
-	}
-
-	// Use pre-populated models from models_data.go
-	if providerModels, ok := models.ModelsData[provider]; ok {
-		modelList := make([]string, 0, len(providerModels))
-		for modelName := range providerModels {
-			modelList = append(modelList, modelName)
-		}
-
-		// Sort the model list alphabetically first for stability
-		sort.Strings(modelList)
-
-		// Sort models to put common ones first (matching web app behavior)
-		// Priority order for common models
-		priorityModels := sm.getPriorityModels(provider)
-		sortedList := []string{}
-
-		// Add priority models first if they exist
-		for _, pModel := range priorityModels {
-			for i := 0; i < len(modelList); i++ {
-				if modelList[i] == pModel {
-					sortedList = append(sortedList, pModel)
-					// Remove from modelList to avoid duplicates
-					modelList = append(modelList[:i], modelList[i+1:]...)
-					break
-				}
-			}
-		}
-
-		// Add remaining models (already sorted alphabetically)
-		sortedList = append(sortedList, modelList...)
-
-		return sortedList
-	}
-
-	// Fallback for unknown providers
+	// Return models based on provider
 	switch provider {
+	case "openai":
+		return []string{
+			"gpt-4-turbo-preview",
+			"gpt-4",
+			"gpt-3.5-turbo",
+			"gpt-3.5-turbo-16k",
+		}
+	case "anthropic":
+		return []string{
+			"claude-3-opus-20240229",
+			"claude-3-sonnet-20240229",
+			"claude-3-haiku-20240307",
+			"claude-2.1",
+		}
+	case "groq":
+		return []string{
+			"mixtral-8x7b-32768",
+			"llama2-70b-4096",
+			"gemma-7b-it",
+		}
 	case "ollama":
 		return []string{
 			"llama2",
@@ -428,858 +191,629 @@ func (sm *SettingsModal) getModelOptions(provider string) []string {
 			"phi",
 		}
 	default:
-		return []string{"custom-model"}
+		return []string{"gpt-3.5-turbo"}
 	}
 }
 
-// getPriorityModels returns the priority models for each provider (matching web app)
-func (sm *SettingsModal) getPriorityModels(provider string) []string {
-	switch provider {
-	case "openai":
-		return []string{
-			"gpt-5-nano",
-			"gpt-5-mini",
-			"gpt-5",
-			"gpt-4.1-nano",
-			"gpt-4.1-mini",
-			"gpt-4.1",
-			"gpt-4o",
-			"gpt-4o-mini",
-			"gpt-4-turbo",
-			"gpt-4",
-			"gpt-3.5-turbo",
-			"o1",
-			"o1-mini",
-			"o3",
-			"o3-mini",
-		}
-	case "anthropic":
-		return []string{
-			"claude-3-5-sonnet-20241022",
-			"claude-3-5-haiku-20241022",
-			"claude-3-opus-20240229",
-			"claude-3-sonnet-20240229",
-			"claude-3-haiku-20240307",
-			"claude-opus-4-1",
-			"claude-opus-4",
-			"claude-sonnet-4",
-			"claude-2.1",
-			"claude-2.0",
-			"claude-instant-1.2",
-		}
-	case "groq":
-		return []string{
-			"llama-3.3-70b-versatile",
-			"llama-3.3-70b-specdec",
-			"llama-3.3-8b-specdec",
-			"llama-3.2-90b-vision-preview",
-			"llama-3.2-11b-vision-preview",
-			"llama-3.2-3b-preview",
-			"llama-3.2-1b-preview",
-			"llama-3.1-405b-reasoning",
-			"llama-3.1-70b-versatile",
-			"llama-3.1-8b-instant",
-			"mixtral-8x7b-32768",
-		}
-	case "mistral":
-		return []string{
-			"mistral-large-latest",
-			"mistral-large-2411",
-			"mistral-medium-2505",
-			"mistral-small-2503",
-			"codestral-2501",
-			"mistral-nemo",
-			"ministral-8b-2410",
-			"ministral-3b-2410",
-			"open-mistral-7b",
-		}
-	case "deepseek":
-		return []string{
-			"deepseek-r1",
-			"deepseek-reasoner",
-			"deepseek-chat",
-			"deepseek-coder",
-			"deepseek-r1-distill-llama-70b",
-			"deepseek-r1-distill-qwen-14b",
-		}
-	default:
-		return []string{}
+// Status text generators
+func (sm *SettingsModal) getAPIKeyStatus(apiKey string) string {
+	if apiKey == "" {
+		return "(No API key set)"
 	}
+
+	// Simple API key detection based on prefix
+	if strings.HasPrefix(apiKey, "sk-") {
+		return "(Detected: OpenAI)"
+	} else if strings.HasPrefix(apiKey, "sk-ant-") {
+		return "(Detected: Anthropic)"
+	} else if strings.HasPrefix(apiKey, "gsk_") {
+		return "(Detected: Groq)"
+	}
+
+	return "(Key configured)"
 }
 
-// refreshModels attempts to refresh the model list from the API
-func (sm *SettingsModal) refreshModels() {
-	// Get the current provider
-	var currentProvider string
-	for _, field := range sm.fields {
-		if field.Key == "provider" {
-			currentProvider = field.Value.(string)
-			break
-		}
+func (sm *SettingsModal) getYoloModeStatus(enabled bool) string {
+	if enabled {
+		return "(Enabled: User is NOT prompted for every function call!)"
+	}
+	return "(Disabled: Prompt user for every function call)"
+}
+
+func (sm *SettingsModal) getVoiceControlStatus(enabled bool, provider string) string {
+	if !enabled {
+		return "(Disabled)"
 	}
 
-	// Find and update the model field
-	for _, field := range sm.fields {
-		if field.Key == "model" {
-			// Clear any cached API models to force refresh
-			// The next call to getModelOptions will try to fetch from API
-			field.Options = sm.getModelOptions(currentProvider)
-
-			// Update menu to show refreshed models
-			sm.updateMenuItems()
-			sm.errorMessage = "Models refreshed"
-			break
-		}
+	// Auto-detect Whisper provider
+	providerName := "OpenAI Whisper"
+	if provider == "groq" {
+		providerName = "Groq Whisper"
 	}
+
+	return fmt.Sprintf("(Enabled, auto-detected: %s)", providerName)
+}
+
+// Action handlers
+func (sm *SettingsModal) openSystemPrompts() error {
+	if sm.OnOpenPrompts != nil {
+		sm.OnOpenPrompts()
+	}
+	return nil
+}
+
+func (sm *SettingsModal) deleteNamespace() error {
+	// Show confirmation dialog
+	// For now, just reset the config to defaults
+	sm.config.Update(func(cfg *core.Config) {
+		cfg.Provider = "openai"
+		cfg.APIKey = ""
+		cfg.Model = "gpt-3.5-turbo"
+		cfg.YoloMode = false
+		cfg.VoiceControl = false
+	})
+
+	if sm.OnOpenNamespaceManager != nil {
+		sm.OnOpenNamespaceManager()
+	}
+	return nil
 }
 
 // Draw renders the settings modal
 func (sm *SettingsModal) Draw() {
-	if sm.confirmingExit {
-		// Draw the confirmation modal
-		sm.drawConfirmationModal()
-	} else if sm.dropdownSelector != nil {
-		// Draw the dropdown selector
-		sm.dropdownSelector.Draw()
-	} else if sm.editingField {
-		// Draw edit overlay for non-dropdown fields
-		sm.drawEditOverlay()
-	} else {
-		// Draw the filterable menu
-		sm.menu.Draw()
-
-		// Add save/cancel instructions
-		sm.drawBottomInstructions()
-
-		// Show error if any
-		if sm.errorMessage != "" {
-			sm.drawError()
-		}
-
-		// Show modified indicator
-		if sm.modified {
-			sm.drawModifiedIndicator()
-		}
-	}
-}
-
-// drawConfirmationModal shows a yes/no confirmation modal
-func (sm *SettingsModal) drawConfirmationModal() {
 	w, h := sm.screen.Size()
 
 	// Calculate modal dimensions
-	modalWidth := 50
-	modalHeight := 8
-	x := (w - modalWidth) / 2
-	y := (h - modalHeight) / 2
+	modalWidth := 70
+	modalHeight := 25
+	modalX := (w - modalWidth) / 2
+	modalY := (h - modalHeight) / 2
 
 	// Draw modal background
-	style := tcell.StyleDefault.Background(tcell.ColorDarkRed)
-	for i := 0; i < modalHeight; i++ {
-		for j := 0; j < modalWidth; j++ {
+	sm.drawModalBackground(modalX, modalY, modalWidth, modalHeight)
+
+	// Draw header
+	sm.drawHeader(modalX, modalY, modalWidth)
+
+	// Draw items
+	sm.drawItems(modalX, modalY+3, modalWidth, modalHeight-6)
+
+	// Draw footer
+	sm.drawFooter(modalX, modalY+modalHeight-2, modalWidth)
+
+	// Draw dropdown if active
+	if sm.dropdownSelector != nil {
+		sm.dropdownSelector.Draw()
+	}
+
+	// Draw loading spinner if loading models
+	if sm.isLoadingModels {
+		sm.drawLoadingSpinner(modalX+modalWidth/2, modalY+modalHeight/2)
+	}
+}
+
+// drawModalBackground draws the modal border and background
+func (sm *SettingsModal) drawModalBackground(x, y, w, h int) {
+	style := tcell.StyleDefault.Background(tcell.ColorBlack)
+	borderStyle := tcell.StyleDefault.Foreground(tcell.ColorGreen)
+
+	// Clear background
+	for i := 0; i < h; i++ {
+		for j := 0; j < w; j++ {
 			sm.screen.SetContent(x+j, y+i, ' ', nil, style)
 		}
 	}
 
 	// Draw border
-	borderStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow)
-	sm.drawBox(x, y, modalWidth, modalHeight, borderStyle)
+	// Top
+	sm.screen.SetContent(x, y, '╔', nil, borderStyle)
+	for i := 1; i < w-1; i++ {
+		sm.screen.SetContent(x+i, y, '═', nil, borderStyle)
+	}
+	sm.screen.SetContent(x+w-1, y, '╗', nil, borderStyle)
 
-	// Draw title
-	title := " Save Changes? "
-	titleX := x + (modalWidth-len(title))/2
-	sm.drawText(titleX, y, title, borderStyle)
+	// Sides
+	for i := 1; i < h-1; i++ {
+		sm.screen.SetContent(x, y+i, '║', nil, borderStyle)
+		sm.screen.SetContent(x+w-1, y+i, '║', nil, borderStyle)
+	}
 
-	// Draw message
-	msg := "You have unsaved changes."
-	msgX := x + (modalWidth-len(msg))/2
-	sm.drawText(msgX, y+2, msg, tcell.StyleDefault.Foreground(tcell.ColorWhite))
-
-	msg2 := "Save before exiting?"
-	msg2X := x + (modalWidth-len(msg2))/2
-	sm.drawText(msg2X, y+3, msg2, tcell.StyleDefault.Foreground(tcell.ColorWhite))
-
-	// Draw options
-	optionsY := y + 5
-	optionsText := "[Y]es    [N]o    [C]ancel"
-	optionsX := x + (modalWidth-len(optionsText))/2
-	sm.drawText(optionsX, optionsY, optionsText, tcell.StyleDefault.Foreground(tcell.ColorGreen))
+	// Bottom
+	sm.screen.SetContent(x, y+h-1, '╚', nil, borderStyle)
+	for i := 1; i < w-1; i++ {
+		sm.screen.SetContent(x+i, y+h-1, '═', nil, borderStyle)
+	}
+	sm.screen.SetContent(x+w-1, y+h-1, '╝', nil, borderStyle)
 }
 
-// drawEditOverlay shows the editing interface
-func (sm *SettingsModal) drawEditOverlay() {
-	w, h := sm.screen.Size()
+// drawHeader draws the modal header
+func (sm *SettingsModal) drawHeader(x, y, w int) {
+	title := " Settings "
+	titleX := x + (w-len(title))/2
+	titleStyle := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
 
-	// Calculate overlay dimensions
-	overlayWidth := 60
-	overlayHeight := 10
-	x := (w - overlayWidth) / 2
-	y := (h - overlayHeight) / 2
-
-	// Draw overlay background
-	style := tcell.StyleDefault.Background(tcell.ColorDarkBlue)
-	for i := 0; i < overlayHeight; i++ {
-		for j := 0; j < overlayWidth; j++ {
-			sm.screen.SetContent(x+j, y+i, ' ', nil, style)
-		}
+	for i, r := range title {
+		sm.screen.SetContent(titleX+i, y, r, nil, titleStyle)
 	}
 
-	// Draw border
-	borderStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow)
-	sm.drawBox(x, y, overlayWidth, overlayHeight, borderStyle)
-
-	// Draw title
-	title := fmt.Sprintf(" Edit: %s ", sm.editingItem.field.Label)
-	titleX := x + (overlayWidth-len(title))/2
-	sm.drawText(titleX, y, title, borderStyle)
-
-	// Draw current value based on type
-	valueY := y + 3
-	field := sm.editingItem.field
-
-	switch field.Type {
-	case FieldTypeBool:
-		// Show toggle state centered with 'x'
-		value := "[ ] Disabled"
-		if field.Value.(bool) {
-			value = "[x] Enabled"
-		}
-		valueX := x + (overlayWidth-len(value))/2
-		sm.drawText(valueX, valueY, value, tcell.StyleDefault.Foreground(tcell.ColorGreen))
-
-		// Show toggle hint
-		hint := "Press Space to toggle, Enter to confirm"
-		hintX := x + (overlayWidth-len(hint))/2
-		sm.drawText(hintX, valueY+2, hint, tcell.StyleDefault.Foreground(tcell.ColorGray))
-
-	default:
-		// Show text input
-		sm.drawText(x+2, valueY, "Value: ", tcell.StyleDefault.Foreground(tcell.ColorWhite))
-		inputX := x + 9
-
-		// Draw edit buffer
-		bufferStyle := tcell.StyleDefault.Foreground(tcell.ColorGreen)
-		sm.drawText(inputX, valueY, sm.editBuffer, bufferStyle)
-
-		// Draw cursor
-		cursorX := inputX + len(sm.editBuffer)
-		if cursorX < x+overlayWidth-2 {
-			sm.screen.SetContent(cursorX, valueY, '_', nil, bufferStyle.Blink(true))
-		}
-
-		// Show type hint
-		hint := "Type value, Enter to confirm"
-		// Add paste hint for password fields
-		if field.Type == FieldTypePassword {
-			hint = "Type or ^V to paste (clear & replace), Enter to confirm"
-		}
-		hintX := x + (overlayWidth-len(hint))/2
-		sm.drawText(hintX, valueY+2, hint, tcell.StyleDefault.Foreground(tcell.ColorGray))
+	// Draw separator
+	sepStyle := tcell.StyleDefault.Foreground(tcell.ColorGray)
+	for i := 1; i < w-1; i++ {
+		sm.screen.SetContent(x+i, y+2, '─', nil, sepStyle)
 	}
-
-	// Draw cancel instruction
-	cancel := "ESC to cancel"
-	cancelX := x + (overlayWidth-len(cancel))/2
-	sm.drawText(cancelX, y+overlayHeight-2, cancel, tcell.StyleDefault.Foreground(tcell.ColorRed))
 }
 
-// drawBottomInstructions adds save/cancel hints
-func (sm *SettingsModal) drawBottomInstructions() {
-	x, y, w, h := sm.menu.GetX(), sm.menu.GetY(), sm.menu.GetWidth(), sm.menu.GetHeight()
+// drawItems draws all settings items
+func (sm *SettingsModal) drawItems(x, y, w, h int) {
+	currentY := y
 
-	// Check if model field is selected
-	instructions := " Changes auto-save | Ctrl-R:Restore | ESC:Close "
-	if selected := sm.menu.GetSelectedItem(); selected != nil {
-		if menuItem, ok := selected.(*SettingsMenuItem); ok && menuItem.field.Key == "model" {
-			instructions = " Changes auto-save | Ctrl-R:Refresh Models | ESC:Close "
+	for i, item := range sm.items {
+		if currentY >= y+h {
+			break // Don't draw beyond bounds
+		}
+
+		isSelected := i == sm.selectedIndex
+		sm.drawItem(x+2, currentY, w-4, item, isSelected, i == sm.selectedIndex && sm.editingField)
+		currentY += 2 // Space between items
+	}
+}
+
+// drawItem draws a single settings item
+func (sm *SettingsModal) drawItem(x, y, w int, item SettingsItem, isSelected, isEditing bool) {
+	labelStyle := tcell.StyleDefault
+	valueStyle := tcell.StyleDefault
+	statusStyle := tcell.StyleDefault.Foreground(tcell.ColorGray)
+
+	if isSelected {
+		labelStyle = labelStyle.Bold(true).Foreground(tcell.ColorYellow)
+		valueStyle = valueStyle.Bold(true)
+	}
+
+	// Draw label
+	label := item.Label + ":"
+	for i, r := range label {
+		if i < w {
+			sm.screen.SetContent(x+i, y, r, nil, labelStyle)
 		}
 	}
 
-	instX := x + (w-len(instructions))/2
-	instY := y + h
+	// Draw value based on type
+	valueX := x + len(label) + 2
+	valueText := ""
 
+	switch item.Type {
+	case ItemTypeDropdown:
+		valueText = fmt.Sprintf("[%v]", item.Value)
+		if isSelected && !isEditing {
+			valueText += " ↓"
+		}
+
+	case ItemTypePassword:
+		if val := item.Value.(string); val != "" {
+			valueText = strings.Repeat("•", 8) + val[len(val)-min(4, len(val)):]
+		} else {
+			valueText = "(not set)"
+		}
+		if isEditing {
+			valueText = sm.editBuffer
+		}
+
+	case ItemTypeCheckbox:
+		if item.Value.(bool) {
+			valueText = "[x]"
+		} else {
+			valueText = "[ ]"
+		}
+
+	case ItemTypeLink:
+		valueText = item.Value.(string)
+		valueStyle = valueStyle.Foreground(tcell.ColorBlue).Underline(true)
+
+	case ItemTypeAction:
+		valueText = ""
+		// Draw the label as a link
+		linkStyle := tcell.StyleDefault.Foreground(tcell.ColorBlue).Underline(true)
+		if isSelected {
+			linkStyle = linkStyle.Bold(true)
+		}
+		for i, r := range item.Label {
+			if i < w {
+				sm.screen.SetContent(x+i, y, r, nil, linkStyle)
+			}
+		}
+		return // Skip the rest for action items
+	}
+
+	// Draw value
+	for i, r := range valueText {
+		if valueX+i < x+w {
+			sm.screen.SetContent(valueX+i, y, r, nil, valueStyle)
+		}
+	}
+
+	// Draw status text (gray, to the right)
+	if item.StatusText != "" {
+		statusX := valueX + len(valueText) + 2
+		for i, r := range item.StatusText {
+			if statusX+i < x+w {
+				sm.screen.SetContent(statusX+i, y, r, nil, statusStyle)
+			}
+		}
+	}
+}
+
+// drawFooter draws the modal footer
+func (sm *SettingsModal) drawFooter(x, y, w int) {
+	instructions := " ↑↓:Navigate | Enter:Edit | Space:Toggle | R:Restore | ESC:Close | Ctrl+S:Save "
+	instrX := x + (w-len(instructions))/2
+	instrStyle := tcell.StyleDefault.Foreground(tcell.ColorGray)
+
+	for i, r := range instructions {
+		if i < w-2 {
+			sm.screen.SetContent(instrX+i, y, r, nil, instrStyle)
+		}
+	}
+}
+
+// drawLoadingSpinner draws a loading spinner for model refresh
+func (sm *SettingsModal) drawLoadingSpinner(x, y int) {
+	spinner := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	frame := int(time.Now().UnixMilli()/100) % len(spinner)
+
+	text := spinner[frame] + " Loading models..."
 	style := tcell.StyleDefault.Foreground(tcell.ColorYellow)
-	if sm.modified {
-		style = style.Bold(true)
+
+	for i, r := range text {
+		sm.screen.SetContent(x-len(text)/2+i, y, r, nil, style)
 	}
-
-	sm.drawText(instX, instY, instructions, style)
-}
-
-// drawModifiedIndicator shows that settings have been changed
-func (sm *SettingsModal) drawModifiedIndicator() {
-	x, y, w, _ := sm.menu.GetX(), sm.menu.GetY(), sm.menu.GetWidth(), sm.menu.GetHeight()
-
-	indicator := " * Modified * "
-	indX := x + w - len(indicator) - 1
-	indY := y
-
-	style := tcell.StyleDefault.Foreground(tcell.ColorYellow).Bold(true)
-	sm.drawText(indX, indY, indicator, style)
-}
-
-// drawError displays error message
-func (sm *SettingsModal) drawError() {
-	x, y, w, h := sm.menu.GetX(), sm.menu.GetY(), sm.menu.GetWidth(), sm.menu.GetHeight()
-
-	msg := sm.errorMessage
-	if len(msg) > w-4 {
-		msg = msg[:w-7] + "..."
-	}
-
-	errX := x + (w-len(msg))/2
-	errY := y + h + 2
-
-	style := tcell.StyleDefault.Foreground(tcell.ColorRed).Bold(true)
-	sm.drawText(errX, errY, msg, style)
 }
 
 // HandleInput processes keyboard input
 func (sm *SettingsModal) HandleInput(ev *tcell.EventKey) bool {
-	// Handle confirmation modal if active
-	if sm.confirmingExit {
-		switch ev.Key() {
-		case tcell.KeyRune:
-			switch ev.Rune() {
-			case 'y', 'Y':
-				// Save and exit
-				sm.save()
-				if sm.OnCancel != nil {
-					sm.OnCancel()
-				}
-				return true
-			case 'n', 'N':
-				// Exit without saving
-				sm.restoreOriginalValues()
-				if sm.OnCancel != nil {
-					sm.OnCancel()
-				}
-				return true
-			case 'c', 'C':
-				// Cancel exit
-				sm.confirmingExit = false
-				return false
-			}
-		case tcell.KeyEscape:
-			// Cancel exit
-			sm.confirmingExit = false
-			return false
-		}
-		return false
-	}
-
-	// Handle dropdown selector if active
+	// Handle dropdown if active
 	if sm.dropdownSelector != nil {
-		// Check for refresh shortcut specifically for model dropdown
-		if ev.Key() == tcell.KeyCtrlR && sm.editingItem != nil && sm.editingItem.field.Key == "model" {
-			// Close current dropdown
-			sm.dropdownSelector = nil
-			sm.editingField = false
-
-			// Refresh models
-			sm.refreshModels()
-
-			// Reopen dropdown with refreshed models
-			sm.startEditing(sm.editingItem)
-			return false
-		}
-
 		value, done := sm.dropdownSelector.HandleInput(ev)
 		if done {
 			if value != "" {
-				// Apply the selected value
-				sm.editingItem.field.Value = value
-				sm.modified = true
-
-				// Special handling for provider change
-				if sm.editingItem.field.Key == "provider" {
-					sm.updateModelOptionsForProvider(value)
-				}
-
-				// Update menu items and save
-				sm.updateMenuItems()
-				sm.save()
+				sm.items[sm.selectedIndex].Value = value
+				sm.updateConfig()
 			}
-			// Close dropdown
 			sm.dropdownSelector = nil
 			sm.editingField = false
-			sm.editingItem = nil
-		}
-		return false
-	}
-
-	if sm.editingField {
-		return sm.handleEditingInput(ev)
-	}
-
-	// Check for model refresh shortcut when model field is selected
-	if ev.Key() == tcell.KeyCtrlR {
-		// Check if current selection is model field
-		if selected := sm.menu.GetSelectedItem(); selected != nil {
-			if menuItem, ok := selected.(*SettingsMenuItem); ok && menuItem.field.Key == "model" {
-				sm.refreshModels()
-				return false
-			}
-		}
-		// Otherwise restore original values (old behavior)
-		sm.restoreOriginalValues()
-		return false
-	}
-
-	// Let the menu handle navigation and filtering
-	item, exit := sm.menu.HandleInput(ev)
-
-	if exit {
-		// Show confirmation modal if modified
-		if sm.modified {
-			sm.confirmingExit = true
 			return false
 		}
-		// Exit directly if no changes
+		return false
+	}
+
+	// Handle editing mode
+	if sm.editingField {
+		return sm.handleEditMode(ev)
+	}
+
+	// Handle navigation
+	switch ev.Key() {
+	case tcell.KeyUp:
+		if sm.selectedIndex > 0 {
+			sm.selectedIndex--
+		}
+		return false
+
+	case tcell.KeyDown:
+		if sm.selectedIndex < len(sm.items)-1 {
+			sm.selectedIndex++
+		}
+		return false
+
+	case tcell.KeyEnter:
+		sm.handleEnter()
+		return false
+
+	case tcell.KeyRune:
+		switch ev.Rune() {
+		case ' ':
+			sm.handleSpace()
+		case 'r', 'R':
+			// Refresh models
+			if sm.items[sm.selectedIndex].Key == "model" {
+				sm.refreshModels()
+			}
+		}
+		return false
+
+	case tcell.KeyCtrlS:
+		sm.save()
+		return false
+
+	case tcell.KeyEscape:
+		// Save current values and close
+		sm.updateConfig()
+		if sm.OnSave != nil {
+			cfg := sm.config.Get()
+			sm.OnSave(cfg)
+		}
 		if sm.OnCancel != nil {
 			sm.OnCancel()
 		}
 		return true
 	}
 
-	if item != nil {
-		// Start editing the selected field
-		if menuItem, ok := item.(*SettingsMenuItem); ok {
-			sm.startEditing(menuItem)
-		}
-	}
-
 	return false
 }
 
-// handleEditingInput handles input when editing a field
-func (sm *SettingsModal) handleEditingInput(ev *tcell.EventKey) bool {
-	field := sm.editingItem.field
+// handleEnter handles Enter key press
+func (sm *SettingsModal) handleEnter() {
+	item := sm.items[sm.selectedIndex]
 
+	switch item.Type {
+	case ItemTypeDropdown:
+		// Open dropdown selector
+		sm.editingField = true
+		sm.dropdownSelector = components.NewDropdownSelector(
+			sm.screen,
+			item.Label,
+			item.Options,
+			fmt.Sprintf("%v", item.Value),
+		)
+
+	case ItemTypePassword:
+		// Start editing
+		sm.editingField = true
+		sm.editBuffer = item.Value.(string)
+
+	case ItemTypeCheckbox:
+		// Toggle
+		sm.items[sm.selectedIndex].Value = !item.Value.(bool)
+		sm.updateStatusText()
+		sm.updateConfig()
+
+	case ItemTypeLink, ItemTypeAction:
+		// Execute handler
+		if item.Handler != nil {
+			item.Handler()
+		}
+	}
+}
+
+// handleSpace handles spacebar press (for checkboxes)
+func (sm *SettingsModal) handleSpace() {
+	item := sm.items[sm.selectedIndex]
+	if item.Type == ItemTypeCheckbox {
+		sm.items[sm.selectedIndex].Value = !item.Value.(bool)
+		sm.updateStatusText()
+		sm.updateConfig()
+	}
+}
+
+// handleEditMode handles input in edit mode
+func (sm *SettingsModal) handleEditMode(ev *tcell.EventKey) bool {
 	switch ev.Key() {
-	case tcell.KeyEscape:
-		sm.cancelEditing()
-		return false
-
 	case tcell.KeyEnter:
-		sm.confirmEditing()
-		return false
+		// Save the edited value
+		sm.items[sm.selectedIndex].Value = sm.editBuffer
 
-	case tcell.KeyCtrlV:
-		// Paste from clipboard (especially useful for API keys)
-		if field.Type == FieldTypePassword || field.Type == FieldTypeString || field.Type == FieldTypeText {
-			if content, err := utils.GetClipboardContent(); err == nil && content != "" {
-				// Complete overwrite - replace entire buffer
-				sm.editBuffer = strings.TrimSpace(content)
-
-				// Log the paste action
-				log.Printf("[DEBUG] Pasted content to %s field (length: %d)", field.Key, len(sm.editBuffer))
-
-				// Auto-detect provider if this is the API key field
-				if field.Key == "api_key" {
-					log.Printf("[DEBUG] Attempting provider detection for API key")
-					if detection := utils.DetectProvider(sm.editBuffer); detection != nil {
-						log.Printf("[DEBUG] Provider detected: %s", detection.ProviderName)
-
-						// Update provider field
-						for _, f := range sm.fields {
-							if f.Key == "provider" {
-								f.Value = detection.Provider
-								// Update model options for new provider
-								sm.updateModelOptionsForProvider(detection.Provider)
-								// Set default model
-								for _, mf := range sm.fields {
-									if mf.Key == "model" {
-										mf.Value = detection.DefaultModel
-										break
-									}
-								}
-								// Set base URL
-								for _, uf := range sm.fields {
-									if uf.Key == "base_url" {
-										uf.Value = detection.BaseURL
-										break
-									}
-								}
-								sm.errorMessage = "Provider auto-detected: " + detection.ProviderName
-								sm.modified = true
-								break
-							}
-						}
-					} else {
-						log.Printf("[DEBUG] No provider detected for API key")
-					}
-				}
-			} else {
-				if err != nil {
-					log.Printf("[ERROR] Failed to get clipboard: %v", err)
-					sm.errorMessage = "Failed to paste from clipboard"
-				}
-			}
+		// If API key was edited, detect provider and update models
+		if sm.items[sm.selectedIndex].Key == "api_key" {
+			sm.detectAPIKeyProvider(sm.editBuffer)
 		}
 
+		sm.updateStatusText()
+		sm.updateConfig()
+		sm.editingField = false
+		sm.editBuffer = ""
+
+	case tcell.KeyEscape:
+		// Cancel editing
+		sm.editingField = false
+		sm.editBuffer = ""
+
 	case tcell.KeyBackspace, tcell.KeyBackspace2:
-		if field.Type != FieldTypeBool {
-			if len(sm.editBuffer) > 0 {
-				sm.editBuffer = sm.editBuffer[:len(sm.editBuffer)-1]
-			}
+		// For API key field, clear entirely on first backspace
+		if sm.items[sm.selectedIndex].Key == "api_key" && sm.editBuffer != "" {
+			sm.editBuffer = ""
+		} else if len(sm.editBuffer) > 0 {
+			sm.editBuffer = sm.editBuffer[:len(sm.editBuffer)-1]
 		}
 
 	case tcell.KeyRune:
-		if field.Type == FieldTypeBool {
-			if ev.Rune() == ' ' {
-				// Toggle boolean
-				field.Value = !field.Value.(bool)
-				sm.modified = true
-			}
-		} else {
-			sm.editBuffer += string(ev.Rune())
-		}
+		sm.editBuffer += string(ev.Rune())
 	}
 
 	return false
 }
 
-// startEditing begins editing a field
-func (sm *SettingsModal) startEditing(item *SettingsMenuItem) {
-	sm.editingField = true
-	sm.editingItem = item
-	sm.errorMessage = ""
+// refreshModels refreshes the model list from the API
+func (sm *SettingsModal) refreshModels() {
+	sm.isLoadingModels = true
 
-	field := item.field
+	// In a real implementation, this would call the API
+	// For now, just simulate a delay
+	go func() {
+		time.Sleep(2 * time.Second)
+		sm.isLoadingModels = false
 
-	switch field.Type {
-	case FieldTypeDropdown:
-		// Create a dropdown selector for this field
-		currentValue := fmt.Sprintf("%v", field.Value)
-		sm.dropdownSelector = components.NewDropdownSelector(
-			sm.screen,
-			fmt.Sprintf("Select %s", field.Label),
-			field.Options,
-			currentValue,
-		)
+		// Update model options
+		provider := sm.items[0].Value.(string)
+		sm.items[2].Options = sm.getModelOptions(provider)
+	}()
+}
 
-	case FieldTypeBool:
-		// Nothing to prepare
-
-	default:
-		// Initialize edit buffer with current value
-		sm.editBuffer = fmt.Sprintf("%v", field.Value)
-		if field.Type == FieldTypePassword && field.Value.(string) != "" {
-			sm.editBuffer = field.Value.(string)
+// updateStatusText updates status text for items that need it
+func (sm *SettingsModal) updateStatusText() {
+	for i := range sm.items {
+		switch sm.items[i].Key {
+		case "api_key":
+			sm.items[i].StatusText = sm.getAPIKeyStatus(sm.items[i].Value.(string))
+		case "yolo_mode":
+			sm.items[i].StatusText = sm.getYoloModeStatus(sm.items[i].Value.(bool))
+		case "voice_control":
+			provider := sm.items[0].Value.(string)
+			sm.items[i].StatusText = sm.getVoiceControlStatus(sm.items[i].Value.(bool), provider)
 		}
 	}
 }
 
-// storeOriginalValues saves the initial state for restore
-func (sm *SettingsModal) storeOriginalValues() {
-	for _, field := range sm.fields {
-		// Deep copy the value to avoid reference issues
-		switch v := field.Value.(type) {
-		case string:
-			sm.originalValues[field.Key] = v
-		case bool:
-			sm.originalValues[field.Key] = v
-		case int:
-			sm.originalValues[field.Key] = v
-		case float64:
-			sm.originalValues[field.Key] = v
-		default:
-			sm.originalValues[field.Key] = field.Value
-		}
-	}
-}
-
-// restoreOriginalValues restores all fields to their original values
-func (sm *SettingsModal) restoreOriginalValues() {
-	for _, field := range sm.fields {
-		if originalValue, exists := sm.originalValues[field.Key]; exists {
-			field.Value = originalValue
-		}
-	}
-
-	// Reset modified flag
-	sm.modified = false
-	sm.errorMessage = ""
-
-	// Update menu items to reflect restored values
-	sm.updateMenuItems()
-
-	// Auto-save the restored state
-	sm.save()
-}
-
-// updateModelOptionsForProvider updates model options when provider changes
-func (sm *SettingsModal) updateModelOptionsForProvider(provider string) {
-	// Update model field options
-	for _, f := range sm.fields {
-		if f.Key == "model" {
-			f.Options = sm.getModelOptions(provider)
-			// Reset to first option if current model not in new list
-			found := false
-			for _, opt := range f.Options {
-				if opt == f.Value.(string) {
-					found = true
-					break
-				}
-			}
-			if !found && len(f.Options) > 0 {
-				f.Value = f.Options[0]
-			}
-			break
-		}
-	}
-}
-
-// confirmEditing saves the edited value
-func (sm *SettingsModal) confirmEditing() {
-	field := sm.editingItem.field
-
-	// Parse and validate new value
-	var newValue interface{}
-	var err error
-
-	switch field.Type {
-	case FieldTypeDropdown:
-		// This case is now handled by the dropdown selector
-		// Should not reach here
-		return
-
-	case FieldTypeBool:
-		// Already updated during editing
-		sm.editingField = false
-		sm.editingItem = nil
-		sm.updateMenuItems()
-		// Auto-save after toggle
-		sm.save()
-		return
-
-	case FieldTypeFloat:
-		newValue, err = strconv.ParseFloat(sm.editBuffer, 64)
-		if err != nil {
-			sm.errorMessage = fmt.Sprintf("Invalid number: %v", err)
-			return
-		}
-		if field.Min != 0 || field.Max != 0 {
-			val := newValue.(float64)
-			if val < field.Min || val > field.Max {
-				sm.errorMessage = fmt.Sprintf("Value must be between %.2f and %.2f", field.Min, field.Max)
-				return
-			}
-		}
-
-	case FieldTypeNumber:
-		newValue, err = strconv.Atoi(sm.editBuffer)
-		if err != nil {
-			sm.errorMessage = fmt.Sprintf("Invalid number: %v", err)
-			return
-		}
-
-	default:
-		newValue = sm.editBuffer
-
-		// Auto-detect provider if this is the API key field and user typed it
-		if field.Key == "api_key" && field.Type == FieldTypePassword {
-			if detection := utils.DetectProvider(sm.editBuffer); detection != nil {
-				// Update provider field
-				for _, f := range sm.fields {
-					if f.Key == "provider" {
-						f.Value = detection.Provider
-						// Update model options for new provider
-						sm.updateModelOptionsForProvider(detection.Provider)
-						// Set default model
-						for _, mf := range sm.fields {
-							if mf.Key == "model" {
-								mf.Value = detection.DefaultModel
-								break
-							}
-						}
-						// Set base URL
-						for _, uf := range sm.fields {
-							if uf.Key == "base_url" {
-								uf.Value = detection.BaseURL
-								break
-							}
-						}
-						sm.errorMessage = "Provider auto-detected: " + detection.ProviderName
-						break
-					}
-				}
-			}
-		}
-	}
-
-	// Update value
-	field.Value = newValue
-	sm.modified = true
-	sm.editingField = false
-	sm.editingItem = nil
-	sm.editBuffer = ""
-
-	// Update menu items to reflect changes
-	sm.updateMenuItems()
-
-	// Auto-save after each change
-	sm.save()
-}
-
-// cancelEditing cancels the current edit
-func (sm *SettingsModal) cancelEditing() {
-	sm.editingField = false
-	sm.editingItem = nil
-	sm.editBuffer = ""
-	sm.errorMessage = ""
-}
-
-// updateMenuItems refreshes menu items with current values
-func (sm *SettingsModal) updateMenuItems() {
-	// Clear and re-add items with updated values
-	sm.menu.Clear()
-
-	for i, field := range sm.fields {
-		sm.menu.AddItem(&SettingsMenuItem{
-			field:  field,
-			number: i,
-			config: sm.config.Get(),
-		})
-	}
-}
-
-// save saves all settings
-func (sm *SettingsModal) save() {
-	// Update config with all field values
-	err := sm.config.Update(func(cfg *core.Config) {
-		for _, field := range sm.fields {
-			switch field.Key {
+// updateConfig updates the configuration with current values
+func (sm *SettingsModal) updateConfig() {
+	sm.config.Update(func(cfg *core.Config) {
+		for _, item := range sm.items {
+			switch item.Key {
 			case "provider":
-				cfg.Provider = field.Value.(string)
+				cfg.Provider = item.Value.(string)
 			case "api_key":
-				cfg.APIKey = field.Value.(string)
-			case "base_url":
-				cfg.BaseURL = field.Value.(string)
+				cfg.APIKey = item.Value.(string)
 			case "model":
-				cfg.Model = field.Value.(string)
-			case "temperature":
-				cfg.Temperature = field.Value.(float64)
-			case "max_tokens":
-				cfg.MaxTokens = field.Value.(int)
-			case "stream_mode":
-				cfg.StreamMode = field.Value.(bool)
+				cfg.Model = item.Value.(string)
 			case "yolo_mode":
-				cfg.YoloMode = field.Value.(bool)
+				cfg.YoloMode = item.Value.(bool)
 			case "voice_control":
-				cfg.VoiceControl = field.Value.(bool)
-			case "system_prompt":
-				cfg.SystemPrompt = field.Value.(string)
-			case "theme":
-				cfg.Theme = field.Value.(string)
-			case "namespace":
-				cfg.Namespace = field.Value.(string)
+				cfg.VoiceControl = item.Value.(bool)
 			}
 		}
 	})
-
-	if err != nil {
-		sm.errorMessage = fmt.Sprintf("Save failed: %v", err)
-		return
-	}
-
-	sm.modified = false
-	if sm.OnSave != nil {
-		sm.OnSave(sm.config.Get())
-	}
 }
 
-// Helper methods
-
-func (sm *SettingsModal) drawBox(x, y, w, h int, style tcell.Style) {
-	// Top border
-	sm.screen.SetContent(x, y, '╔', nil, style)
-	for i := 1; i < w-1; i++ {
-		sm.screen.SetContent(x+i, y, '═', nil, style)
-	}
-	sm.screen.SetContent(x+w-1, y, '╗', nil, style)
-
-	// Side borders
-	for i := 1; i < h-1; i++ {
-		sm.screen.SetContent(x, y+i, '║', nil, style)
-		sm.screen.SetContent(x+w-1, y+i, '║', nil, style)
-	}
-
-	// Bottom border
-	sm.screen.SetContent(x, y+h-1, '╚', nil, style)
-	for i := 1; i < w-1; i++ {
-		sm.screen.SetContent(x+i, y+h-1, '═', nil, style)
-	}
-	sm.screen.SetContent(x+w-1, y+h-1, '╝', nil, style)
-}
-
-func (sm *SettingsModal) drawText(x, y int, text string, style tcell.Style) {
-	for i, r := range text {
-		sm.screen.SetContent(x+i, y, r, nil, style)
+// save saves the configuration
+func (sm *SettingsModal) save() {
+	sm.updateConfig()
+	if err := sm.config.Save(); err != nil {
+		sm.errorMessage = fmt.Sprintf("Error saving: %v", err)
+	} else {
+		if sm.OnSave != nil {
+			cfg := sm.config.Get()
+			sm.OnSave(cfg)
+		}
 	}
 }
 
 // HandleMouse processes mouse events for the settings modal
 func (sm *SettingsModal) HandleMouse(event *core.MouseEvent) bool {
-	// If dropdown selector is active, handle its mouse events
+	// If dropdown is active, forward to it
 	if sm.dropdownSelector != nil {
 		value, done := sm.dropdownSelector.HandleMouse(event)
 		if done && value != "" {
-			// Handle dropdown selection
-			if sm.editingItem != nil && sm.editingItem.field != nil {
-				// Update the field value
-				sm.editingItem.field.Value = value
-				// Save config (which will update all fields)
-				sm.save()
-			}
-			// Close dropdown
+			sm.items[sm.selectedIndex].Value = value
+			sm.updateConfig()
 			sm.dropdownSelector = nil
 			sm.editingField = false
-			sm.editingItem = nil
-			sm.updateMenuItems()
-			return true
 		} else if done {
-			// Cancelled
 			sm.dropdownSelector = nil
 			sm.editingField = false
-			sm.editingItem = nil
-			return true
 		}
-		return true // Dropdown is consuming events
+		return true
 	}
 
-	// If we're editing a field, handle mouse events specially
-	if sm.editingField {
-		// Check for clicks outside the edit area to cancel editing
-		if event.Type == core.MouseEventClick {
-			// For now, any click cancels editing
-			sm.editingField = false
-			sm.editingItem = nil
-			return true
-		}
-	}
+	// Calculate modal bounds
+	w, h := sm.screen.Size()
+	modalWidth := 70
+	modalHeight := 25
+	modalX := (w - modalWidth) / 2
+	modalY := (h - modalHeight) / 2
 
-	// Forward mouse events to the menu
-	if sm.menu != nil {
-		// Check if menu item was clicked to trigger editing
+	// Check if click is within modal
+	if event.X < modalX || event.X >= modalX+modalWidth ||
+		event.Y < modalY || event.Y >= modalY+modalHeight {
+		// Click outside modal - save and close
 		if event.Type == core.MouseEventClick {
-			selectedItem := sm.menu.GetSelectedItem()
-			if selectedItem != nil {
-				// Let menu handle the click first
-				if sm.menu.HandleMouse(event) {
-					// If it's a settings menu item, start editing
-					if settingsItem, ok := selectedItem.(*SettingsMenuItem); ok {
-						sm.startEditing(settingsItem)
-					}
-					return true
-				}
+			sm.updateConfig()
+			if sm.OnSave != nil {
+				cfg := sm.config.Get()
+				sm.OnSave(cfg)
 			}
-		} else {
-			// For non-click events, just forward to menu
-			return sm.menu.HandleMouse(event)
+			if sm.OnCancel != nil {
+				sm.OnCancel()
+			}
 		}
+		return false
 	}
 
-	return false
+	// Calculate which item was clicked
+	itemY := modalY + 3
+	for i, item := range sm.items {
+		if event.Y == itemY {
+			if event.Type == core.MouseEventClick {
+				sm.selectedIndex = i
+
+				// Handle different item types
+				switch item.Type {
+				case ItemTypeCheckbox:
+					// Toggle on click
+					sm.items[i].Value = !item.Value.(bool)
+					sm.updateStatusText()
+					sm.updateConfig()
+
+				case ItemTypeLink, ItemTypeAction:
+					// Execute handler on click
+					if item.Handler != nil {
+						item.Handler()
+					}
+
+				default:
+					// Open for editing
+					sm.handleEnter()
+				}
+				return true
+			}
+		}
+		itemY += 2
+	}
+
+	return true // Event was within modal
 }
+
+// detectAPIKeyProvider automatically detects the provider based on API key format
+func (sm *SettingsModal) detectAPIKeyProvider(apiKey string) {
+	var detectedProvider string
+
+	if strings.HasPrefix(apiKey, "sk-") && !strings.HasPrefix(apiKey, "sk-ant-") {
+		detectedProvider = "openai"
+	} else if strings.HasPrefix(apiKey, "sk-ant-") {
+		detectedProvider = "anthropic"
+	} else if strings.HasPrefix(apiKey, "gsk_") {
+		detectedProvider = "groq"
+	}
+
+	// If we detected a provider, update it
+	if detectedProvider != "" {
+		for i, item := range sm.items {
+			if item.Key == "provider" {
+				sm.items[i].Value = detectedProvider
+				break
+			}
+		}
+
+		// Update model options for the new provider
+		modelOptions := sm.getModelOptions(detectedProvider)
+		for i, item := range sm.items {
+			if item.Key == "model" {
+				sm.items[i].Options = modelOptions
+				// Reset to first available model for new provider
+				if len(modelOptions) > 0 {
+					sm.items[i].Value = modelOptions[0]
+				}
+				break
+			}
+		}
+
+		sm.updateConfig()
+	}
+}
+
+// restoreOriginal restores settings to their original values
+func (sm *SettingsModal) restoreOriginal() {
+	if sm.originalConfig == nil {
+		return
+	}
+
+	// Update the config
+	sm.config.Update(func(cfg *core.Config) {
+		cfg.Provider = sm.originalConfig.Provider
+		cfg.APIKey = sm.originalConfig.APIKey
+		cfg.Model = sm.originalConfig.Model
+		cfg.YoloMode = sm.originalConfig.YoloMode
+		cfg.VoiceControl = sm.originalConfig.VoiceControl
+	})
+
+	// Reinitialize items to reflect restored values
+	sm.initializeItems()
+}
+
