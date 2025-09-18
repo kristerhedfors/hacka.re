@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/hacka-re/cli/internal/prompts"
+	"github.com/hacka-re/cli/internal/tui/internal/prompts"
 	"github.com/hacka-re/cli/internal/tui/internal/components"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
@@ -66,40 +66,64 @@ func NewPromptsReadOnlyPage(screen tcell.Screen, config *core.ConfigManager, sta
 
 // loadPrompts loads prompt configuration from config and embedded defaults
 func (pp *PromptsReadOnlyPage) loadPrompts() {
-	// cfg := pp.config.Get() // Not used directly in read-only view
+	// cfg := pp.config.Get() // TODO: Use for loading enabled prompts
 
 	// Clear existing items
 	pp.defaultPromptsGroup.ClearItems()
 	pp.customPromptsGroup.ClearItems()
 
-	// Load embedded default prompts (categories)
-	defaultCategories := prompts.GetDefaultPrompts()
+	// Load default prompts from our new prompts package
+	defaultPrompts := prompts.GetDefaultPrompts()
 	enabledDefaults := make(map[string]bool)
 
-	// For read-only view, mock which prompts are enabled
-	// In real implementation, this would load from actual config
-	enabledDefaults["agent-orchestration"] = true
-	enabledDefaults["agent-coding"] = true
+	// For now, no prompts are enabled by default
+	// This would load from actual config
 
-	// Add default prompts to the group (organized by category)
-	for _, category := range defaultCategories {
-		// Add category header
-		categoryItem := components.ExpandableItem{
-			Text:  category.Name + ":",
-			Style: tcell.StyleDefault.Bold(true),
+	// Add default prompts to the group (no categories, flat list)
+	for _, prompt := range defaultPrompts {
+		item := components.ExpandableItem{
+			Text:       prompt.Name,
+			Indented:   false,
+			Style:      tcell.StyleDefault,
+			IsCheckbox: true,
+			IsChecked:  enabledDefaults[prompt.ID],
 		}
-		pp.defaultPromptsGroup.AddItem(categoryItem)
+		pp.defaultPromptsGroup.AddItem(item)
 
-		// Add prompts in this category
-		for _, prompt := range category.Prompts {
+		// Add description
+		if prompt.Description != "" {
+			descItem := components.ExpandableItem{
+				Text:     "  " + prompt.Description,
+				Indented: true,
+				Style:    tcell.StyleDefault.Foreground(tcell.ColorGray),
+			}
+			pp.defaultPromptsGroup.AddItem(descItem)
+		}
+
+		// Add token count (rough estimate)
+		tokenItem := components.ExpandableItem{
+			Text:     fmt.Sprintf("  ~%d tokens", len(prompt.Content)/4),
+			Indented: true,
+			Style:    tcell.StyleDefault.Foreground(tcell.ColorBlue),
+		}
+		pp.defaultPromptsGroup.AddItem(tokenItem)
+	}
+
+	// Check if MCP is connected (simple check - improve later)
+	mcpConnected := true // Show MCP prompts for demonstration
+
+	// Load MCP prompts if connected
+	if mcpConnected {
+		mcpPrompts := prompts.GetMCPPrompts()
+		for _, prompt := range mcpPrompts {
 			item := components.ExpandableItem{
 				Text:       prompt.Name,
-				Indented:   true,
+				Indented:   false,
 				Style:      tcell.StyleDefault,
 				IsCheckbox: true,
-				IsChecked:  enabledDefaults[prompt.ID],
+				IsChecked:  false, // MCP prompts start unchecked
 			}
-			pp.defaultPromptsGroup.AddItem(item)
+			pp.customPromptsGroup.AddItem(item)
 
 			// Add description
 			if prompt.Description != "" {
@@ -108,26 +132,19 @@ func (pp *PromptsReadOnlyPage) loadPrompts() {
 					Indented: true,
 					Style:    tcell.StyleDefault.Foreground(tcell.ColorGray),
 				}
-				pp.defaultPromptsGroup.AddItem(descItem)
+				pp.customPromptsGroup.AddItem(descItem)
 			}
 
 			// Add token count
 			tokenItem := components.ExpandableItem{
-				Text:     fmt.Sprintf("  ~%d tokens", prompt.Tokens),
+				Text:     fmt.Sprintf("  ~%d tokens", len(prompt.Content)/4),
 				Indented: true,
 				Style:    tcell.StyleDefault.Foreground(tcell.ColorBlue),
 			}
-			pp.defaultPromptsGroup.AddItem(tokenItem)
+			pp.customPromptsGroup.AddItem(tokenItem)
 		}
-
-		// Add spacing between categories
-		pp.defaultPromptsGroup.AddItem(components.ExpandableItem{Text: ""})
-	}
-
-	// Load custom prompts (mock data for read-only view)
-	hasCustom := false
-
-	if !hasCustom {
+	} else {
+		// No MCP prompts or custom prompts
 		item := components.ExpandableItem{
 			Text:  "(No custom prompts defined)",
 			Style: tcell.StyleDefault.Foreground(tcell.ColorGray).Italic(true),

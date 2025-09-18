@@ -7,6 +7,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/hacka-re/cli/internal/tui/internal/components"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
+	"github.com/hacka-re/cli/internal/tui/internal/prompts"
 )
 
 // Prompt represents a system prompt
@@ -16,18 +17,23 @@ type Prompt struct {
 	Content     string
 	Description string
 	IsDefault   bool
+	IsMCP       bool // Whether this is an MCP prompt
 	IsActive    bool
+	IsEnabled   bool // Whether the prompt is enabled (checkbox)
 }
 
 // PromptsPage manages system prompts
 type PromptsPage struct {
 	*BasePage
-	prompts        []Prompt
+	defaultPrompts []Prompt
+	customPrompts  []Prompt
+	mcpPrompts     []Prompt
 	menu           *components.FilterableMenu
 	editor         *components.Editor
 	currentMode    PromptMode
 	selectedPrompt *Prompt
 	editingPrompt  *Prompt
+	mcpConnected   bool // Whether MCP is connected
 }
 
 // PromptMode represents the current view mode
@@ -53,6 +59,8 @@ func (p *PromptMenuItem) GetDescription() string { return p.prompt.Description }
 func (p *PromptMenuItem) GetCategory() string {
 	if p.prompt.IsDefault {
 		return "Default"
+	} else if p.prompt.IsMCP {
+		return "MCP"
 	}
 	return "Custom"
 }
@@ -60,10 +68,10 @@ func (p *PromptMenuItem) IsEnabled() bool { return true }
 func (p *PromptMenuItem) GetInfo() string {
 	info := fmt.Sprintf("Name: %s\n", p.prompt.Name)
 	info += fmt.Sprintf("Type: %s\n", p.GetCategory())
-	if p.prompt.IsActive {
-		info += "Status: Active\n"
+	if p.prompt.IsEnabled {
+		info += "Status: ✓ Enabled\n"
 	} else {
-		info += "Status: Inactive\n"
+		info += "Status: ☐ Disabled\n"
 	}
 	info += fmt.Sprintf("\nDescription:\n%s\n", p.prompt.Description)
 	info += fmt.Sprintf("\nContent Preview:\n%s", p.getContentPreview())
@@ -86,13 +94,16 @@ func (p *PromptMenuItem) getContentPreview() string {
 // NewPromptsPage creates a new prompts management page
 func NewPromptsPage(screen tcell.Screen, config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus) *PromptsPage {
 	page := &PromptsPage{
-		BasePage:    NewBasePage(screen, config, state, eventBus, "System Prompts", PageTypePrompts),
-		currentMode: PromptModeList,
-		prompts:     []Prompt{},
+		BasePage:      NewBasePage(screen, config, state, eventBus, "System Prompts", PageTypePrompts),
+		currentMode:   PromptModeList,
+		defaultPrompts: []Prompt{},
+		customPrompts:  []Prompt{},
+		mcpPrompts:     []Prompt{},
+		mcpConnected:   false,
 	}
 
 	// Initialize components
-	page.menu = components.NewFilterableMenu(screen, "System Prompts Manager")
+	page.menu = components.NewFilterableMenu(screen, "System Prompts")
 	page.editor = components.NewEditor(screen)
 
 	// Configure menu layout
@@ -119,46 +130,45 @@ func NewPromptsPage(screen tcell.Screen, config *core.ConfigManager, state *core
 
 // loadPrompts loads available prompts
 func (p *PromptsPage) loadPrompts() {
-	// Load default prompts
-	p.prompts = []Prompt{
-		{
-			ID:          "default-helpful",
-			Name:        "Helpful Assistant",
-			Content:     "You are a helpful AI assistant. Be concise, accurate, and friendly.",
-			Description: "A general-purpose helpful assistant prompt",
+	// Load default prompts from the prompts package
+	defaultPrompts := prompts.GetDefaultPrompts()
+	p.defaultPrompts = make([]Prompt, 0, len(defaultPrompts))
+	for _, dp := range defaultPrompts {
+		p.defaultPrompts = append(p.defaultPrompts, Prompt{
+			ID:          dp.ID,
+			Name:        dp.Name,
+			Content:     dp.Content,
+			Description: dp.Description,
 			IsDefault:   true,
-			IsActive:    true,
-		},
-		{
-			ID:          "default-technical",
-			Name:        "Technical Expert",
-			Content:     "You are a technical expert. Provide detailed, accurate technical information with examples.",
-			Description: "For technical discussions and problem-solving",
-			IsDefault:   true,
+			IsMCP:       false,
 			IsActive:    false,
-		},
-		{
-			ID:          "default-creative",
-			Name:        "Creative Writer",
-			Content:     "You are a creative writer. Help with creative writing, storytelling, and content creation.",
-			Description: "For creative writing and content generation",
-			IsDefault:   true,
-			IsActive:    false,
-		},
-	}
-
-	// Load custom prompts from config
-	cfg := p.config.Get()
-	if cfg.SystemPrompt != "" {
-		p.prompts = append(p.prompts, Prompt{
-			ID:          "custom-current",
-			Name:        "Current System Prompt",
-			Content:     cfg.SystemPrompt,
-			Description: "The currently configured system prompt",
-			IsDefault:   false,
-			IsActive:    true,
+			IsEnabled:   false, // Default prompts start disabled
 		})
 	}
+
+	// Load MCP prompts if MCP is connected
+	if p.mcpConnected {
+		mcpPrompts := prompts.GetMCPPrompts()
+		p.mcpPrompts = make([]Prompt, 0, len(mcpPrompts))
+		for _, mp := range mcpPrompts {
+			p.mcpPrompts = append(p.mcpPrompts, Prompt{
+				ID:          mp.ID,
+				Name:        mp.Name,
+				Content:     mp.Content,
+				Description: mp.Description,
+				IsDefault:   false,
+				IsMCP:       true,
+				IsActive:    false,
+				IsEnabled:   false, // MCP prompts also start disabled
+			})
+		}
+	} else {
+		p.mcpPrompts = []Prompt{}
+	}
+
+	// Load custom prompts from config (user-created)
+	p.customPrompts = []Prompt{}
+	// TODO: Load from persistent storage when implemented
 
 	// Update menu items
 	p.updateMenuItems()
@@ -167,12 +177,36 @@ func (p *PromptsPage) loadPrompts() {
 // updateMenuItems refreshes the menu with current prompts
 func (p *PromptsPage) updateMenuItems() {
 	p.menu.Clear()
-	for i := range p.prompts {
+	number := 0
+
+	// Add default prompts
+	for i := range p.defaultPrompts {
 		item := &PromptMenuItem{
-			prompt: &p.prompts[i],
-			number: i,
+			prompt: &p.defaultPrompts[i],
+			number: number,
 		}
 		p.menu.AddItem(item)
+		number++
+	}
+
+	// Add custom prompts
+	for i := range p.customPrompts {
+		item := &PromptMenuItem{
+			prompt: &p.customPrompts[i],
+			number: number,
+		}
+		p.menu.AddItem(item)
+		number++
+	}
+
+	// Add MCP prompts (shown in custom section)
+	for i := range p.mcpPrompts {
+		item := &PromptMenuItem{
+			prompt: &p.mcpPrompts[i],
+			number: number,
+		}
+		p.menu.AddItem(item)
+		number++
 	}
 }
 
@@ -194,9 +228,26 @@ func (p *PromptsPage) Draw() {
 func (p *PromptsPage) drawListMode() {
 	p.menu.Draw()
 
-	// Draw instructions at the bottom
+	// Draw sections headers
 	w, _ := p.screen.Size()
-	instructions := " Enter:View | E:Edit | N:New | D:Delete | A:Activate | I:Import | X:Export | ESC:Back "
+
+	// Draw Default Prompts header
+	headerY := p.menu.GetY() - 2
+	defaultHeader := "Default Prompts"
+	p.DrawText(p.menu.GetX(), headerY, defaultHeader, tcell.StyleDefault.Bold(true))
+
+	// Draw Custom Prompts header if there are custom or MCP prompts
+	if len(p.customPrompts) > 0 || len(p.mcpPrompts) > 0 {
+		customY := headerY + len(p.defaultPrompts) + 3
+		customHeader := "Custom Prompts"
+		if p.mcpConnected {
+			customHeader = "Custom Prompts (including MCP)"
+		}
+		p.DrawText(p.menu.GetX(), customY, customHeader, tcell.StyleDefault.Bold(true))
+	}
+
+	// Draw instructions at the bottom
+	instructions := " Enter:View | Space:Toggle | N:New | D:Delete | ESC:Back "
 	x := (w - len(instructions)) / 2
 	y := p.menu.GetY() + p.menu.GetHeight() + 1
 
@@ -226,8 +277,13 @@ func (p *PromptsPage) drawViewMode() {
 	p.editor.SetReadOnly(true)
 	p.editor.Draw()
 
-	// Draw instructions
-	instructions := " E:Edit | D:Delete | A:Activate | ESC:Back to List "
+	// Draw instructions based on prompt type
+	var instructions string
+	if p.selectedPrompt.IsDefault || p.selectedPrompt.IsMCP {
+		instructions = " Space:Toggle | ESC:Back to List "
+	} else {
+		instructions = " E:Edit | D:Delete | Space:Toggle | ESC:Back to List "
+	}
 	p.DrawCenteredText(h-2, instructions, tcell.StyleDefault.Foreground(tcell.ColorYellow))
 }
 
@@ -316,11 +372,22 @@ func (p *PromptsPage) handleListInput(ev *tcell.EventKey) bool {
 	switch ev.Key() {
 	case tcell.KeyRune:
 		switch ev.Rune() {
-		case 'e', 'E':
-			// Edit selected prompt
+		case ' ':
+			// Toggle enabled status
 			if item := p.menu.GetSelectedItem(); item != nil {
 				if menuItem, ok := item.(*PromptMenuItem); ok {
-					p.startEdit(menuItem.prompt)
+					p.togglePrompt(menuItem.prompt)
+				}
+			}
+			return false
+
+		case 'e', 'E':
+			// Edit selected prompt (only for custom prompts)
+			if item := p.menu.GetSelectedItem(); item != nil {
+				if menuItem, ok := item.(*PromptMenuItem); ok {
+					if !menuItem.prompt.IsDefault && !menuItem.prompt.IsMCP {
+						p.startEdit(menuItem.prompt)
+					}
 				}
 			}
 			return false
@@ -331,31 +398,14 @@ func (p *PromptsPage) handleListInput(ev *tcell.EventKey) bool {
 			return false
 
 		case 'd', 'D':
-			// Delete selected prompt
+			// Delete selected prompt (only custom, non-MCP prompts)
 			if item := p.menu.GetSelectedItem(); item != nil {
 				if menuItem, ok := item.(*PromptMenuItem); ok {
-					p.deletePrompt(menuItem.prompt)
+					if !menuItem.prompt.IsDefault && !menuItem.prompt.IsMCP {
+						p.deletePrompt(menuItem.prompt)
+					}
 				}
 			}
-			return false
-
-		case 'a', 'A':
-			// Activate selected prompt
-			if item := p.menu.GetSelectedItem(); item != nil {
-				if menuItem, ok := item.(*PromptMenuItem); ok {
-					p.activatePrompt(menuItem.prompt)
-				}
-			}
-			return false
-
-		case 'i', 'I':
-			// Import prompt
-			// TODO: Implement import functionality
-			return false
-
-		case 'x', 'X':
-			// Export prompt
-			// TODO: Implement export functionality
 			return false
 		}
 	}
@@ -378,16 +428,20 @@ func (p *PromptsPage) handleViewInput(ev *tcell.EventKey) bool {
 	case tcell.KeyRune:
 		switch ev.Rune() {
 		case 'e', 'E':
-			p.startEdit(p.selectedPrompt)
+			if !p.selectedPrompt.IsDefault && !p.selectedPrompt.IsMCP {
+				p.startEdit(p.selectedPrompt)
+			}
 			return false
 
 		case 'd', 'D':
-			p.deletePrompt(p.selectedPrompt)
-			p.currentMode = PromptModeList
+			if !p.selectedPrompt.IsDefault && !p.selectedPrompt.IsMCP {
+				p.deletePrompt(p.selectedPrompt)
+				p.currentMode = PromptModeList
+			}
 			return false
 
-		case 'a', 'A':
-			p.activatePrompt(p.selectedPrompt)
+		case ' ':
+			p.togglePrompt(p.selectedPrompt)
 			return false
 		}
 	}
@@ -444,12 +498,13 @@ func (p *PromptsPage) startEdit(prompt *Prompt) {
 // startCreate starts creating a new prompt
 func (p *PromptsPage) startCreate() {
 	p.editingPrompt = &Prompt{
-		ID:          fmt.Sprintf("custom-%d", len(p.prompts)),
+		ID:          fmt.Sprintf("custom-%d", len(p.customPrompts)),
 		Name:        "New Prompt",
 		Content:     "",
 		Description: "A new custom system prompt",
 		IsDefault:   false,
-		IsActive:    false,
+		IsMCP:       false,
+		IsEnabled:   false,
 	}
 
 	p.editor.SetText("")
@@ -466,25 +521,21 @@ func (p *PromptsPage) savePrompt() {
 
 	// Check if this is a new prompt or update
 	found := false
-	for i, prompt := range p.prompts {
+	for i, prompt := range p.customPrompts {
 		if prompt.ID == p.editingPrompt.ID {
-			p.prompts[i] = *p.editingPrompt
+			p.customPrompts[i] = *p.editingPrompt
 			found = true
 			break
 		}
 	}
 
 	if !found {
-		// Add new prompt
-		p.prompts = append(p.prompts, *p.editingPrompt)
+		// Add new prompt to custom prompts
+		p.customPrompts = append(p.customPrompts, *p.editingPrompt)
 	}
 
-	// If this prompt is active, update the config
-	if p.editingPrompt.IsActive {
-		p.config.Update(func(cfg *core.Config) {
-			cfg.SystemPrompt = p.editingPrompt.Content
-		})
-	}
+	// Update system prompt if needed
+	p.updateSystemPrompt()
 
 	p.SetDirty(false)
 	p.updateMenuItems()
@@ -493,48 +544,99 @@ func (p *PromptsPage) savePrompt() {
 
 // deletePrompt deletes a prompt
 func (p *PromptsPage) deletePrompt(prompt *Prompt) {
-	if prompt.IsDefault {
-		// Can't delete default prompts
+	if prompt.IsDefault || prompt.IsMCP {
+		// Can't delete default or MCP prompts
 		return
 	}
 
-	// Remove from list
+	// Remove from custom prompts list
 	newPrompts := []Prompt{}
-	for _, pr := range p.prompts {
+	for _, pr := range p.customPrompts {
 		if pr.ID != prompt.ID {
 			newPrompts = append(newPrompts, pr)
 		}
 	}
-	p.prompts = newPrompts
+	p.customPrompts = newPrompts
 	p.updateMenuItems()
 }
 
-// activatePrompt activates a prompt
-func (p *PromptsPage) activatePrompt(prompt *Prompt) {
-	// Deactivate all prompts
-	for i := range p.prompts {
-		p.prompts[i].IsActive = false
-	}
-
-	// Activate selected prompt
-	for i := range p.prompts {
-		if p.prompts[i].ID == prompt.ID {
-			p.prompts[i].IsActive = true
-			break
+// togglePrompt toggles the enabled state of a prompt
+func (p *PromptsPage) togglePrompt(prompt *Prompt) {
+	// Find and toggle the prompt in the appropriate list
+	if prompt.IsDefault {
+		for i := range p.defaultPrompts {
+			if p.defaultPrompts[i].ID == prompt.ID {
+				p.defaultPrompts[i].IsEnabled = !p.defaultPrompts[i].IsEnabled
+				break
+			}
+		}
+	} else if prompt.IsMCP {
+		for i := range p.mcpPrompts {
+			if p.mcpPrompts[i].ID == prompt.ID {
+				p.mcpPrompts[i].IsEnabled = !p.mcpPrompts[i].IsEnabled
+				break
+			}
+		}
+	} else {
+		for i := range p.customPrompts {
+			if p.customPrompts[i].ID == prompt.ID {
+				p.customPrompts[i].IsEnabled = !p.customPrompts[i].IsEnabled
+				break
+			}
 		}
 	}
 
+	// Update the system prompt in config with all enabled prompts
+	p.updateSystemPrompt()
+	p.updateMenuItems()
+}
+
+// updateSystemPrompt combines all enabled prompts into the system prompt
+func (p *PromptsPage) updateSystemPrompt() {
+	var enabledPrompts []string
+
+	// Collect enabled default prompts
+	for _, prompt := range p.defaultPrompts {
+		if prompt.IsEnabled {
+			enabledPrompts = append(enabledPrompts, prompt.Content)
+		}
+	}
+
+	// Collect enabled custom prompts
+	for _, prompt := range p.customPrompts {
+		if prompt.IsEnabled {
+			enabledPrompts = append(enabledPrompts, prompt.Content)
+		}
+	}
+
+	// Collect enabled MCP prompts
+	for _, prompt := range p.mcpPrompts {
+		if prompt.IsEnabled {
+			enabledPrompts = append(enabledPrompts, prompt.Content)
+		}
+	}
+
+	// Combine all enabled prompts
+	combinedPrompt := strings.Join(enabledPrompts, "\n\n")
+
 	// Update config
 	p.config.Update(func(cfg *core.Config) {
-		cfg.SystemPrompt = prompt.Content
+		cfg.SystemPrompt = combinedPrompt
 	})
-
-	p.updateMenuItems()
 }
 
 // OnActivate is called when the page becomes active
 func (p *PromptsPage) OnActivate() {
+	// Check MCP connection status
+	p.checkMCPConnection()
 	p.loadPrompts()
+}
+
+// checkMCPConnection checks if MCP servers are connected
+func (p *PromptsPage) checkMCPConnection() {
+	// TODO: Properly check actual MCP connection status
+	// For now, MCP is not connected until we implement it
+	p.mcpConnected = false
 }
 
 // Save saves any changes
