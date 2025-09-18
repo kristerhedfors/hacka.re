@@ -24,6 +24,7 @@ type SettingsModal struct {
 	editingField     bool
 	editBuffer       string
 	dropdownSelector *components.DropdownSelector
+	modelSelector    *components.ModelSelector
 	isLoadingModels  bool
 	errorMessage     string
 
@@ -331,6 +332,11 @@ func (sm *SettingsModal) Draw() {
 		sm.dropdownSelector.Draw()
 	}
 
+	// Draw model selector if active
+	if sm.modelSelector != nil {
+		sm.modelSelector.Draw()
+	}
+
 	// Draw loading spinner if loading models
 	if sm.isLoadingModels {
 		sm.drawLoadingSpinner(modalX+modalWidth/2, modalY+modalHeight/2)
@@ -515,6 +521,21 @@ func (sm *SettingsModal) drawLoadingSpinner(x, y int) {
 
 // HandleInput processes keyboard input
 func (sm *SettingsModal) HandleInput(ev *tcell.EventKey) bool {
+	// Handle model selector if active
+	if sm.modelSelector != nil {
+		value, done := sm.modelSelector.HandleInput(ev)
+		if done {
+			if value != "" {
+				sm.items[sm.selectedIndex].Value = value
+				sm.updateConfig()
+			}
+			sm.modelSelector = nil
+			sm.editingField = false
+			return false
+		}
+		return false
+	}
+
 	// Handle dropdown if active
 	if sm.dropdownSelector != nil {
 		value, done := sm.dropdownSelector.HandleInput(ev)
@@ -591,14 +612,51 @@ func (sm *SettingsModal) handleEnter() {
 
 	switch item.Type {
 	case ItemTypeDropdown:
-		// Open dropdown selector
-		sm.editingField = true
-		sm.dropdownSelector = components.NewDropdownSelector(
-			sm.screen,
-			item.Label,
-			item.Options,
-			fmt.Sprintf("%v", item.Value),
-		)
+		// Check if this is the Model field - use special selector
+		if item.Key == "model" {
+			sm.editingField = true
+
+			// Get the current provider to determine which models to show
+			providerStr := sm.items[0].Value.(string) // Provider is first item
+			var provider models.ModelProvider
+			switch providerStr {
+			case "openai":
+				provider = models.ProviderOpenAI
+			case "groq":
+				provider = models.ProviderGroq
+			case "berget":
+				provider = models.ProviderBerget
+			case "ollama":
+				provider = models.ProviderOllama
+			case "llamafile":
+				provider = models.ProviderLlamafile
+			case "gpt4all":
+				provider = models.ProviderGPT4All
+			case "lmstudio":
+				provider = models.ProviderLMStudio
+			case "localai":
+				provider = models.ProviderLocalAI
+			default:
+				provider = models.ProviderOpenAI
+			}
+
+			sm.modelSelector = components.NewModelSelector(
+				sm.screen,
+				"Select Model",
+				sm.modelRegistry,
+				provider,
+				fmt.Sprintf("%v", item.Value),
+			)
+		} else {
+			// Use regular dropdown for other fields
+			sm.editingField = true
+			sm.dropdownSelector = components.NewDropdownSelector(
+				sm.screen,
+				item.Label,
+				item.Options,
+				fmt.Sprintf("%v", item.Value),
+			)
+		}
 
 	case ItemTypePassword:
 		// Start editing
@@ -732,6 +790,12 @@ func (sm *SettingsModal) save() {
 
 // HandleMouse processes mouse events for the settings modal
 func (sm *SettingsModal) HandleMouse(event *core.MouseEvent) bool {
+	// If model selector is active, just consume the event
+	// (Model selector doesn't support mouse yet)
+	if sm.modelSelector != nil {
+		return true
+	}
+
 	// If dropdown is active, forward to it
 	if sm.dropdownSelector != nil {
 		value, done := sm.dropdownSelector.HandleMouse(event)
