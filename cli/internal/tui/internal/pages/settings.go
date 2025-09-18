@@ -2,6 +2,7 @@ package pages
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"sort"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/hacka-re/cli/internal/models"
 	"github.com/hacka-re/cli/internal/tui/internal/components"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
+	"github.com/hacka-re/cli/internal/utils"
 )
 
 // FieldType represents the type of settings field
@@ -127,8 +129,13 @@ type SettingsModal struct {
 	dropdownSelector *components.DropdownSelector
 
 	// UI state
-	modified     bool
-	errorMessage string
+	modified        bool
+	errorMessage    string
+	confirmingExit  bool
+
+	// Paste detection for terminal paste (Cmd+V on macOS)
+	lastKeyTime     int64
+	rapidKeyCount   int
 
 	// Original state for restore
 	originalValues map[string]interface{}
@@ -528,7 +535,10 @@ func (sm *SettingsModal) refreshModels() {
 
 // Draw renders the settings modal
 func (sm *SettingsModal) Draw() {
-	if sm.dropdownSelector != nil {
+	if sm.confirmingExit {
+		// Draw the confirmation modal
+		sm.drawConfirmationModal()
+	} else if sm.dropdownSelector != nil {
 		// Draw the dropdown selector
 		sm.dropdownSelector.Draw()
 	} else if sm.editingField {
@@ -551,6 +561,49 @@ func (sm *SettingsModal) Draw() {
 			sm.drawModifiedIndicator()
 		}
 	}
+}
+
+// drawConfirmationModal shows a yes/no confirmation modal
+func (sm *SettingsModal) drawConfirmationModal() {
+	w, h := sm.screen.Size()
+
+	// Calculate modal dimensions
+	modalWidth := 50
+	modalHeight := 8
+	x := (w - modalWidth) / 2
+	y := (h - modalHeight) / 2
+
+	// Draw modal background
+	style := tcell.StyleDefault.Background(tcell.ColorDarkRed)
+	for i := 0; i < modalHeight; i++ {
+		for j := 0; j < modalWidth; j++ {
+			sm.screen.SetContent(x+j, y+i, ' ', nil, style)
+		}
+	}
+
+	// Draw border
+	borderStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow)
+	sm.drawBox(x, y, modalWidth, modalHeight, borderStyle)
+
+	// Draw title
+	title := " Save Changes? "
+	titleX := x + (modalWidth-len(title))/2
+	sm.drawText(titleX, y, title, borderStyle)
+
+	// Draw message
+	msg := "You have unsaved changes."
+	msgX := x + (modalWidth-len(msg))/2
+	sm.drawText(msgX, y+2, msg, tcell.StyleDefault.Foreground(tcell.ColorWhite))
+
+	msg2 := "Save before exiting?"
+	msg2X := x + (modalWidth-len(msg2))/2
+	sm.drawText(msg2X, y+3, msg2, tcell.StyleDefault.Foreground(tcell.ColorWhite))
+
+	// Draw options
+	optionsY := y + 5
+	optionsText := "[Y]es    [N]o    [C]ancel"
+	optionsX := x + (modalWidth-len(optionsText))/2
+	sm.drawText(optionsX, optionsY, optionsText, tcell.StyleDefault.Foreground(tcell.ColorGreen))
 }
 
 // drawEditOverlay shows the editing interface
@@ -616,6 +669,10 @@ func (sm *SettingsModal) drawEditOverlay() {
 
 		// Show type hint
 		hint := "Type value, Enter to confirm"
+		// Add paste hint for password fields
+		if field.Type == FieldTypePassword {
+			hint = "Type or ^V to paste (clear & replace), Enter to confirm"
+		}
 		hintX := x + (overlayWidth-len(hint))/2
 		sm.drawText(hintX, valueY+2, hint, tcell.StyleDefault.Foreground(tcell.ColorGray))
 	}
@@ -679,6 +736,38 @@ func (sm *SettingsModal) drawError() {
 
 // HandleInput processes keyboard input
 func (sm *SettingsModal) HandleInput(ev *tcell.EventKey) bool {
+	// Handle confirmation modal if active
+	if sm.confirmingExit {
+		switch ev.Key() {
+		case tcell.KeyRune:
+			switch ev.Rune() {
+			case 'y', 'Y':
+				// Save and exit
+				sm.save()
+				if sm.OnCancel != nil {
+					sm.OnCancel()
+				}
+				return true
+			case 'n', 'N':
+				// Exit without saving
+				sm.restoreOriginalValues()
+				if sm.OnCancel != nil {
+					sm.OnCancel()
+				}
+				return true
+			case 'c', 'C':
+				// Cancel exit
+				sm.confirmingExit = false
+				return false
+			}
+		case tcell.KeyEscape:
+			// Cancel exit
+			sm.confirmingExit = false
+			return false
+		}
+		return false
+	}
+
 	// Handle dropdown selector if active
 	if sm.dropdownSelector != nil {
 		// Check for refresh shortcut specifically for model dropdown
@@ -741,10 +830,12 @@ func (sm *SettingsModal) HandleInput(ev *tcell.EventKey) bool {
 	item, exit := sm.menu.HandleInput(ev)
 
 	if exit {
-		// Auto-save on exit if modified
+		// Show confirmation modal if modified
 		if sm.modified {
-			sm.save()
+			sm.confirmingExit = true
+			return false
 		}
+		// Exit directly if no changes
 		if sm.OnCancel != nil {
 			sm.OnCancel()
 		}
@@ -773,6 +864,59 @@ func (sm *SettingsModal) handleEditingInput(ev *tcell.EventKey) bool {
 	case tcell.KeyEnter:
 		sm.confirmEditing()
 		return false
+
+	case tcell.KeyCtrlV:
+		// Paste from clipboard (especially useful for API keys)
+		if field.Type == FieldTypePassword || field.Type == FieldTypeString || field.Type == FieldTypeText {
+			if content, err := utils.GetClipboardContent(); err == nil && content != "" {
+				// Complete overwrite - replace entire buffer
+				sm.editBuffer = strings.TrimSpace(content)
+
+				// Log the paste action
+				log.Printf("[DEBUG] Pasted content to %s field (length: %d)", field.Key, len(sm.editBuffer))
+
+				// Auto-detect provider if this is the API key field
+				if field.Key == "api_key" {
+					log.Printf("[DEBUG] Attempting provider detection for API key")
+					if detection := utils.DetectProvider(sm.editBuffer); detection != nil {
+						log.Printf("[DEBUG] Provider detected: %s", detection.ProviderName)
+
+						// Update provider field
+						for _, f := range sm.fields {
+							if f.Key == "provider" {
+								f.Value = detection.Provider
+								// Update model options for new provider
+								sm.updateModelOptionsForProvider(detection.Provider)
+								// Set default model
+								for _, mf := range sm.fields {
+									if mf.Key == "model" {
+										mf.Value = detection.DefaultModel
+										break
+									}
+								}
+								// Set base URL
+								for _, uf := range sm.fields {
+									if uf.Key == "base_url" {
+										uf.Value = detection.BaseURL
+										break
+									}
+								}
+								sm.errorMessage = "Provider auto-detected: " + detection.ProviderName
+								sm.modified = true
+								break
+							}
+						}
+					} else {
+						log.Printf("[DEBUG] No provider detected for API key")
+					}
+				}
+			} else {
+				if err != nil {
+					log.Printf("[ERROR] Failed to get clipboard: %v", err)
+					sm.errorMessage = "Failed to paste from clipboard"
+				}
+			}
+		}
 
 	case tcell.KeyBackspace, tcell.KeyBackspace2:
 		if field.Type != FieldTypeBool {
@@ -933,6 +1077,36 @@ func (sm *SettingsModal) confirmEditing() {
 
 	default:
 		newValue = sm.editBuffer
+
+		// Auto-detect provider if this is the API key field and user typed it
+		if field.Key == "api_key" && field.Type == FieldTypePassword {
+			if detection := utils.DetectProvider(sm.editBuffer); detection != nil {
+				// Update provider field
+				for _, f := range sm.fields {
+					if f.Key == "provider" {
+						f.Value = detection.Provider
+						// Update model options for new provider
+						sm.updateModelOptionsForProvider(detection.Provider)
+						// Set default model
+						for _, mf := range sm.fields {
+							if mf.Key == "model" {
+								mf.Value = detection.DefaultModel
+								break
+							}
+						}
+						// Set base URL
+						for _, uf := range sm.fields {
+							if uf.Key == "base_url" {
+								uf.Value = detection.BaseURL
+								break
+							}
+						}
+						sm.errorMessage = "Provider auto-detected: " + detection.ProviderName
+						break
+					}
+				}
+			}
+		}
 	}
 
 	// Update value
