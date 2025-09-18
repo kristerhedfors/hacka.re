@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/models"
 	"github.com/hacka-re/cli/internal/tui/internal/components"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
@@ -28,6 +29,9 @@ type SettingsModal struct {
 
 	// Original values for restore
 	originalConfig   *core.Config
+
+	// Model registry for accessing model metadata
+	modelRegistry    *models.ModelRegistry
 
 	// Callbacks
 	OnSave         func(*core.Config) error
@@ -60,10 +64,11 @@ const (
 // NewSettingsModal creates a new streamlined settings modal
 func NewSettingsModal(screen tcell.Screen, config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus) *SettingsModal {
 	sm := &SettingsModal{
-		screen:   screen,
-		config:   config,
-		state:    state,
-		eventBus: eventBus,
+		screen:       screen,
+		config:       config,
+		state:        state,
+		eventBus:     eventBus,
+		modelRegistry: models.NewModelRegistry(),
 	}
 
 	// Save original config for restore
@@ -161,38 +166,78 @@ func (sm *SettingsModal) getProviderOptions() []string {
 
 // getModelOptions returns available models for a provider
 func (sm *SettingsModal) getModelOptions(provider string) []string {
-	// Return models based on provider
+	// Map provider string to ModelProvider type
+	var modelProvider models.ModelProvider
 	switch provider {
 	case "openai":
-		return []string{
-			"gpt-4-turbo-preview",
-			"gpt-4",
-			"gpt-3.5-turbo",
-			"gpt-3.5-turbo-16k",
-		}
-	case "anthropic":
-		return []string{
-			"claude-3-opus-20240229",
-			"claude-3-sonnet-20240229",
-			"claude-3-haiku-20240307",
-			"claude-2.1",
-		}
+		modelProvider = models.ProviderOpenAI
 	case "groq":
-		return []string{
-			"mixtral-8x7b-32768",
-			"llama2-70b-4096",
-			"gemma-7b-it",
-		}
+		modelProvider = models.ProviderGroq
+	case "berget":
+		modelProvider = models.ProviderBerget
 	case "ollama":
-		return []string{
-			"llama2",
-			"mistral",
-			"codellama",
-			"phi",
-		}
+		modelProvider = models.ProviderOllama
+	case "llamafile":
+		modelProvider = models.ProviderLlamafile
+	case "gpt4all":
+		modelProvider = models.ProviderGPT4All
+	case "lmstudio":
+		modelProvider = models.ProviderLMStudio
+	case "localai":
+		modelProvider = models.ProviderLocalAI
 	default:
+		// For custom or unknown providers, return a default set
 		return []string{"gpt-3.5-turbo"}
 	}
+
+	// Get all models for the provider from the registry
+	providerModels := sm.modelRegistry.GetProviderModels(modelProvider)
+
+	// Build list of model IDs, prioritizing default models and production/preview categories
+	var modelIDs []string
+	var defaultModel string
+	var productionModels []string
+	var previewModels []string
+
+	for _, model := range providerModels {
+		// Skip system and legacy models for the dropdown
+		if model.Category == "system" || model.Category == "legacy" {
+			continue
+		}
+
+		if model.IsDefault {
+			defaultModel = model.ID
+		} else if model.Category == "production" {
+			productionModels = append(productionModels, model.ID)
+		} else if model.Category == "preview" {
+			previewModels = append(previewModels, model.ID)
+		}
+	}
+
+	// Build final list with default first, then production, then preview
+	if defaultModel != "" {
+		modelIDs = append(modelIDs, defaultModel)
+	}
+	modelIDs = append(modelIDs, productionModels...)
+	modelIDs = append(modelIDs, previewModels...)
+
+	// If no models found, return provider-specific defaults matching the web app
+	if len(modelIDs) == 0 {
+		switch provider {
+		case "openai":
+			return []string{"gpt-5-nano", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"}
+		case "groq":
+			return []string{"moonshotai/kimi-k2-instruct", "llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "mixtral-8x7b-32768"}
+		case "berget":
+			return []string{"mistralai/Magistral-Small-2506", "llama-3.3-70b", "gpt-5-nano", "claude-3-opus-20240229"}
+		case "ollama":
+			return []string{"llama3.2", "llama3.1", "llama3", "mistral"}
+		default:
+			return []string{"gpt-3.5-turbo"}
+		}
+	}
+
+	return modelIDs
 }
 
 // Status text generators
