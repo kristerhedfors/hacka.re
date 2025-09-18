@@ -1,18 +1,55 @@
 # hacka.re CLI
 
-A command-line interface for [hacka.re](https://hacka.re) - the privacy-focused, serverless chat interface for OpenAI-compatible APIs.
+A Golang command-line interface for [hacka.re](https://hacka.re) - an architectural variant exploring rapid feature implementation in the console, mirroring the privacy-focused web application.
 
-## Features
+## Overview
+
+The hacka.re CLI is a Golang implementation that serves as an experimental platform to explore how quickly the complete feature set of the hacka.re web application can be implemented in a terminal environment. It demonstrates that with a clear architectural vision, complex web features can be rapidly adapted to console interfaces.
+
+## Current Implementation Status
+
+### ✅ Core Features Implemented
 
 - 🌐 **Embedded Web Server**: Full hacka.re web interface with single binary (browse command)
-- 💬 **Terminal Chat**: Interactive AI chat sessions directly in the terminal (chat command)
+- 💬 **Terminal Chat**: Interactive AI chat sessions with streaming responses
 - 🔐 **Secure Configuration Import**: Parse and decrypt hacka.re shared links with password protection
-- 📺 **ASCII Settings Modal**: Terminal-based UI mimicking the web interface
-- 🔒 **TweetNaCl Encryption**: Industry-standard encryption for configuration sharing
-- 📱 **QR Code Generation**: Share configurations easily via QR codes
-- 📦 **Single Binary**: All assets embedded - no installation or dependencies needed
+- 📺 **TUI Interface**: Advanced terminal UI with tcell/tview for settings and prompts management
+- 🔒 **TweetNaCl Encryption**: Industry-standard encryption matching web version
+- 📱 **QR Code Generation**: Share configurations via QR codes
+- 📦 **Single Binary**: ~13MB with all web assets embedded
 - 🎯 **Cross-Platform**: Works on macOS, Linux, and Windows
 - 🚀 **Zero Configuration**: Works with just a hacka.re URL fragment
+
+### 🚧 Features In Progress
+
+- 📝 **Prompts Management**: UI implemented, refinements ongoing
+- 🔧 **JavaScript Functions**: Basic support implemented, improving execution engine
+- 🤖 **MCP (Model Context Protocol)**: Foundation laid, authentication mechanisms in development
+
+### ⏳ Upcoming Features
+
+#### Priority 1: Enhanced User Experience
+- 🖱️ **Mouse Click Support**: Click to expand, check boxes, select items - making the terminal as intuitive as the web interface
+- 📊 **Interactive Elements**: Collapsible sections, clickable buttons, drag-and-drop support
+- 🎨 **Rich Terminal UI**: Full-color theming, smooth animations, responsive layouts
+
+#### Priority 2: Complete MCP Implementation
+- 🔌 **MCP Server Connections**: Full support for Model Context Protocol servers
+- 🔐 **Authentication Mechanisms**:
+  - GitHub (PAT authentication)
+  - Gmail (OAuth flow)
+  - Shodan (API key)
+- 🔗 **Advanced MCP Features**:
+  - Share Link MCP
+  - Introspection MCP
+  - Custom server configurations
+
+#### Priority 3: Feature Parity
+- 🔄 **Function Calling**: Complete JavaScript execution environment
+- 🎯 **RAG Support**: Retrieval-Augmented Generation with embeddings
+- 💾 **Conversation Management**: History, search, export capabilities
+- 👤 **Multiple Profiles**: Switch between different configurations
+- 🎨 **Theme System**: Match web app's theme options
 
 ## Installation
 
@@ -256,31 +293,106 @@ GOOS=darwin GOARCH=amd64 go build -o hacka.re-darwin cmd/hacka.re/main.go
 
 ### Testing
 
+The CLI uses a comprehensive Python/Playwright test suite for validation:
+
 ```bash
-go test ./...
+# Setup test environment
+cd cli/_tests
+./setup_test_env.sh
+
+# Run full test suite
+./run_cli_tests.sh
+
+# Quick tests (no browser)
+./run_quick_tests.sh
+
+# Specific test categories
+source .venv/bin/activate
+pytest test_cli_browse_command.py -v
+pytest test_cli_chat_command.py -v
 ```
 
-## Roadmap
+**Note**: The project uses Python/Playwright for testing the Go binary, ensuring real-world validation of all features.
 
-- [ ] Chat interface with streaming responses
-- [ ] Function calling support
-- [ ] RAG (Retrieval-Augmented Generation) support
-- [ ] MCP (Model Context Protocol) server connections
-- [ ] Conversation history management
-- [ ] Multiple configuration profiles
-- [ ] Export/import configurations as JSON
+## Architecture Philosophy
+
+The CLI demonstrates that complex web application features can be rapidly reimplemented in a console environment when you have:
+- **Clear architectural vision**: Understanding the complete feature set upfront
+- **Modern terminal capabilities**: Leveraging advanced TUI libraries
+- **User-first design**: Making the console as intuitive as the web
+
+### Key Architectural Decisions
+
+1. **Golang for Performance**: Fast execution, single binary distribution
+2. **Embedded Web Assets**: No external dependencies, instant deployment
+3. **TUI-First Design**: Not just a port, but a reimagining for the terminal
+4. **Mouse Support Focus**: Breaking the keyboard-only terminal paradigm
+5. **Feature Parity Goal**: Proving console apps can match web functionality
+
+## Development Roadmap
+
+### Phase 1: Core Functionality ✅
+- Basic chat interface
+- Configuration management
+- Web server embedding
+- Encryption/decryption
+
+### Phase 2: Advanced UI (Current)
+- Mouse click events
+- Interactive components
+- Rich visual feedback
+- Responsive layouts
+
+### Phase 3: Complete Feature Set
+- Full MCP implementation
+- JavaScript function execution
+- RAG support
+- Complete testing coverage
+
+### Phase 4: Innovation
+- Terminal-exclusive features
+- Performance optimizations
+- Advanced automation
+- CLI-specific workflows
 
 ## License
 
 MIT License - Same as the hacka.re web application
 
+## Why a CLI?
+
+The hacka.re CLI serves multiple purposes:
+
+1. **Rapid Prototyping**: Testing how quickly web features can be adapted to console
+2. **Accessibility**: Terminal-based interface for power users and automation
+3. **Performance**: Native Go performance vs browser overhead
+4. **Privacy**: Even more minimal attack surface than the web app
+5. **Innovation**: Exploring terminal-exclusive features not possible in browsers
+
+## Technical Highlights
+
+- **13MB Single Binary**: Complete application with embedded web assets
+- **Zero Dependencies**: No runtime requirements, instant deployment
+- **Cross-Platform**: Native support for macOS, Linux, Windows
+- **Memory Serving**: Web assets served from memory, no disk extraction
+- **Modern TUI**: Advanced terminal UI with mouse support (coming soon)
+
 ## Contributing
 
-Contributions are welcome! Please ensure:
-- Minimal external dependencies
-- Compatibility with the web version's encryption format
-- Clean, idiomatic Go code
-- Comprehensive error handling
+Contributions are welcome! Focus areas:
+
+### High Priority
+- 🖱️ Mouse event handling implementation
+- 🔌 MCP server authentication flows
+- 🎨 Terminal UI enhancements
+- 📊 Interactive component development
+
+### Guidelines
+- Maintain single binary philosophy
+- Ensure web version compatibility
+- Focus on user experience
+- Write Python/Playwright tests for new features
+- Consider terminal-first design patterns
 
 ## Related
 
