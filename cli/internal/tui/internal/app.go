@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"fmt"
+	// "fmt" // Unused - socket mode disabled
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -21,6 +21,14 @@ type App struct {
 	settingsModal  *pages.SettingsModal
 	chatPanel      *components.ChatPanel
 	confirmDialog  *components.ConfirmDialog
+
+	// Configuration view pages (read-only)
+	promptsPage    *pages.PromptsReadOnlyPage
+	functionsPage  *pages.FunctionsPage
+	mcpServersPage *pages.MCPServersPage
+	ragPage        *pages.RAGPage
+	sharePage      *pages.SharePage
+
 	showConfirmExit bool
 	currentPanel   Panel
 	running        bool
@@ -38,6 +46,7 @@ const (
 	PanelFunctions
 	PanelMCP
 	PanelRAG
+	PanelShare
 )
 
 // NewApp creates a new rich TUI application
@@ -242,6 +251,9 @@ Share links allow you to transfer settings between devices securely.`,
 		},
 	})
 
+	/* ============================================================
+	   SOCKET MODE OPTION DISABLED - WORKING ON TUI ONLY
+	   ============================================================
 	a.mainMenu.AddItem(&components.BasicMenuItem{
 		Number:      7,
 		Title:       "Switch to Socket Mode",
@@ -262,9 +274,10 @@ Useful for SSH, telnet, or serial connections.`,
 			return fmt.Errorf("switching to socket mode")
 		},
 	})
+	*/
 
 	a.mainMenu.AddItem(&components.BasicMenuItem{
-		Number:      8,
+		Number:      7,
 		Title:       "About",
 		Description: "About hacka.re Terminal UI",
 		Info: `hacka.re Terminal UI v2.0
@@ -286,7 +299,7 @@ Built with Go, tcell, and love.`,
 	})
 
 	a.mainMenu.AddItem(&components.BasicMenuItem{
-		Number:      9,
+		Number:      8,
 		Title:       "Exit",
 		Description: "Exit the application",
 		Info: `Exit the hacka.re Terminal UI.
@@ -300,6 +313,36 @@ Press Enter to confirm exit, or ESC to cancel.`,
 			return nil
 		},
 	})
+}
+
+// SetInitialPanel sets the panel to display when the app starts
+func (a *App) SetInitialPanel(panelName string) {
+	switch panelName {
+	case "functions":
+		a.currentPanel = PanelFunctions
+		a.showFunctions()
+	case "prompts":
+		a.currentPanel = PanelPrompts
+		a.showPrompts()
+	case "mcp":
+		a.currentPanel = PanelMCP
+		a.showMCP()
+	case "rag":
+		a.currentPanel = PanelRAG
+		a.showRAG()
+	case "share":
+		a.currentPanel = PanelShare
+		a.generateShareLink()
+	case "settings":
+		a.currentPanel = PanelSettings
+		a.showSettings()
+	case "chat":
+		a.currentPanel = PanelChat
+		a.showChat()
+	default:
+		// Stay on main menu
+		a.currentPanel = PanelMainMenu
+	}
 }
 
 // Run starts the application main loop
@@ -400,6 +443,56 @@ func (a *App) handleKeyEvent(ev *tcell.EventKey) {
 			a.needsRedraw = true
 		}
 
+	case PanelPrompts:
+		if a.promptsPage != nil {
+			done := a.promptsPage.HandleInput(ev)
+			if done {
+				a.currentPanel = PanelMainMenu
+				a.promptsPage = nil
+			}
+			a.needsRedraw = true
+		}
+
+	case PanelFunctions:
+		if a.functionsPage != nil {
+			done := a.functionsPage.HandleInput(ev)
+			if done {
+				a.currentPanel = PanelMainMenu
+				a.functionsPage = nil
+			}
+			a.needsRedraw = true
+		}
+
+	case PanelMCP:
+		if a.mcpServersPage != nil {
+			done := a.mcpServersPage.HandleInput(ev)
+			if done {
+				a.currentPanel = PanelMainMenu
+				a.mcpServersPage = nil
+			}
+			a.needsRedraw = true
+		}
+
+	case PanelRAG:
+		if a.ragPage != nil {
+			done := a.ragPage.HandleInput(ev)
+			if done {
+				a.currentPanel = PanelMainMenu
+				a.ragPage = nil
+			}
+			a.needsRedraw = true
+		}
+
+	case PanelShare:
+		if a.sharePage != nil {
+			done := a.sharePage.HandleInput(ev)
+			if done {
+				a.currentPanel = PanelMainMenu
+				a.sharePage = nil
+			}
+			a.needsRedraw = true
+		}
+
 	default:
 		// Handle other panels
 		if ev.Key() == tcell.KeyEscape {
@@ -428,16 +521,39 @@ func (a *App) draw() {
 		}
 
 	case PanelPrompts:
-		a.drawPlaceholder("Prompts Panel", "Prompt management coming soon.\nPress ESC to return to main menu.")
+		if a.promptsPage != nil {
+			a.promptsPage.Draw()
+		} else {
+			a.drawPlaceholder("Prompts Panel", "Loading...")
+		}
 
 	case PanelFunctions:
-		a.drawPlaceholder("Functions Panel", "Function management coming soon.\nPress ESC to return to main menu.")
+		if a.functionsPage != nil {
+			a.functionsPage.Draw()
+		} else {
+			a.drawPlaceholder("Functions Panel", "Loading...")
+		}
 
 	case PanelMCP:
-		a.drawPlaceholder("MCP Panel", "MCP server configuration coming soon.\nPress ESC to return to main menu.")
+		if a.mcpServersPage != nil {
+			a.mcpServersPage.Draw()
+		} else {
+			a.drawPlaceholder("MCP Panel", "Loading...")
+		}
 
 	case PanelRAG:
-		a.drawPlaceholder("RAG Panel", "RAG configuration coming soon.\nPress ESC to return to main menu.")
+		if a.ragPage != nil {
+			a.ragPage.Draw()
+		} else {
+			a.drawPlaceholder("RAG Panel", "Loading...")
+		}
+
+	case PanelShare:
+		if a.sharePage != nil {
+			a.sharePage.Draw()
+		} else {
+			a.drawPlaceholder("Share Panel", "Loading...")
+		}
 	}
 
 	// Draw exit confirmation dialog on top if active
@@ -533,27 +649,53 @@ func (a *App) showChat() error {
 }
 
 func (a *App) showPrompts() error {
-	// Prompts panel implementation
+	// Create read-only prompts page
+	if a.promptsPage == nil {
+		// Use the read-only version for viewing configuration
+		a.promptsPage = pages.NewPromptsReadOnlyPage(a.screen, a.config, a.state, a.eventBus)
+	}
+	a.currentPanel = PanelPrompts
+	a.needsRedraw = true
 	return nil
 }
 
 func (a *App) showFunctions() error {
-	// Functions panel implementation
+	// Create functions page (read-only)
+	if a.functionsPage == nil {
+		a.functionsPage = pages.NewFunctionsPage(a.screen, a.config, a.state, a.eventBus)
+	}
+	a.currentPanel = PanelFunctions
+	a.needsRedraw = true
 	return nil
 }
 
 func (a *App) showMCP() error {
-	// MCP panel implementation
+	// Create MCP servers page (read-only)
+	if a.mcpServersPage == nil {
+		a.mcpServersPage = pages.NewMCPServersPage(a.screen, a.config, a.state, a.eventBus)
+	}
+	a.currentPanel = PanelMCP
+	a.needsRedraw = true
 	return nil
 }
 
 func (a *App) showRAG() error {
-	// RAG panel implementation
+	// Create RAG configuration page (read-only)
+	if a.ragPage == nil {
+		a.ragPage = pages.NewRAGPage(a.screen, a.config, a.state, a.eventBus)
+	}
+	a.currentPanel = PanelRAG
+	a.needsRedraw = true
 	return nil
 }
 
 func (a *App) generateShareLink() error {
-	// Share link generation
+	// Create share configuration page (read-only)
+	if a.sharePage == nil {
+		a.sharePage = pages.NewSharePage(a.screen, a.config, a.state, a.eventBus)
+	}
+	a.currentPanel = PanelShare
+	a.needsRedraw = true
 	return nil
 }
 

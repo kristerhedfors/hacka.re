@@ -14,6 +14,11 @@ import (
 
 // LaunchTUI launches the hackare-tui interface with CLI integration
 func LaunchTUI(cfg *config.Config) error {
+	return LaunchTUIWithPanel(cfg, "")
+}
+
+// LaunchTUIWithPanel launches the hackare-tui interface with a specific panel pre-selected
+func LaunchTUIWithPanel(cfg *config.Config, targetPanel string) error {
 	// Wrap config for TUI compatibility
 	adaptedConfig := WrapConfig(cfg)
 
@@ -102,10 +107,11 @@ func LaunchTUI(cfg *config.Config) error {
 
 	// Configure launch options
 	options := &tui.LaunchOptions{
-		Mode:      "auto",        // Auto-detect terminal capabilities
-		Config:    adaptedConfig, // Adapted CLI config
-		Callbacks: callbacks,     // CLI integration hooks
-		Debug:     isDebugMode(), // Check if debug mode is enabled
+		Mode:        "auto",        // Auto-detect terminal capabilities
+		Config:      adaptedConfig, // Adapted CLI config
+		Callbacks:   callbacks,     // CLI integration hooks
+		Debug:       isDebugMode(), // Check if debug mode is enabled
+		TargetPanel: targetPanel,   // Pre-selected panel
 	}
 
 	// Launch the TUI

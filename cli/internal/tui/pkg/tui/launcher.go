@@ -6,7 +6,7 @@ import (
 	"github.com/hacka-re/cli/internal/tui/internal"
 	"github.com/hacka-re/cli/internal/tui/internal/adapters"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
-	"github.com/hacka-re/cli/internal/tui/internal/modes/socket"
+	// "github.com/hacka-re/cli/internal/tui/internal/modes/socket" // DISABLED - Socket mode disabled
 	"github.com/hacka-re/cli/internal/tui/internal/transport"
 )
 
@@ -26,6 +26,9 @@ type LaunchOptions struct {
 
 	// ConfigPath overrides default config path
 	ConfigPath string
+
+	// TargetPanel specifies which panel to open initially (e.g., "functions", "prompts", "mcp")
+	TargetPanel string
 }
 
 // Callbacks defines callback functions for parent application integration
@@ -108,26 +111,40 @@ func LaunchTUI(options *LaunchOptions) error {
 	}
 
 	// Detect terminal capabilities
+	// ============================================================
+	// TERMINAL DETECTION SIMPLIFIED - SOCKET MODE DISABLED
+	// ============================================================
 	detector := transport.NewDetector()
-	caps, err := detector.Detect()
+	_, err = detector.Detect() // caps unused - we always use rich mode
 	if err != nil && options.Mode == "auto" {
-		// If detection fails and mode is auto, fall back to socket
-		options.Mode = "socket"
+		// If detection fails and mode is auto, still use rich mode
+		// Original: options.Mode = "socket"
+		options.Mode = "rich" // Force rich mode
 	}
 
 	// Determine UI mode
+	// ============================================================
+	// SOCKET MODE IS CURRENTLY DISABLED - WORKING ON TUI ONLY
+	// ============================================================
 	var uiMode core.UIMode
 	switch options.Mode {
 	case "rich":
 		uiMode = core.ModeRich
 	case "socket":
-		uiMode = core.ModeSocket
+		// SOCKET MODE DISABLED - Force rich mode even if socket is requested
+		// TODO: Re-enable socket mode after TUI is complete
+		uiMode = core.ModeRich
+		// Original: uiMode = core.ModeSocket
 	case "auto", "":
+		// AUTO MODE - Always use rich TUI while socket is disabled
+		uiMode = core.ModeRich
+		/* ORIGINAL AUTO DETECTION - DISABLED
 		if caps != nil {
 			uiMode = detector.RecommendMode()
 		} else {
 			uiMode = core.ModeSocket // Safe default
 		}
+		*/
 	default:
 		return fmt.Errorf("unknown mode: %s", options.Mode)
 	}
@@ -136,12 +153,24 @@ func LaunchTUI(options *LaunchOptions) error {
 	appState.SetMode(uiMode)
 
 	// Start the appropriate UI mode
+	// ============================================================
+	// ONLY RICH TUI MODE IS ACTIVE - SOCKET MODE DISABLED
+	// ============================================================
 	switch uiMode {
 	case core.ModeRich:
 		app, err := internal.NewAppWithCallbacks(configManager, appState, eventBus, options.Callbacks)
 		if err != nil {
-			// Fall back to socket mode if rich mode fails
-			goto socketMode
+			// ============================================================
+			// SOCKET MODE FALLBACK DISABLED - WORKING ON TUI ONLY
+			// ============================================================
+			// Original: Fall back to socket mode if rich mode fails
+			// goto socketMode
+			// Now: Return error instead of falling back
+			return fmt.Errorf("failed to initialize rich TUI mode: %w", err)
+		}
+		// Set the initial panel if specified
+		if options.TargetPanel != "" {
+			app.SetInitialPanel(options.TargetPanel)
 		}
 		if err := app.Run(); err != nil {
 			return fmt.Errorf("rich mode error: %w", err)
@@ -149,20 +178,35 @@ func LaunchTUI(options *LaunchOptions) error {
 
 		// Check if user intentionally switched to socket mode
 		if appState.GetMode() == core.ModeSocket {
-			// User explicitly selected socket mode, continue to it
-			goto socketMode
+			// ============================================================
+			// SOCKET MODE SWITCHING DISABLED - WORKING ON TUI ONLY
+			// ============================================================
+			// Original: goto socketMode
+			// Now: Just exit normally (socket mode is disabled)
 		}
 
 		// Otherwise, user exited normally - don't fall through to socket mode
 		goto exitNormally
 
-	socketMode:
+	/* socketMode: // Label commented out - socket mode disabled
+		// ============================================================
+		// SOCKET MODE IS DISABLED - THIS CODE PATH SHOULD NOT BE REACHED
+		// ============================================================
+		return fmt.Errorf("socket mode is currently disabled - TUI development only") */
+		/* ORIGINAL SOCKET MODE CODE - DISABLED
 		fallthrough
 	case core.ModeSocket:
 		handler := socket.NewHandlerWithCallbacks(configManager, appState, eventBus, options.Callbacks)
 		if err := handler.Start(); err != nil {
 			return fmt.Errorf("socket mode error: %w", err)
 		}
+		*/
+
+	case core.ModeSocket:
+		// ============================================================
+		// SOCKET MODE IS DISABLED - FORCE RICH TUI INSTEAD
+		// ============================================================
+		return fmt.Errorf("socket mode is currently disabled - please use rich TUI mode")
 
 	default:
 		return fmt.Errorf("unsupported mode: %s", uiMode)

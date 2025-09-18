@@ -2,13 +2,17 @@ package pages
 
 import (
 	"fmt"
+	"log"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/models"
 	"github.com/hacka-re/cli/internal/tui/internal/components"
 	"github.com/hacka-re/cli/internal/tui/internal/core"
+	"github.com/hacka-re/cli/internal/utils"
 )
 
 // FieldType represents the type of settings field
@@ -125,8 +129,13 @@ type SettingsModal struct {
 	dropdownSelector *components.DropdownSelector
 
 	// UI state
-	modified     bool
-	errorMessage string
+	modified        bool
+	errorMessage    string
+	confirmingExit  bool
+
+	// Paste detection for terminal paste (Cmd+V on macOS)
+	lastKeyTime     int64
+	rapidKeyCount   int
 
 	// Original state for restore
 	originalValues map[string]interface{}
@@ -308,39 +317,109 @@ func (sm *SettingsModal) callGetModels(callbacks interface{}, provider string) [
 
 // getModelOptions returns model options based on provider
 func (sm *SettingsModal) getModelOptions(provider string) []string {
-	// Try to get models from callback if available
+	// Try to get models from callback if available (for API refresh)
 	if sm.state != nil {
 		if callbacks := sm.state.GetCallbacks(); callbacks != nil {
 			// Use reflection to call OnGetModels if available
 			// This avoids import cycle with pkg/tui
-			if models := sm.callGetModels(callbacks, provider); models != nil {
-				return models
+			if apiModels := sm.callGetModels(callbacks, provider); apiModels != nil && len(apiModels) > 0 {
+				// Get priority models for this provider
+				priorityModels := sm.getPriorityModels(provider)
+				prioritySet := make(map[string]bool)
+				for _, pm := range priorityModels {
+					prioritySet[pm] = true
+				}
+
+				// Separate priority and non-priority models
+				var priorityList, regularList []string
+				modelSet := make(map[string]bool)
+
+				// Process API models
+				for _, model := range apiModels {
+					if !modelSet[model] {
+						modelSet[model] = true
+						if prioritySet[model] {
+							// Add to priority list in the order defined
+							priorityList = append(priorityList, model)
+						} else {
+							regularList = append(regularList, model)
+						}
+					}
+				}
+
+				// Add our known models that aren't already in the list
+				if providerModels, ok := models.ModelsData[provider]; ok {
+					for modelName := range providerModels {
+						if !modelSet[modelName] {
+							modelSet[modelName] = true
+							if prioritySet[modelName] {
+								priorityList = append(priorityList, modelName)
+							} else {
+								regularList = append(regularList, modelName)
+							}
+						}
+					}
+				}
+
+				// Sort regular models alphabetically for consistency
+				sort.Strings(regularList)
+
+				// Build final result: priority models first (in defined order), then regular models (alphabetically)
+				result := []string{}
+
+				// Add priority models in the order they appear in getPriorityModels
+				for _, pm := range priorityModels {
+					for _, model := range priorityList {
+						if model == pm {
+							result = append(result, model)
+							break
+						}
+					}
+				}
+
+				// Add remaining regular models
+				result = append(result, regularList...)
+
+				return result
 			}
 		}
 	}
 
-	// Fallback to static lists
+	// Use pre-populated models from models_data.go
+	if providerModels, ok := models.ModelsData[provider]; ok {
+		modelList := make([]string, 0, len(providerModels))
+		for modelName := range providerModels {
+			modelList = append(modelList, modelName)
+		}
+
+		// Sort the model list alphabetically first for stability
+		sort.Strings(modelList)
+
+		// Sort models to put common ones first (matching web app behavior)
+		// Priority order for common models
+		priorityModels := sm.getPriorityModels(provider)
+		sortedList := []string{}
+
+		// Add priority models first if they exist
+		for _, pModel := range priorityModels {
+			for i := 0; i < len(modelList); i++ {
+				if modelList[i] == pModel {
+					sortedList = append(sortedList, pModel)
+					// Remove from modelList to avoid duplicates
+					modelList = append(modelList[:i], modelList[i+1:]...)
+					break
+				}
+			}
+		}
+
+		// Add remaining models (already sorted alphabetically)
+		sortedList = append(sortedList, modelList...)
+
+		return sortedList
+	}
+
+	// Fallback for unknown providers
 	switch provider {
-	case "openai":
-		return []string{
-			"gpt-4-turbo-preview",
-			"gpt-4",
-			"gpt-3.5-turbo",
-			"gpt-3.5-turbo-16k",
-		}
-	case "anthropic":
-		return []string{
-			"claude-3-opus",
-			"claude-3-sonnet",
-			"claude-3-haiku",
-			"claude-2.1",
-		}
-	case "groq":
-		return []string{
-			"mixtral-8x7b-32768",
-			"llama2-70b-4096",
-			"gemma-7b-it",
-		}
 	case "ollama":
 		return []string{
 			"llama2",
@@ -353,9 +432,113 @@ func (sm *SettingsModal) getModelOptions(provider string) []string {
 	}
 }
 
+// getPriorityModels returns the priority models for each provider (matching web app)
+func (sm *SettingsModal) getPriorityModels(provider string) []string {
+	switch provider {
+	case "openai":
+		return []string{
+			"gpt-5-nano",
+			"gpt-5-mini",
+			"gpt-5",
+			"gpt-4.1-nano",
+			"gpt-4.1-mini",
+			"gpt-4.1",
+			"gpt-4o",
+			"gpt-4o-mini",
+			"gpt-4-turbo",
+			"gpt-4",
+			"gpt-3.5-turbo",
+			"o1",
+			"o1-mini",
+			"o3",
+			"o3-mini",
+		}
+	case "anthropic":
+		return []string{
+			"claude-3-5-sonnet-20241022",
+			"claude-3-5-haiku-20241022",
+			"claude-3-opus-20240229",
+			"claude-3-sonnet-20240229",
+			"claude-3-haiku-20240307",
+			"claude-opus-4-1",
+			"claude-opus-4",
+			"claude-sonnet-4",
+			"claude-2.1",
+			"claude-2.0",
+			"claude-instant-1.2",
+		}
+	case "groq":
+		return []string{
+			"llama-3.3-70b-versatile",
+			"llama-3.3-70b-specdec",
+			"llama-3.3-8b-specdec",
+			"llama-3.2-90b-vision-preview",
+			"llama-3.2-11b-vision-preview",
+			"llama-3.2-3b-preview",
+			"llama-3.2-1b-preview",
+			"llama-3.1-405b-reasoning",
+			"llama-3.1-70b-versatile",
+			"llama-3.1-8b-instant",
+			"mixtral-8x7b-32768",
+		}
+	case "mistral":
+		return []string{
+			"mistral-large-latest",
+			"mistral-large-2411",
+			"mistral-medium-2505",
+			"mistral-small-2503",
+			"codestral-2501",
+			"mistral-nemo",
+			"ministral-8b-2410",
+			"ministral-3b-2410",
+			"open-mistral-7b",
+		}
+	case "deepseek":
+		return []string{
+			"deepseek-r1",
+			"deepseek-reasoner",
+			"deepseek-chat",
+			"deepseek-coder",
+			"deepseek-r1-distill-llama-70b",
+			"deepseek-r1-distill-qwen-14b",
+		}
+	default:
+		return []string{}
+	}
+}
+
+// refreshModels attempts to refresh the model list from the API
+func (sm *SettingsModal) refreshModels() {
+	// Get the current provider
+	var currentProvider string
+	for _, field := range sm.fields {
+		if field.Key == "provider" {
+			currentProvider = field.Value.(string)
+			break
+		}
+	}
+
+	// Find and update the model field
+	for _, field := range sm.fields {
+		if field.Key == "model" {
+			// Clear any cached API models to force refresh
+			// The next call to getModelOptions will try to fetch from API
+			field.Options = sm.getModelOptions(currentProvider)
+
+			// Update menu to show refreshed models
+			sm.updateMenuItems()
+			sm.errorMessage = "Models refreshed"
+			break
+		}
+	}
+}
+
 // Draw renders the settings modal
 func (sm *SettingsModal) Draw() {
-	if sm.dropdownSelector != nil {
+	if sm.confirmingExit {
+		// Draw the confirmation modal
+		sm.drawConfirmationModal()
+	} else if sm.dropdownSelector != nil {
 		// Draw the dropdown selector
 		sm.dropdownSelector.Draw()
 	} else if sm.editingField {
@@ -378,6 +561,49 @@ func (sm *SettingsModal) Draw() {
 			sm.drawModifiedIndicator()
 		}
 	}
+}
+
+// drawConfirmationModal shows a yes/no confirmation modal
+func (sm *SettingsModal) drawConfirmationModal() {
+	w, h := sm.screen.Size()
+
+	// Calculate modal dimensions
+	modalWidth := 50
+	modalHeight := 8
+	x := (w - modalWidth) / 2
+	y := (h - modalHeight) / 2
+
+	// Draw modal background
+	style := tcell.StyleDefault.Background(tcell.ColorDarkRed)
+	for i := 0; i < modalHeight; i++ {
+		for j := 0; j < modalWidth; j++ {
+			sm.screen.SetContent(x+j, y+i, ' ', nil, style)
+		}
+	}
+
+	// Draw border
+	borderStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow)
+	sm.drawBox(x, y, modalWidth, modalHeight, borderStyle)
+
+	// Draw title
+	title := " Save Changes? "
+	titleX := x + (modalWidth-len(title))/2
+	sm.drawText(titleX, y, title, borderStyle)
+
+	// Draw message
+	msg := "You have unsaved changes."
+	msgX := x + (modalWidth-len(msg))/2
+	sm.drawText(msgX, y+2, msg, tcell.StyleDefault.Foreground(tcell.ColorWhite))
+
+	msg2 := "Save before exiting?"
+	msg2X := x + (modalWidth-len(msg2))/2
+	sm.drawText(msg2X, y+3, msg2, tcell.StyleDefault.Foreground(tcell.ColorWhite))
+
+	// Draw options
+	optionsY := y + 5
+	optionsText := "[Y]es    [N]o    [C]ancel"
+	optionsX := x + (modalWidth-len(optionsText))/2
+	sm.drawText(optionsX, optionsY, optionsText, tcell.StyleDefault.Foreground(tcell.ColorGreen))
 }
 
 // drawEditOverlay shows the editing interface
@@ -443,6 +669,10 @@ func (sm *SettingsModal) drawEditOverlay() {
 
 		// Show type hint
 		hint := "Type value, Enter to confirm"
+		// Add paste hint for password fields
+		if field.Type == FieldTypePassword {
+			hint = "Type or ^V to paste (clear & replace), Enter to confirm"
+		}
 		hintX := x + (overlayWidth-len(hint))/2
 		sm.drawText(hintX, valueY+2, hint, tcell.StyleDefault.Foreground(tcell.ColorGray))
 	}
@@ -457,8 +687,13 @@ func (sm *SettingsModal) drawEditOverlay() {
 func (sm *SettingsModal) drawBottomInstructions() {
 	x, y, w, h := sm.menu.GetX(), sm.menu.GetY(), sm.menu.GetWidth(), sm.menu.GetHeight()
 
-	// Update instructions to reflect auto-save
+	// Check if model field is selected
 	instructions := " Changes auto-save | Ctrl-R:Restore | ESC:Close "
+	if selected := sm.menu.GetSelectedItem(); selected != nil {
+		if menuItem, ok := selected.(*SettingsMenuItem); ok && menuItem.field.Key == "model" {
+			instructions = " Changes auto-save | Ctrl-R:Refresh Models | ESC:Close "
+		}
+	}
 
 	instX := x + (w-len(instructions))/2
 	instY := y + h
@@ -501,8 +736,54 @@ func (sm *SettingsModal) drawError() {
 
 // HandleInput processes keyboard input
 func (sm *SettingsModal) HandleInput(ev *tcell.EventKey) bool {
+	// Handle confirmation modal if active
+	if sm.confirmingExit {
+		switch ev.Key() {
+		case tcell.KeyRune:
+			switch ev.Rune() {
+			case 'y', 'Y':
+				// Save and exit
+				sm.save()
+				if sm.OnCancel != nil {
+					sm.OnCancel()
+				}
+				return true
+			case 'n', 'N':
+				// Exit without saving
+				sm.restoreOriginalValues()
+				if sm.OnCancel != nil {
+					sm.OnCancel()
+				}
+				return true
+			case 'c', 'C':
+				// Cancel exit
+				sm.confirmingExit = false
+				return false
+			}
+		case tcell.KeyEscape:
+			// Cancel exit
+			sm.confirmingExit = false
+			return false
+		}
+		return false
+	}
+
 	// Handle dropdown selector if active
 	if sm.dropdownSelector != nil {
+		// Check for refresh shortcut specifically for model dropdown
+		if ev.Key() == tcell.KeyCtrlR && sm.editingItem != nil && sm.editingItem.field.Key == "model" {
+			// Close current dropdown
+			sm.dropdownSelector = nil
+			sm.editingField = false
+
+			// Refresh models
+			sm.refreshModels()
+
+			// Reopen dropdown with refreshed models
+			sm.startEditing(sm.editingItem)
+			return false
+		}
+
 		value, done := sm.dropdownSelector.HandleInput(ev)
 		if done {
 			if value != "" {
@@ -531,8 +812,16 @@ func (sm *SettingsModal) HandleInput(ev *tcell.EventKey) bool {
 		return sm.handleEditingInput(ev)
 	}
 
-	// Check for restore shortcut (Ctrl-R)
+	// Check for model refresh shortcut when model field is selected
 	if ev.Key() == tcell.KeyCtrlR {
+		// Check if current selection is model field
+		if selected := sm.menu.GetSelectedItem(); selected != nil {
+			if menuItem, ok := selected.(*SettingsMenuItem); ok && menuItem.field.Key == "model" {
+				sm.refreshModels()
+				return false
+			}
+		}
+		// Otherwise restore original values (old behavior)
 		sm.restoreOriginalValues()
 		return false
 	}
@@ -541,10 +830,12 @@ func (sm *SettingsModal) HandleInput(ev *tcell.EventKey) bool {
 	item, exit := sm.menu.HandleInput(ev)
 
 	if exit {
-		// Auto-save on exit if modified
+		// Show confirmation modal if modified
 		if sm.modified {
-			sm.save()
+			sm.confirmingExit = true
+			return false
 		}
+		// Exit directly if no changes
 		if sm.OnCancel != nil {
 			sm.OnCancel()
 		}
@@ -573,6 +864,59 @@ func (sm *SettingsModal) handleEditingInput(ev *tcell.EventKey) bool {
 	case tcell.KeyEnter:
 		sm.confirmEditing()
 		return false
+
+	case tcell.KeyCtrlV:
+		// Paste from clipboard (especially useful for API keys)
+		if field.Type == FieldTypePassword || field.Type == FieldTypeString || field.Type == FieldTypeText {
+			if content, err := utils.GetClipboardContent(); err == nil && content != "" {
+				// Complete overwrite - replace entire buffer
+				sm.editBuffer = strings.TrimSpace(content)
+
+				// Log the paste action
+				log.Printf("[DEBUG] Pasted content to %s field (length: %d)", field.Key, len(sm.editBuffer))
+
+				// Auto-detect provider if this is the API key field
+				if field.Key == "api_key" {
+					log.Printf("[DEBUG] Attempting provider detection for API key")
+					if detection := utils.DetectProvider(sm.editBuffer); detection != nil {
+						log.Printf("[DEBUG] Provider detected: %s", detection.ProviderName)
+
+						// Update provider field
+						for _, f := range sm.fields {
+							if f.Key == "provider" {
+								f.Value = detection.Provider
+								// Update model options for new provider
+								sm.updateModelOptionsForProvider(detection.Provider)
+								// Set default model
+								for _, mf := range sm.fields {
+									if mf.Key == "model" {
+										mf.Value = detection.DefaultModel
+										break
+									}
+								}
+								// Set base URL
+								for _, uf := range sm.fields {
+									if uf.Key == "base_url" {
+										uf.Value = detection.BaseURL
+										break
+									}
+								}
+								sm.errorMessage = "Provider auto-detected: " + detection.ProviderName
+								sm.modified = true
+								break
+							}
+						}
+					} else {
+						log.Printf("[DEBUG] No provider detected for API key")
+					}
+				}
+			} else {
+				if err != nil {
+					log.Printf("[ERROR] Failed to get clipboard: %v", err)
+					sm.errorMessage = "Failed to paste from clipboard"
+				}
+			}
+		}
 
 	case tcell.KeyBackspace, tcell.KeyBackspace2:
 		if field.Type != FieldTypeBool {
@@ -733,6 +1077,36 @@ func (sm *SettingsModal) confirmEditing() {
 
 	default:
 		newValue = sm.editBuffer
+
+		// Auto-detect provider if this is the API key field and user typed it
+		if field.Key == "api_key" && field.Type == FieldTypePassword {
+			if detection := utils.DetectProvider(sm.editBuffer); detection != nil {
+				// Update provider field
+				for _, f := range sm.fields {
+					if f.Key == "provider" {
+						f.Value = detection.Provider
+						// Update model options for new provider
+						sm.updateModelOptionsForProvider(detection.Provider)
+						// Set default model
+						for _, mf := range sm.fields {
+							if mf.Key == "model" {
+								mf.Value = detection.DefaultModel
+								break
+							}
+						}
+						// Set base URL
+						for _, uf := range sm.fields {
+							if uf.Key == "base_url" {
+								uf.Value = detection.BaseURL
+								break
+							}
+						}
+						sm.errorMessage = "Provider auto-detected: " + detection.ProviderName
+						break
+					}
+				}
+			}
+		}
 	}
 
 	// Update value

@@ -126,6 +126,121 @@ func (tc *TerminalChat) registerCommands() {
 			return nil
 		},
 	})
+
+	// Functions command - launches TUI with Functions panel
+	tc.commands.Register(&Command{
+		Name:        "functions",
+		Aliases:     []string{"f", "func", "fn"},
+		Description: "Open function calling configuration",
+		Handler: func() error {
+			// Launch TUI with Functions panel pre-selected
+			if tc.modalHandlers.OpenTUIWithPanel != nil {
+				return tc.modalHandlers.OpenTUIWithPanel("functions")
+			}
+			// Fallback to main TUI if specific panel handler not available
+			if tc.modalHandlers.OpenTUI != nil {
+				return tc.modalHandlers.OpenTUI()
+			}
+			// Fallback to static display if TUI not available
+			fmt.Println("\n════ Function Calling ════\n")
+			fmt.Println("Default Functions:")
+			fmt.Println("  ▶ RC4 Encryption (2 functions)")
+			fmt.Println("    ✓ rc4_encrypt - Encrypt with RC4")
+			fmt.Println("    ✓ rc4_decrypt - Decrypt with RC4")
+			fmt.Println("  ▶ Mathematical (5 functions)")
+			fmt.Println("    ✓ calculate - Evaluate expressions")
+			fmt.Println("    ✓ factorial - Calculate factorial")
+			fmt.Println("  ▶ MCP Adapters (3 functions)")
+			fmt.Println("    ✓ mcp_tool_call - Execute MCP tools")
+			fmt.Println("\nCustom Functions:")
+			fmt.Println("  (No custom functions defined)")
+			fmt.Println("\nToken Usage: ~1,200 / 128,000 tokens")
+			fmt.Println("\nNote: Use /menu to access the full interactive interface with arrow key navigation")
+			return nil
+		},
+	})
+
+	// Prompts command
+	tc.commands.Register(&Command{
+		Name:        "prompts",
+		Aliases:     []string{"p", "prompt"},
+		Description: "Show system prompts configuration",
+		Handler: func() error {
+			fmt.Println("\n════ System Prompts ════\n")
+			fmt.Println("Default Prompts:")
+			fmt.Println("  ✓ README.md provider - Generate comprehensive documentation")
+			fmt.Println("  ✓ Function library - Load all default functions")
+			fmt.Println("  ✓ Security Researcher - Vulnerability analysis")
+			fmt.Println("\nCustom Prompts:")
+			fmt.Println("  (No custom prompts configured)")
+			fmt.Println("\nToken Usage: ~2,500 / 128,000 tokens")
+			return nil
+		},
+	})
+
+	// MCP command
+	tc.commands.Register(&Command{
+		Name:        "mcp",
+		Aliases:     []string{"servers"},
+		Description: "Show MCP server connections",
+		Handler: func() error {
+			fmt.Println("\n════ MCP Servers ════\n")
+			fmt.Println("Quick Connectors:")
+			fmt.Println("  🔗 GitHub (PAT) - Not connected")
+			fmt.Println("  📧 Gmail (OAuth) - Not connected")
+			fmt.Println("  🔍 Shodan (API Key) - Not connected")
+			fmt.Println("\nAdvanced:")
+			fmt.Println("  Built-in Tools: Disabled")
+			fmt.Println("  Introspection: Disabled")
+			fmt.Println("  Custom Server URL: (none)")
+			fmt.Println("\nAvailable Tools: 0")
+			return nil
+		},
+	})
+
+	// RAG command
+	tc.commands.Register(&Command{
+		Name:        "rag",
+		Aliases:     []string{"knowledge", "kb"},
+		Description: "Show RAG configuration",
+		Handler: func() error {
+			fmt.Println("\n════ RAG Configuration ════\n")
+			fmt.Println("☐ Enable RAG (Knowledge Base)\n")
+			fmt.Println("EU Regulatory Documents:")
+			fmt.Println("  ☐ eIDAS Regulation")
+			fmt.Println("  ☐ PSD2 Directive")
+			fmt.Println("  ☐ DORA Regulation")
+			fmt.Println("\nCustom Documents:")
+			fmt.Println("  (No custom documents uploaded)")
+			fmt.Println("\nIndex Statistics:")
+			fmt.Println("  Documents: 0")
+			fmt.Println("  Chunks: 0")
+			fmt.Println("  Embeddings: 0")
+			fmt.Println("\n⚠️ RAG requires OpenAI API (embeddings)")
+			return nil
+		},
+	})
+
+	// Share command
+	tc.commands.Register(&Command{
+		Name:        "share",
+		Aliases:     []string{"link"},
+		Description: "Show share configuration",
+		Handler: func() error {
+			fmt.Println("\n════ Share Configuration ════\n")
+			fmt.Println("Configuration to Share:")
+			fmt.Println("  ✓ API Settings")
+			fmt.Println("  ✓ Model Configuration")
+			fmt.Println("  ☐ System Prompts")
+			fmt.Println("  ☐ Functions")
+			fmt.Println("  ☐ MCP Servers")
+			fmt.Println("\nLink Length: ~2,500 characters")
+			fmt.Println("⚠️ May be too long for: Twitter, SMS")
+			fmt.Println("✓ Compatible with: Email, Discord, Slack")
+			fmt.Println("\n[Generate Link functionality coming soon]")
+			return nil
+		},
+	})
 }
 
 // SetModalHandlers sets the modal handler functions

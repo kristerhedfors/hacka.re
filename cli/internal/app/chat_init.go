@@ -40,6 +40,28 @@ func StartChatInterface(cfg *config.Config) error {
 
 			return nil
 		},
+		OpenTUIWithPanel: func(panel string) error {
+			// Clear screen for modal
+			fmt.Print("\033[2J\033[H")
+
+			// Launch TUI with specific panel
+			if err := integration.LaunchTUIWithPanel(cfg, panel); err != nil {
+				return err
+			}
+
+			// Always save configuration when exiting TUI
+			configPath := config.GetConfigPath()
+			cfg.SaveToFile(configPath)
+
+			// Clear and redraw chat interface
+			fmt.Print("\033[2J\033[H")
+			fmt.Println("═══════════════════════════════════════════════════════")
+			fmt.Println("  hacka.re CLI - Chat Interface")
+			fmt.Printf("  %s configuration updated • Type /help for commands\n", panel)
+			fmt.Println("═══════════════════════════════════════════════════════")
+
+			return nil
+		},
 		OpenSettings: func(cfg *config.Config) error {
 			// Deprecated - redirect to OpenTUI
 			// Clear screen for modal
