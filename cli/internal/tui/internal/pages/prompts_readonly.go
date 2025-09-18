@@ -19,13 +19,21 @@ type PromptsReadOnlyPage struct {
 	infoIcon            *components.InfoIcon
 	systemPromptPreview []string
 	scrollOffset        int
+	maxScroll           int
+	selectedGroup       int  // 0 = default prompts, 1 = custom prompts
+	selectedItemIndex   int  // Index of selected item within the group (-1 = group header)
+	visibleHeight       int  // Height of the visible content area
 }
 
 // NewPromptsReadOnlyPage creates a new read-only prompts configuration page
 func NewPromptsReadOnlyPage(screen tcell.Screen, config *core.ConfigManager, state *core.AppState, eventBus *core.EventBus) *PromptsReadOnlyPage {
+	_, h := screen.Size()
 	page := &PromptsReadOnlyPage{
-		BasePage:     NewBasePage(screen, config, state, eventBus, "System Prompts", PageTypePrompts),
-		scrollOffset: 0,
+		BasePage:          NewBasePage(screen, config, state, eventBus, "System Prompts", PageTypePrompts),
+		scrollOffset:      0,
+		selectedGroup:     0,  // Start with default prompts selected
+		selectedItemIndex: -1, // Start on group header
+		visibleHeight:     h - 12, // Account for header, footer, borders
 	}
 
 	w, h := screen.Size()
@@ -201,10 +209,34 @@ func (pp *PromptsReadOnlyPage) Draw() {
 	// Draw header
 	pp.DrawHeader()
 
+	// Draw scroll position indicator and selection info
+	if pp.maxScroll > 0 || pp.scrollOffset > 0 {
+		groupName := "Default"
+		if pp.selectedGroup == 1 {
+			groupName = "Custom"
+		}
+		itemInfo := "Header"
+		if pp.selectedItemIndex >= 0 {
+			itemInfo = fmt.Sprintf("Item %d", pp.selectedItemIndex + 1)
+		}
+		scrollInfo := fmt.Sprintf("%s: %s | Scroll: %d/%d", groupName, itemInfo, pp.scrollOffset, pp.maxScroll)
+		scrollStyle := tcell.StyleDefault.Foreground(tcell.ColorGray)
+		// Clear previous text first
+		for x := w-40; x < w-2; x++ {
+			pp.screen.SetContent(x, 3, ' ', nil, tcell.StyleDefault)
+		}
+		// Draw new text
+		for i, ch := range scrollInfo {
+			if w-len(scrollInfo)-2+i >= 0 {
+				pp.screen.SetContent(w-len(scrollInfo)-2+i, 3, ch, nil, scrollStyle)
+			}
+		}
+	}
+
 	// Draw "Show System Prompt" button hint
 	buttonHint := "[S] Show System Prompt"
 	buttonStyle := tcell.StyleDefault.Foreground(tcell.ColorBlue)
-	pp.DrawText(w-len(buttonHint)-5, 3, buttonHint, buttonStyle)
+	pp.DrawText(3, 3, buttonHint, buttonStyle)
 
 	// Draw info icon
 	pp.infoIcon.Draw()
@@ -212,17 +244,109 @@ func (pp *PromptsReadOnlyPage) Draw() {
 	// Draw main content area border
 	pp.drawContentBorder(2, 5, w-4, h-8)
 
-	// Draw expandable groups
-	currentY := pp.defaultPromptsGroup.Draw()
+	// Draw expandable groups with scroll support
+	baseY := 6
+	currentY := baseY - pp.scrollOffset
 
-	pp.customPromptsGroup.Y = currentY + 1
-	pp.customPromptsGroup.Draw()
+	// Draw default prompts group
+	defaultY := currentY
+	// Highlight header if selected
+	if pp.selectedGroup == 0 && pp.selectedItemIndex == -1 && currentY >= 6 && currentY < h-4 {
+		selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorYellow)
+		for x := 3; x < w-3; x++ {
+			pp.screen.SetContent(x, currentY, ' ', nil, selectionStyle)
+		}
+	}
+	pp.defaultPromptsGroup.Y = currentY
+	linesDrawn := pp.defaultPromptsGroup.Draw()
+
+	// Highlight selected item within default prompts if expanded
+	if pp.selectedGroup == 0 && pp.selectedItemIndex >= 0 && pp.defaultPromptsGroup.IsExpanded() {
+		actualY := defaultY + 1 + pp.selectedItemIndex // +1 for header
+		if actualY >= 6 && actualY < h-4 {
+			// Draw item highlight
+			selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorWhite)
+			for x := 3; x < w-3; x++ {
+				pp.screen.SetContent(x, actualY, ' ', nil, selectionStyle)
+			}
+			// Redraw the item text with highlight
+			items := pp.defaultPromptsGroup.GetItems()
+			if pp.selectedItemIndex < len(items) {
+				item := items[pp.selectedItemIndex]
+				x := pp.defaultPromptsGroup.X + 2 // Same as component base indentation
+				if item.Indented {
+					x += 2
+				}
+				text := item.Text
+				if item.IsCheckbox {
+					checkbox := "[ ]"
+					if item.IsChecked {
+						checkbox = "[x]"
+					}
+					text = checkbox + " " + text
+				}
+				for i, ch := range text {
+					if i < w-x-3 {
+						pp.screen.SetContent(x+i, actualY, ch, nil, selectionStyle)
+					}
+				}
+			}
+		}
+	}
+	currentY += linesDrawn + 1
+
+	// Draw custom prompts group
+	customY := currentY
+	// Highlight header if selected
+	if pp.selectedGroup == 1 && pp.selectedItemIndex == -1 && currentY >= 6 && currentY < h-4 {
+		selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorYellow)
+		for x := 3; x < w-3; x++ {
+			pp.screen.SetContent(x, currentY, ' ', nil, selectionStyle)
+		}
+	}
+	pp.customPromptsGroup.Y = currentY
+	linesDrawn = pp.customPromptsGroup.Draw()
+
+	// Highlight selected item within custom prompts if expanded
+	if pp.selectedGroup == 1 && pp.selectedItemIndex >= 0 && pp.customPromptsGroup.IsExpanded() {
+		actualY := customY + 1 + pp.selectedItemIndex // +1 for header
+		if actualY >= 6 && actualY < h-4 {
+			// Draw item highlight
+			selectionStyle := tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorWhite)
+			for x := 3; x < w-3; x++ {
+				pp.screen.SetContent(x, actualY, ' ', nil, selectionStyle)
+			}
+			// Redraw the item text with highlight
+			items := pp.customPromptsGroup.GetItems()
+			if pp.selectedItemIndex < len(items) {
+				item := items[pp.selectedItemIndex]
+				x := pp.customPromptsGroup.X + 2 // Same as component base indentation
+				if item.Indented {
+					x += 2
+				}
+				text := item.Text
+				if item.IsCheckbox {
+					checkbox := "[ ]"
+					if item.IsChecked {
+						checkbox = "[x]"
+					}
+					text = checkbox + " " + text
+				}
+				for i, ch := range text {
+					if i < w-x-3 {
+						pp.screen.SetContent(x+i, actualY, ch, nil, selectionStyle)
+					}
+				}
+			}
+		}
+	}
+	currentY += linesDrawn
 
 	// Draw token usage bar
 	pp.tokenUsageBar.Draw()
 
 	// Draw instructions
-	instructions := " S:System Prompt | I:Info | Space:Expand | ↑↓:Scroll | ESC:Back "
+	instructions := " ↑↓:Navigate | Space/Enter:Expand/Toggle | S:System Prompt | I:Info | ESC:Back "
 	instructionStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow)
 	pp.DrawCenteredText(h-2, instructions, instructionStyle)
 }
@@ -303,13 +427,93 @@ func (pp *PromptsReadOnlyPage) HandleInput(ev *tcell.EventKey) bool {
 		return true // Exit the page
 
 	case tcell.KeyUp:
-		if pp.scrollOffset > 0 {
-			pp.scrollOffset--
+		// Navigate through items within groups
+		if pp.selectedGroup == 1 {
+			// In custom prompts group
+			if pp.selectedItemIndex > -1 {
+				// Find previous selectable item
+				items := pp.customPromptsGroup.GetItems()
+				prevIndex := pp.findPreviousSelectableItem(items, pp.selectedItemIndex)
+				pp.selectedItemIndex = prevIndex
+				pp.handleScrollForSelection()
+			} else {
+				// At custom prompts header, move to default prompts
+				pp.selectedGroup = 0
+				if pp.defaultPromptsGroup.IsExpanded() {
+					// Select last selectable item in default prompts
+					items := pp.defaultPromptsGroup.GetItems()
+					pp.selectedItemIndex = pp.findLastSelectableItem(items)
+				} else {
+					// Select header if collapsed
+					pp.selectedItemIndex = -1
+				}
+				pp.handleScrollForSelection()
+			}
+		} else {
+			// In default prompts group
+			if pp.selectedItemIndex > -1 {
+				// Find previous selectable item
+				items := pp.defaultPromptsGroup.GetItems()
+				prevIndex := pp.findPreviousSelectableItem(items, pp.selectedItemIndex)
+				pp.selectedItemIndex = prevIndex
+				pp.handleScrollForSelection()
+			}
+			// If at header, stay there
 		}
 		return false
 
 	case tcell.KeyDown:
-		pp.scrollOffset++
+		// Navigate through items within groups
+		if pp.selectedGroup == 0 {
+			// In default prompts group
+			if pp.defaultPromptsGroup.IsExpanded() {
+				// Find next selectable item (checkbox or header)
+				items := pp.defaultPromptsGroup.GetItems()
+				nextIndex := pp.findNextSelectableItem(items, pp.selectedItemIndex)
+				if nextIndex != -2 { // -2 means no more items
+					pp.selectedItemIndex = nextIndex
+					pp.handleScrollForSelection()
+				} else {
+					// No more items in default prompts, move to custom prompts
+					pp.selectedGroup = 1
+					pp.selectedItemIndex = -1 // Select header
+					pp.handleScrollForSelection()
+				}
+			} else {
+				// Group is collapsed - move to custom prompts
+				pp.selectedGroup = 1
+				pp.selectedItemIndex = -1
+				pp.handleScrollForSelection()
+			}
+		} else {
+			// In custom prompts group
+			if pp.customPromptsGroup.IsExpanded() {
+				// Find next selectable item
+				items := pp.customPromptsGroup.GetItems()
+				nextIndex := pp.findNextSelectableItem(items, pp.selectedItemIndex)
+				if nextIndex != -2 {
+					pp.selectedItemIndex = nextIndex
+					pp.handleScrollForSelection()
+				}
+				// If at last item, stay there
+			}
+			// If collapsed, stay on header
+		}
+		return false
+
+	case tcell.KeyEnter:
+		// Toggle expansion when on header, or select item when on item
+		if pp.selectedItemIndex == -1 {
+			// On header - toggle expansion
+			if pp.selectedGroup == 0 {
+				pp.defaultPromptsGroup.Toggle()
+			} else {
+				pp.customPromptsGroup.Toggle()
+			}
+		} else {
+			// On an item - could trigger item-specific action
+			// For now, just acknowledge selection
+		}
 		return false
 
 	case tcell.KeyRune:
@@ -327,17 +531,120 @@ func (pp *PromptsReadOnlyPage) HandleInput(ev *tcell.EventKey) bool {
 			return false
 
 		case ' ':
-			// Toggle expansion of groups
-			if pp.defaultPromptsGroup.IsExpanded() {
-				pp.defaultPromptsGroup.Toggle()
+			// Space toggles expansion when on header or checkbox when on item
+			if pp.selectedItemIndex == -1 {
+				// On header - toggle expansion
+				if pp.selectedGroup == 0 {
+					pp.defaultPromptsGroup.Toggle()
+				} else {
+					pp.customPromptsGroup.Toggle()
+				}
 			} else {
-				pp.customPromptsGroup.Toggle()
+				// On an item - toggle checkbox if it has one
+				var items []components.ExpandableItem
+				if pp.selectedGroup == 0 {
+					items = pp.defaultPromptsGroup.GetItems()
+				} else {
+					items = pp.customPromptsGroup.GetItems()
+				}
+				if pp.selectedItemIndex < len(items) {
+					item := &items[pp.selectedItemIndex]
+					if item.IsCheckbox {
+						item.IsChecked = !item.IsChecked
+						// Update the item in the group
+						if pp.selectedGroup == 0 {
+							pp.defaultPromptsGroup.UpdateItem(pp.selectedItemIndex, *item)
+						} else {
+							pp.customPromptsGroup.UpdateItem(pp.selectedItemIndex, *item)
+						}
+						// Update token usage when toggling prompts
+						pp.updateTokenUsage()
+					}
+				}
 			}
 			return false
 		}
 	}
 
 	return false
+}
+
+// findNextSelectableItem finds the next checkbox or header item
+func (pp *PromptsReadOnlyPage) findNextSelectableItem(items []components.ExpandableItem, currentIndex int) int {
+	for i := currentIndex + 1; i < len(items); i++ {
+		if items[i].IsCheckbox || (!items[i].Indented && strings.Contains(items[i].Text, ":")) {
+			return i
+		}
+	}
+	return -2 // No more selectable items
+}
+
+// findPreviousSelectableItem finds the previous checkbox or header item
+func (pp *PromptsReadOnlyPage) findPreviousSelectableItem(items []components.ExpandableItem, currentIndex int) int {
+	for i := currentIndex - 1; i >= 0; i-- {
+		if items[i].IsCheckbox || (!items[i].Indented && strings.Contains(items[i].Text, ":")) {
+			return i
+		}
+	}
+	return -1 // Back to header
+}
+
+// findLastSelectableItem finds the last checkbox or header item
+func (pp *PromptsReadOnlyPage) findLastSelectableItem(items []components.ExpandableItem) int {
+	for i := len(items) - 1; i >= 0; i-- {
+		if items[i].IsCheckbox || (!items[i].Indented && strings.Contains(items[i].Text, ":")) {
+			return i
+		}
+	}
+	return -1 // No selectable items
+}
+
+// handleScrollForSelection adjusts scroll offset based on current selection
+func (pp *PromptsReadOnlyPage) handleScrollForSelection() {
+	// Calculate the absolute line position of current selection
+	var currentLine int
+
+	if pp.selectedGroup == 0 {
+		// Default prompts group
+		currentLine = 0 // Header is at line 0
+		if pp.selectedItemIndex >= 0 && pp.defaultPromptsGroup.IsExpanded() {
+			// Add lines for each item before the selected one
+			currentLine += pp.selectedItemIndex + 1 // +1 to skip header
+		}
+	} else {
+		// Custom prompts group - calculate position after default prompts
+		currentLine = 1 // Default prompts header
+		if pp.defaultPromptsGroup.IsExpanded() {
+			currentLine += len(pp.defaultPromptsGroup.GetItems())
+		}
+		currentLine += 1 // Gap between groups
+
+		if pp.selectedItemIndex >= 0 && pp.customPromptsGroup.IsExpanded() {
+			currentLine += pp.selectedItemIndex + 1 // +1 to skip header
+		}
+	}
+
+	// Calculate visible position
+	visibleY := currentLine - pp.scrollOffset
+
+	// Scroll down if selection is too close to bottom
+	if visibleY >= pp.visibleHeight - 3 {
+		pp.scrollOffset = currentLine - (pp.visibleHeight - 4)
+		if pp.scrollOffset < 0 {
+			pp.scrollOffset = 0
+		}
+	}
+
+	// Scroll up if selection is above visible area
+	if visibleY < 2 {
+		pp.scrollOffset = currentLine - 2
+		if pp.scrollOffset < 0 {
+			pp.scrollOffset = 0
+		}
+	}
+
+	// Update max scroll for display
+	pp.maxScroll = 10 // Approximate based on content
 }
 
 // OnActivate is called when the page becomes active
