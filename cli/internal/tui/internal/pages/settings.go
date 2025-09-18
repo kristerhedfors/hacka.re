@@ -790,9 +790,19 @@ func (sm *SettingsModal) save() {
 
 // HandleMouse processes mouse events for the settings modal
 func (sm *SettingsModal) HandleMouse(event *core.MouseEvent) bool {
-	// If model selector is active, just consume the event
-	// (Model selector doesn't support mouse yet)
+	// If model selector is active, forward the event to it
 	if sm.modelSelector != nil {
+		value, done := sm.modelSelector.HandleMouse(event)
+		if done {
+			if value != "" {
+				// Model was selected
+				sm.items[sm.selectedIndex].Value = value
+				sm.updateConfig()
+			}
+			// Either selected or cancelled - close the selector
+			sm.modelSelector = nil
+			sm.editingField = false
+		}
 		return true
 	}
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/hacka-re/cli/internal/models"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // ModelSelectorItem represents a model option with context info
@@ -369,8 +370,66 @@ func (ms *ModelSelector) HandleInput(ev *tcell.EventKey) (string, bool) {
 }
 
 // HandleMouse processes mouse events
-func (ms *ModelSelector) HandleMouse(event *tcell.Event) (string, bool) {
-	// For now, we don't handle mouse events in the model selector
-	// This could be extended to support clicking on models
+func (ms *ModelSelector) HandleMouse(event *core.MouseEvent) (string, bool) {
+	// Handle scroll events first (they should work anywhere in the modal)
+	if event.Type == core.MouseEventScroll {
+		// Handle mouse wheel scrolling
+		if event.Button == core.MouseWheelUp {
+			// Scroll up - move selection up
+			if ms.selectedIndex > 0 {
+				ms.selectedIndex--
+			}
+		} else if event.Button == core.MouseWheelDown {
+			// Scroll down - move selection down
+			if ms.selectedIndex < len(ms.filteredModels)-1 {
+				ms.selectedIndex++
+			}
+		}
+		// Return false to indicate we're not done yet
+		return "", false
+	}
+
+	// Check if click is outside the modal bounds - close without saving
+	if !core.IsWithinBounds(event.X, event.Y, ms.x, ms.y, ms.width, ms.height) {
+		if event.Type == core.MouseEventClick && event.Button == core.MouseButtonLeft {
+			// Click outside - cancel selection
+			return "", true
+		}
+		return "", false
+	}
+
+	// Handle different mouse event types
+	switch event.Type {
+
+	case core.MouseEventClick:
+		// Check if click is on a model item
+		if event.Button == core.MouseButtonLeft {
+			// Calculate which item was clicked
+			startY := ms.y + 4 // Account for border, title, filter
+			maxItems := ms.height - 7 // Account for borders, title, filter, instructions
+
+			// Calculate scroll position
+			scrollStart := 0
+			if ms.selectedIndex >= maxItems {
+				scrollStart = ms.selectedIndex - maxItems + 1
+			}
+
+			// Check if click is within the model list area
+			clickedRow := event.Y - startY
+			if clickedRow >= 0 && clickedRow < maxItems {
+				// Calculate the actual model index accounting for scroll
+				clickedIndex := clickedRow + scrollStart
+
+				if clickedIndex >= 0 && clickedIndex < len(ms.filteredModels) {
+					// Select the clicked model
+					return ms.filteredModels[clickedIndex].ID, true
+				}
+			}
+
+			// Click was inside modal but not on a model item - don't close
+			return "", false
+		}
+	}
+
 	return "", false
 }
