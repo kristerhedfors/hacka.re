@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // Tooltip represents an info tooltip with expandable help text
@@ -244,5 +245,60 @@ func (ii *InfoIcon) HandleInput(ev *tcell.EventKey) bool {
 			return true
 		}
 	}
+	return false
+}
+
+// HandleMouse processes mouse events for the info icon
+func (ii *InfoIcon) HandleMouse(event *core.MouseEvent) bool {
+	// Check if click is on the info icon
+	iconHitTest := core.NewComponentHitTest(ii.x, ii.y, 1, 1)
+
+	if iconHitTest.ContainsEvent(event) {
+		if event.Type == core.MouseEventClick {
+			ii.Tooltip.Toggle()
+			return true
+		} else if event.Type == core.MouseEventHover {
+			// Could show tooltip on hover if desired
+			// ii.Tooltip.Show()
+			return true
+		}
+	}
+
+	// Check if tooltip is visible and handle its mouse events
+	if ii.Tooltip.IsVisible() {
+		return ii.Tooltip.HandleMouse(event)
+	}
+
+	return false
+}
+
+// HandleMouse processes mouse events for the tooltip
+func (t *Tooltip) HandleMouse(event *core.MouseEvent) bool {
+	if !t.isVisible {
+		return false
+	}
+
+	// Calculate actual height for hit testing
+	contentHeight := len(t.content)
+	if t.title != "" {
+		contentHeight += 2 // Title + separator
+	}
+	height := contentHeight + 2 // +2 for borders
+	if height > t.maxHeight {
+		height = t.maxHeight
+	}
+
+	// Check if click is within tooltip bounds
+	tooltipHitTest := core.NewComponentHitTest(t.x, t.y, t.width, height)
+
+	if tooltipHitTest.ContainsEvent(event) {
+		// Click inside tooltip keeps it open
+		return true
+	} else if event.Type == core.MouseEventClick {
+		// Click outside tooltip closes it
+		t.Hide()
+		return true
+	}
+
 	return false
 }

@@ -35,6 +35,17 @@ type Config struct {
 
 	// Session
 	Namespace    string `json:"namespace"`      // Storage namespace
+
+	// Prompts
+	EnabledPrompts []string       `json:"enabled_prompts"` // IDs of enabled prompts
+	CustomPrompts  []CustomPrompt `json:"custom_prompts"`  // User-defined prompts
+}
+
+// CustomPrompt represents a user-defined system prompt
+type CustomPrompt struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Content string `json:"content"`
 }
 
 // DefaultConfig returns a new config with default values
@@ -55,6 +66,8 @@ func DefaultConfig() *Config {
 		PanelLayout:      "horizontal",
 		ShowStatus:       true,
 		Namespace:        "default",
+		EnabledPrompts:   []string{},
+		CustomPrompts:    []CustomPrompt{},
 	}
 }
 

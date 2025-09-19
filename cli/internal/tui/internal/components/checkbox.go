@@ -2,6 +2,7 @@ package components
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // Checkbox represents a read-only checkbox display
@@ -12,7 +13,11 @@ type Checkbox struct {
 	checked     bool
 	style       tcell.Style
 	focusStyle  tcell.Style
+	hoverStyle  tcell.Style
 	hasFocus    bool
+	isHovered   bool
+	isReadOnly  bool
+	onChange    func(bool)
 }
 
 // NewCheckbox creates a new checkbox component
@@ -25,7 +30,11 @@ func NewCheckbox(screen tcell.Screen, x, y int, label string, checked bool) *Che
 		checked:    checked,
 		style:      tcell.StyleDefault,
 		focusStyle: tcell.StyleDefault.Foreground(tcell.ColorYellow),
+		hoverStyle: tcell.StyleDefault.Foreground(tcell.ColorTeal),
 		hasFocus:   false,
+		isHovered:  false,
+		isReadOnly: false,
+		onChange:   nil,
 	}
 }
 
@@ -49,6 +58,8 @@ func (c *Checkbox) Draw() {
 	style := c.style
 	if c.hasFocus {
 		style = c.focusStyle
+	} else if c.isHovered {
+		style = c.hoverStyle
 	}
 
 	// Draw checkbox
@@ -67,6 +78,47 @@ func (c *Checkbox) Draw() {
 // GetWidth returns the total width of the checkbox including label
 func (c *Checkbox) GetWidth() int {
 	return 3 + 1 + len(c.label) // checkbox + space + label
+}
+
+// SetReadOnly sets whether the checkbox can be toggled
+func (c *Checkbox) SetReadOnly(readOnly bool) {
+	c.isReadOnly = readOnly
+}
+
+// SetOnChange sets the callback function for checkbox state changes
+func (c *Checkbox) SetOnChange(onChange func(bool)) {
+	c.onChange = onChange
+}
+
+// Toggle toggles the checkbox state if not read-only
+func (c *Checkbox) Toggle() {
+	if !c.isReadOnly {
+		c.checked = !c.checked
+		if c.onChange != nil {
+			c.onChange(c.checked)
+		}
+	}
+}
+
+// HandleMouse processes mouse events for the checkbox
+func (c *Checkbox) HandleMouse(event *core.MouseEvent) bool {
+	// Check if mouse is within checkbox bounds
+	hitTest := core.NewComponentHitTest(c.x, c.y, c.GetWidth(), 1)
+	isWithin := hitTest.ContainsEvent(event)
+
+	switch event.Type {
+	case core.MouseEventClick:
+		if isWithin && !c.isReadOnly {
+			c.Toggle()
+			return true
+		}
+
+	case core.MouseEventHover:
+		c.isHovered = isWithin
+		return isWithin
+	}
+
+	return false
 }
 
 // CheckboxGroup manages a group of checkboxes
@@ -126,4 +178,16 @@ func (cg *CheckboxGroup) Draw() int {
 	}
 
 	return currentY - cg.y
+}
+
+// HandleMouse processes mouse events for the checkbox group
+func (cg *CheckboxGroup) HandleMouse(event *core.MouseEvent) bool {
+	// Forward mouse events to individual checkboxes
+	handled := false
+	for _, checkbox := range cg.checkboxes {
+		if checkbox.HandleMouse(event) {
+			handled = true
+		}
+	}
+	return handled
 }

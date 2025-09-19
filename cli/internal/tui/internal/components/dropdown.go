@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // DropdownItem represents an option in the dropdown
@@ -246,4 +247,34 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// HandleMouse processes mouse events for the dropdown selector
+func (ds *DropdownSelector) HandleMouse(event *core.MouseEvent) (string, bool) {
+	// Forward mouse events to the menu
+	if ds.menu != nil {
+		// Check if the menu handled a click
+		if event.Type == core.MouseEventClick {
+			// Get the currently selected item from the menu
+			selectedItem := ds.menu.GetSelectedItem()
+			if selectedItem != nil {
+				// Check if this was actually clicked
+				if ds.menu.HandleMouse(event) {
+					// If the menu handled it and an item is selected, treat it as a selection
+					if dropdownItem, ok := selectedItem.(*DropdownItem); ok {
+						selectedValue := dropdownItem.value
+						if ds.onSelect != nil {
+							ds.onSelect(selectedValue)
+						}
+						return selectedValue, true
+					}
+				}
+			}
+		} else {
+			// For non-click events, just forward to menu
+			ds.menu.HandleMouse(event)
+		}
+	}
+
+	return "", false
 }

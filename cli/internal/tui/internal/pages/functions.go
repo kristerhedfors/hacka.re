@@ -688,3 +688,9 @@ func (fp *FunctionsPage) Save() error {
 	// Read-only page, nothing to save
 	return nil
 }
+// HandleMouse processes mouse events for the page
+func (p *FunctionsPage) HandleMouse(event *core.MouseEvent) bool {
+	// TODO: Implement mouse support for interactive elements
+	// For now, just return false to indicate event not handled
+	return false
+}

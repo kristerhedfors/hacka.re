@@ -25,6 +25,7 @@ type Page interface {
 	// Core lifecycle methods
 	Draw()
 	HandleInput(ev *tcell.EventKey) bool
+	HandleMouse(event *core.MouseEvent) bool
 	OnActivate()
 	OnDeactivate()
 
@@ -98,6 +99,12 @@ func (p *BasePage) Save() error {
 	return nil
 }
 
+// HandleMouse handles mouse events for the page
+func (p *BasePage) HandleMouse(event *core.MouseEvent) bool {
+	// Default implementation - override in subclasses
+	return false
+}
+
 // Common drawing helpers
 
 // DrawBox draws a box with the specified style
@@ -140,6 +147,12 @@ func (p *BasePage) ClearLine(y int, style tcell.Style) {
 	for x := 0; x < w; x++ {
 		p.screen.SetContent(x, y, ' ', nil, style)
 	}
+}
+
+// IsClickOutsideModal checks if a mouse click is outside modal bounds
+func (p *BasePage) IsClickOutsideModal(event *core.MouseEvent, modalX, modalY, modalWidth, modalHeight int) bool {
+	return event.X < modalX || event.X >= modalX+modalWidth ||
+		event.Y < modalY || event.Y >= modalY+modalHeight
 }
 
 // DrawCenteredText draws text centered horizontally

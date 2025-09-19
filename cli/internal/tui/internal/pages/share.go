@@ -368,3 +368,9 @@ func truncate(s string, maxLen int) string {
 	}
 	return s[:maxLen-3] + "..."
 }
+// HandleMouse processes mouse events for the page
+func (p *SharePage) HandleMouse(event *core.MouseEvent) bool {
+	// TODO: Implement mouse support for interactive elements
+	// For now, just return false to indicate event not handled
+	return false
+}

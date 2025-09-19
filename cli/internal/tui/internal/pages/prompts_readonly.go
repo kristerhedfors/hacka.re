@@ -723,3 +723,135 @@ func (pp *PromptsReadOnlyPage) Save() error {
 	// Read-only page, nothing to save
 	return nil
 }
+// HandleMouse processes mouse events for the page
+func (pp *PromptsReadOnlyPage) HandleMouse(event *core.MouseEvent) bool {
+	// Handle scroll events globally
+	if event.Type == core.MouseEventScroll {
+		switch event.Button {
+		case core.MouseWheelUp:
+			if pp.scrollOffset > 0 {
+				pp.scrollOffset--
+				return true
+			}
+		case core.MouseWheelDown:
+			if pp.scrollOffset < pp.maxScroll {
+				pp.scrollOffset++
+				return true
+			}
+		}
+		return false
+	}
+
+	// Check if click is on the default prompts group
+	defaultGroupY := pp.defaultPromptsGroup.Y - pp.scrollOffset
+	defaultGroupHeight := 1 // Header height
+	if pp.defaultPromptsGroup.IsExpanded() {
+		defaultGroupHeight += len(pp.defaultPromptsGroup.GetItems())
+	}
+
+	if event.Y >= defaultGroupY && event.Y < defaultGroupY+defaultGroupHeight {
+		// Calculate relative Y within the group
+		relativeY := event.Y - defaultGroupY
+
+		if relativeY == 0 {
+			// Click on header - toggle expansion
+			if event.Type == core.MouseEventClick {
+				pp.defaultPromptsGroup.Toggle()
+				pp.selectedGroup = 0
+				pp.selectedItemIndex = -1
+				return true
+			}
+		} else if pp.defaultPromptsGroup.IsExpanded() && relativeY > 0 {
+			// Click on an item
+			itemIndex := relativeY - 1
+			items := pp.defaultPromptsGroup.GetItems()
+
+			if itemIndex < len(items) {
+				item := items[itemIndex]
+				if item.IsCheckbox && event.Type == core.MouseEventClick {
+					// Toggle checkbox state
+					items[itemIndex].IsChecked = !items[itemIndex].IsChecked
+					pp.defaultPromptsGroup.UpdateItem(itemIndex, items[itemIndex])
+
+					// Update the enabled prompts tracking
+					if itemIndex/3 < len(pp.defaultPromptIDs) {
+						promptID := pp.defaultPromptIDs[itemIndex/3]
+						pp.enabledPrompts[promptID] = items[itemIndex].IsChecked
+					}
+
+					// Update selection
+					pp.selectedGroup = 0
+					pp.selectedItemIndex = itemIndex
+					return true
+				} else if event.Type == core.MouseEventHover {
+					// Update selection on hover
+					pp.selectedGroup = 0
+					pp.selectedItemIndex = itemIndex
+					return true
+				}
+			}
+		}
+	}
+
+	// Check if click is on the custom prompts group
+	customGroupY := pp.customPromptsGroup.Y - pp.scrollOffset
+	if pp.defaultPromptsGroup.IsExpanded() {
+		customGroupY = defaultGroupY + defaultGroupHeight + 1
+	}
+
+	customGroupHeight := 1 // Header height
+	if pp.customPromptsGroup.IsExpanded() {
+		customGroupHeight += len(pp.customPromptsGroup.GetItems())
+	}
+
+	if event.Y >= customGroupY && event.Y < customGroupY+customGroupHeight {
+		// Calculate relative Y within the group
+		relativeY := event.Y - customGroupY
+
+		if relativeY == 0 {
+			// Click on header - toggle expansion
+			if event.Type == core.MouseEventClick {
+				pp.customPromptsGroup.Toggle()
+				pp.selectedGroup = 1
+				pp.selectedItemIndex = -1
+				return true
+			}
+		} else if pp.customPromptsGroup.IsExpanded() && relativeY > 0 {
+			// Click on an item
+			itemIndex := relativeY - 1
+			items := pp.customPromptsGroup.GetItems()
+
+			if itemIndex < len(items) {
+				item := items[itemIndex]
+				if item.IsCheckbox && event.Type == core.MouseEventClick {
+					// Toggle checkbox state
+					items[itemIndex].IsChecked = !items[itemIndex].IsChecked
+					pp.customPromptsGroup.UpdateItem(itemIndex, items[itemIndex])
+
+					// Update the enabled prompts tracking
+					if itemIndex/3 < len(pp.mcpPromptIDs) {
+						promptID := pp.mcpPromptIDs[itemIndex/3]
+						pp.enabledPrompts[promptID] = items[itemIndex].IsChecked
+					}
+
+					// Update selection
+					pp.selectedGroup = 1
+					pp.selectedItemIndex = itemIndex
+					return true
+				} else if event.Type == core.MouseEventHover {
+					// Update selection on hover
+					pp.selectedGroup = 1
+					pp.selectedItemIndex = itemIndex
+					return true
+				}
+			}
+		}
+	}
+
+	// Check if click is on info icon
+	if pp.infoIcon != nil && pp.infoIcon.HandleMouse(event) {
+		return true
+	}
+
+	return false
+}

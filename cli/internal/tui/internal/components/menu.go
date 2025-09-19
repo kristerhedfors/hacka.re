@@ -6,6 +6,7 @@ import (
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/hacka-re/cli/internal/tui/internal/core"
 )
 
 // MenuItem represents a selectable menu item interface
@@ -137,6 +138,14 @@ func (m *FilterableMenu) drawBorder() {
 
 // drawBox draws a box with the given dimensions
 func (m *FilterableMenu) drawBox(x, y, w, h int, style tcell.Style) {
+	// Clear background to make it opaque
+	bgStyle := tcell.StyleDefault.Background(tcell.ColorBlack)
+	for row := 0; row < h; row++ {
+		for col := 0; col < w; col++ {
+			m.screen.SetContent(x+col, y+row, ' ', nil, bgStyle)
+		}
+	}
+
 	// Top border
 	m.screen.SetContent(x, y, '╔', nil, style)
 	for i := 1; i < w-1; i++ {
@@ -504,4 +513,142 @@ func (m *FilterableMenu) GetX() int {
 // GetWidth returns the width of the menu
 func (m *FilterableMenu) GetWidth() int {
 	return m.width
+}
+
+// HandleMouse processes mouse events for the menu
+func (m *FilterableMenu) HandleMouse(event *core.MouseEvent) bool {
+	// Check if mouse is within menu bounds
+	hitTest := core.NewComponentHitTest(m.x, m.y, m.width, m.height)
+	if !hitTest.ContainsEvent(event) {
+		return false
+	}
+
+	// Calculate relative position within menu
+	relX := event.X - m.x
+	relY := event.Y - m.y
+
+	// Handle different mouse event types
+	switch event.Type {
+	case core.MouseEventClick:
+		return m.handleMouseClick(relX, relY)
+	case core.MouseEventDoubleClick:
+		return m.handleMouseDoubleClick(relX, relY)
+	case core.MouseEventScroll:
+		return m.handleMouseScroll(event.Button)
+	case core.MouseEventHover:
+		return m.handleMouseHover(relX, relY)
+	}
+
+	return false
+}
+
+// handleMouseClick processes mouse click events
+func (m *FilterableMenu) handleMouseClick(relX, relY int) bool {
+	// Check if click is on filter area
+	filterY := 2
+	if relY == filterY {
+		// Click on filter area - could implement focus here
+		return true
+	}
+
+	// Check if click is on a menu item
+	startY := 4 // Items start at y+4
+	maxItems := m.height - 7
+
+	if relY >= startY && relY < startY+maxItems {
+		// Calculate which item was clicked
+		itemIndex := relY - startY
+		scrollStart := 0
+		if m.selectedIndex >= maxItems {
+			scrollStart = m.selectedIndex - maxItems + 1
+		}
+
+		actualIndex := itemIndex + scrollStart
+		if actualIndex < len(m.filteredItems) {
+			// Select the item
+			m.selectedIndex = actualIndex
+
+			// If it's enabled, trigger selection
+			item := m.filteredItems[actualIndex]
+			if item.IsEnabled() {
+				// Trigger the item handler if it's a BasicMenuItem
+				if basicItem, ok := item.(*BasicMenuItem); ok && basicItem.Handler != nil {
+					basicItem.Handler()
+				}
+				return true
+			}
+		}
+	}
+
+	// Check if click is on scroll arrows
+	if relX == m.width-3 {
+		scrollBarY := 4
+		maxItems := m.height - 7
+
+		// Up arrow
+		if relY == scrollBarY {
+			if m.selectedIndex > 0 {
+				m.selectedIndex--
+				return true
+			}
+		}
+
+		// Down arrow
+		if relY == scrollBarY+maxItems-1 {
+			if m.selectedIndex < len(m.filteredItems)-1 {
+				m.selectedIndex++
+				return true
+			}
+		}
+	}
+
+	return true // Event was handled (click was within menu)
+}
+
+// handleMouseDoubleClick processes double-click events
+func (m *FilterableMenu) handleMouseDoubleClick(relX, relY int) bool {
+	// Treat double-click same as single click for menu items
+	return m.handleMouseClick(relX, relY)
+}
+
+// handleMouseScroll processes scroll wheel events
+func (m *FilterableMenu) handleMouseScroll(button core.MouseButton) bool {
+	switch button {
+	case core.MouseWheelUp:
+		if m.selectedIndex > 0 {
+			m.selectedIndex--
+			return true
+		}
+	case core.MouseWheelDown:
+		if m.selectedIndex < len(m.filteredItems)-1 {
+			m.selectedIndex++
+			return true
+		}
+	}
+	return false
+}
+
+// handleMouseHover processes hover events
+func (m *FilterableMenu) handleMouseHover(relX, relY int) bool {
+	// Check if hovering over a menu item
+	startY := 4
+	maxItems := m.height - 7
+
+	if relY >= startY && relY < startY+maxItems {
+		// Calculate which item is being hovered
+		itemIndex := relY - startY
+		scrollStart := 0
+		if m.selectedIndex >= maxItems {
+			scrollStart = m.selectedIndex - maxItems + 1
+		}
+
+		actualIndex := itemIndex + scrollStart
+		if actualIndex < len(m.filteredItems) {
+			// Update selection to hovered item (provides visual feedback)
+			m.selectedIndex = actualIndex
+			return true
+		}
+	}
+
+	return false
 }
