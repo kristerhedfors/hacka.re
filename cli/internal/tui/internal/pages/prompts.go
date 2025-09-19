@@ -39,6 +39,10 @@ type PromptsPage struct {
 	selectedPromptIndex  int  // Index in the combined prompt list (0 to N-1)
 	scrollOffset        int
 
+	// View mode settings
+	showMarkdown     bool  // Toggle between markdown and raw view
+	viewScrollOffset int   // Scroll position in view mode
+
 	// Input fields for custom prompts
 	nameInput        string
 	editingName      bool
@@ -109,6 +113,8 @@ func NewPromptsPage(screen tcell.Screen, config *core.ConfigManager, state *core
 		customPrompts:  []Prompt{},
 		mcpPrompts:     []Prompt{},
 		mcpConnected:   false,
+		showMarkdown:   true,  // Default to markdown view
+		viewScrollOffset: 0,
 	}
 
 	// Initialize components
@@ -231,13 +237,101 @@ func (p *PromptsPage) Draw() {
 	}
 }
 
+// estimateTokens provides a rough estimation of token count
+// Generally, 1 token ~= 4 characters in English text
+func (p *PromptsPage) estimateTokens(text string) int {
+	// Simple estimation: ~4 characters per token
+	return len(text) / 4
+}
+
+// getTotalTokenCount returns estimated token count for all enabled prompts
+func (p *PromptsPage) getTotalTokenCount() int {
+	totalTokens := 0
+
+	// Count enabled default prompts
+	for _, prompt := range p.defaultPrompts {
+		if prompt.IsEnabled {
+			totalTokens += p.estimateTokens(prompt.Content)
+		}
+	}
+
+	// Count enabled custom prompts
+	for _, prompt := range p.customPrompts {
+		if prompt.IsEnabled {
+			totalTokens += p.estimateTokens(prompt.Content)
+		}
+	}
+
+	// Count enabled MCP prompts
+	for _, prompt := range p.mcpPrompts {
+		if prompt.IsEnabled {
+			totalTokens += p.estimateTokens(prompt.Content)
+		}
+	}
+
+	return totalTokens
+}
+
+// drawTokenBar draws a visual token counter bar
+func (p *PromptsPage) drawTokenBar(y int) {
+	w, _ := p.screen.Size()
+	totalTokens := p.getTotalTokenCount()
+
+	// Token thresholds for different models
+	smallLimit := 4096   // GPT-3.5 context
+	mediumLimit := 8192  // Many models
+	largeLimit := 32768  // GPT-4 context
+	barWidth := 60
+
+	// Calculate bar position
+	barX := (w - barWidth - 20) / 2
+
+	// Draw token count label
+	label := fmt.Sprintf("Tokens: %d", totalTokens)
+	p.DrawText(barX, y, label, tcell.StyleDefault.Bold(true))
+
+	// Determine bar color based on token count
+	barStyle := tcell.StyleDefault.Background(tcell.ColorGreen).Foreground(tcell.ColorBlack)
+	if totalTokens > largeLimit {
+		barStyle = tcell.StyleDefault.Background(tcell.ColorRed).Foreground(tcell.ColorWhite)
+	} else if totalTokens > mediumLimit {
+		barStyle = tcell.StyleDefault.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack)
+	}
+
+	// Calculate fill percentage (cap at largeLimit for display)
+	fillPercent := float64(totalTokens) / float64(largeLimit)
+	if fillPercent > 1.0 {
+		fillPercent = 1.0
+	}
+	fillWidth := int(float64(barWidth) * fillPercent)
+
+	// Draw the bar background
+	for i := 0; i < barWidth; i++ {
+		x := barX + len(label) + 2 + i
+		if i < fillWidth {
+			p.screen.SetContent(x, y, '█', nil, barStyle)
+		} else {
+			p.screen.SetContent(x, y, '░', nil, tcell.StyleDefault.Foreground(tcell.ColorDarkGray))
+		}
+	}
+
+	// Draw context limit indicators
+	indicatorY := y + 1
+	smallPos := barX + len(label) + 2 + (barWidth*smallLimit)/largeLimit
+	mediumPos := barX + len(label) + 2 + (barWidth*mediumLimit)/largeLimit
+
+	p.DrawText(smallPos-1, indicatorY, "4K", tcell.StyleDefault.Foreground(tcell.ColorDarkGray).Dim(true))
+	p.DrawText(mediumPos-1, indicatorY, "8K", tcell.StyleDefault.Foreground(tcell.ColorDarkGray).Dim(true))
+	p.DrawText(barX+len(label)+2+barWidth-2, indicatorY, "32K", tcell.StyleDefault.Foreground(tcell.ColorDarkGray).Dim(true))
+}
+
 // drawListMode renders the prompt list
 func (p *PromptsPage) drawListMode() {
 	w, h := p.screen.Size()
 
-	// Calculate dimensions
+	// Calculate dimensions (reduce height to make room for token bar)
 	listWidth := 70
-	listHeight := h - 10
+	listHeight := h - 12  // Changed from h - 10 to make room for token bar
 	listX := (w - listWidth) / 2
 	listY := 3
 
@@ -248,6 +342,9 @@ func (p *PromptsPage) drawListMode() {
 	title := " System Prompts "
 	titleX := listX + (listWidth-len(title))/2
 	p.DrawText(titleX, listY, title, tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true))
+
+	// Draw token counter bar at the bottom
+	p.drawTokenBar(h - 4)
 
 	// Calculate visible area
 	contentY := listY + 2
@@ -347,7 +444,7 @@ func (p *PromptsPage) drawListMode() {
 		instructions = " ↑↓ Enter Space N D/⌫ ESC "
 		instructionsX = listX + (listWidth-len(instructions))/2
 	}
-	p.DrawText(instructionsX, listY+listHeight-2, instructions, tcell.StyleDefault.Foreground(tcell.ColorYellow))
+	p.DrawText(instructionsX, listY+listHeight-1, instructions, tcell.StyleDefault.Foreground(tcell.ColorYellow))
 }
 
 // drawListBorder draws the border for the prompt list
@@ -423,30 +520,174 @@ func (p *PromptsPage) drawViewMode() {
 		return
 	}
 
-	_, h := p.screen.Size()
+	w, h := p.screen.Size()
 
-	// Draw title
-	title := fmt.Sprintf(" Viewing: %s ", p.selectedPrompt.Name)
-	titleStyle := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
-	p.DrawCenteredText(2, title, titleStyle)
+	// Calculate modal dimensions
+	modalWidth := min(80, w-10)
+	modalHeight := min(30, h-6)
+	modalX := (w - modalWidth) / 2
+	modalY := (h - modalHeight) / 2
 
-	// Draw description
-	descStyle := tcell.StyleDefault.Foreground(tcell.ColorGray)
-	p.DrawCenteredText(4, p.selectedPrompt.Description, descStyle)
+	// Draw modal border
+	p.drawModalBorder(modalX, modalY, modalWidth, modalHeight)
 
-	// Set editor content and draw
-	p.editor.SetText(p.selectedPrompt.Content)
-	p.editor.SetReadOnly(true)
-	p.editor.Draw()
+	// Draw title with view mode indicator
+	viewMode := "[Raw]"
+	if p.showMarkdown {
+		viewMode = "[Markdown]"
+	}
+	title := fmt.Sprintf(" %s %s - %s ", viewMode, p.selectedPrompt.Name, "Press M to toggle")
+	if len(title) > modalWidth-2 {
+		title = fmt.Sprintf(" %s %s ", viewMode, p.selectedPrompt.Name)
+	}
+	titleX := modalX + (modalWidth-len(title))/2
+	p.DrawText(titleX, modalY, title, tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true))
+
+	// Draw content area
+	contentX := modalX + 2
+	contentY := modalY + 2
+	contentWidth := modalWidth - 4
+	contentHeight := modalHeight - 5 // Leave room for title and instructions
+
+	if p.showMarkdown {
+		// Render markdown-style view
+		p.drawMarkdownContent(contentX, contentY, contentWidth, contentHeight)
+	} else {
+		// Show raw text
+		p.drawRawContent(contentX, contentY, contentWidth, contentHeight)
+	}
+
+	// Draw scroll indicators
+	lines := strings.Split(p.selectedPrompt.Content, "\n")
+	if p.viewScrollOffset > 0 {
+		p.DrawText(modalX+modalWidth-3, contentY, "↑", tcell.StyleDefault.Foreground(tcell.ColorYellow))
+	}
+	if p.viewScrollOffset + contentHeight < len(lines) {
+		p.DrawText(modalX+modalWidth-3, contentY+contentHeight-1, "↓", tcell.StyleDefault.Foreground(tcell.ColorYellow))
+	}
 
 	// Draw instructions based on prompt type
 	var instructions string
 	if p.selectedPrompt.IsDefault || p.selectedPrompt.IsMCP {
-		instructions = " Space:Toggle | ESC:Back to List "
+		instructions = " M:Toggle View | Space:Toggle | ↑↓:Scroll | ESC:Back "
 	} else {
-		instructions = " E:Edit | D:Delete | Space:Toggle | ESC:Back to List "
+		instructions = " M:Toggle View | E:Edit | D:Delete | Space:Toggle | ↑↓:Scroll | ESC:Back "
 	}
-	p.DrawCenteredText(h-2, instructions, tcell.StyleDefault.Foreground(tcell.ColorYellow))
+	instructionsX := modalX + (modalWidth-len(instructions))/2
+	if instructionsX < modalX + 1 {
+		// Shorter version if too long
+		instructions = " M:View E:Edit D:Del Space ↑↓ ESC "
+		instructionsX = modalX + (modalWidth-len(instructions))/2
+	}
+	p.DrawText(instructionsX, modalY+modalHeight-2, instructions, tcell.StyleDefault.Foreground(tcell.ColorYellow))
+}
+
+// drawModalBorder draws a border for the view modal
+func (p *PromptsPage) drawModalBorder(x, y, w, h int) {
+	// Clear background
+	bgStyle := tcell.StyleDefault.Background(tcell.ColorBlack)
+	for row := 0; row < h; row++ {
+		for col := 0; col < w; col++ {
+			p.screen.SetContent(x+col, y+row, ' ', nil, bgStyle)
+		}
+	}
+
+	// Draw border
+	style := tcell.StyleDefault.Foreground(tcell.ColorBlue)
+	// Top
+	p.screen.SetContent(x, y, '╔', nil, style)
+	for i := 1; i < w-1; i++ {
+		p.screen.SetContent(x+i, y, '═', nil, style)
+	}
+	p.screen.SetContent(x+w-1, y, '╗', nil, style)
+
+	// Sides
+	for i := 1; i < h-1; i++ {
+		p.screen.SetContent(x, y+i, '║', nil, style)
+		p.screen.SetContent(x+w-1, y+i, '║', nil, style)
+	}
+
+	// Bottom
+	p.screen.SetContent(x, y+h-1, '╚', nil, style)
+	for i := 1; i < w-1; i++ {
+		p.screen.SetContent(x+i, y+h-1, '═', nil, style)
+	}
+	p.screen.SetContent(x+w-1, y+h-1, '╝', nil, style)
+}
+
+// drawRawContent draws the raw prompt content
+func (p *PromptsPage) drawRawContent(x, y, width, height int) {
+	lines := strings.Split(p.selectedPrompt.Content, "\n")
+	style := tcell.StyleDefault.Foreground(tcell.ColorWhite)
+
+	// Draw visible lines with scroll offset
+	for i := 0; i < height && i+p.viewScrollOffset < len(lines); i++ {
+		line := lines[i+p.viewScrollOffset]
+		// Truncate if too long
+		if len(line) > width {
+			line = line[:width-3] + "..."
+		}
+		p.DrawText(x, y+i, line, style)
+	}
+}
+
+// drawMarkdownContent draws content with basic markdown rendering
+func (p *PromptsPage) drawMarkdownContent(x, y, width, height int) {
+	lines := strings.Split(p.selectedPrompt.Content, "\n")
+	currentY := 0
+
+	for lineNum := p.viewScrollOffset; lineNum < len(lines) && currentY < height; lineNum++ {
+		line := lines[lineNum]
+		style := tcell.StyleDefault.Foreground(tcell.ColorWhite)
+
+		// Basic markdown styling
+		if strings.HasPrefix(line, "# ") {
+			// H1 - Large header
+			style = tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
+			line = strings.TrimPrefix(line, "# ")
+		} else if strings.HasPrefix(line, "## ") {
+			// H2 - Medium header
+			style = tcell.StyleDefault.Foreground(tcell.ColorTeal).Bold(true)
+			line = strings.TrimPrefix(line, "## ")
+		} else if strings.HasPrefix(line, "### ") {
+			// H3 - Small header
+			style = tcell.StyleDefault.Foreground(tcell.ColorYellow).Bold(true)
+			line = strings.TrimPrefix(line, "### ")
+		} else if strings.HasPrefix(line, "- ") || strings.HasPrefix(line, "* ") {
+			// Bullet points
+			line = "• " + line[2:]
+			style = tcell.StyleDefault.Foreground(tcell.ColorWhite)
+		} else if strings.HasPrefix(line, "```") {
+			// Code block marker
+			style = tcell.StyleDefault.Foreground(tcell.ColorGray)
+		} else if strings.HasPrefix(line, "    ") || strings.HasPrefix(line, "\t") {
+			// Indented code
+			style = tcell.StyleDefault.Foreground(tcell.ColorBlue)
+		}
+
+		// Handle bold text (simplified - just color differently)
+		if strings.Contains(line, "**") {
+			line = strings.ReplaceAll(line, "**", "")
+			style = style.Bold(true)
+		}
+
+		// Handle inline code
+		if strings.Contains(line, "`") {
+			line = strings.ReplaceAll(line, "`", "")
+			// Only change style if not already styled as a header
+			if !strings.HasPrefix(lines[lineNum], "#") {
+				style = tcell.StyleDefault.Foreground(tcell.ColorBlue)
+			}
+		}
+
+		// Truncate if too long
+		if len(line) > width {
+			line = line[:width-3] + "..."
+		}
+
+		p.DrawText(x, y+currentY, line, style)
+		currentY++
+	}
 }
 
 // drawEditMode renders the prompt editor
@@ -554,7 +795,9 @@ func (p *PromptsPage) HandleInput(ev *tcell.EventKey) bool {
 
 // HandleMouse processes mouse events
 func (p *PromptsPage) HandleMouse(event *core.MouseEvent) bool {
-	if p.currentMode != PromptModeList {
+	if p.currentMode == PromptModeView {
+		return p.handleViewMouse(event)
+	} else if p.currentMode != PromptModeList {
 		return false
 	}
 
@@ -616,6 +859,52 @@ func (p *PromptsPage) HandleMouse(event *core.MouseEvent) bool {
 					p.currentMode = PromptModeView
 				}
 			}
+		}
+	}
+
+	return false
+}
+
+// handleViewMouse handles mouse events in view mode
+func (p *PromptsPage) handleViewMouse(event *core.MouseEvent) bool {
+	w, h := p.screen.Size()
+	modalWidth := min(80, w-10)
+	modalHeight := min(30, h-6)
+	modalX := (w - modalWidth) / 2
+	modalY := (h - modalHeight) / 2
+
+	// Handle scrolling anywhere in view mode (not just inside modal)
+	if event.Type == core.MouseEventScroll {
+		lines := strings.Split(p.selectedPrompt.Content, "\n")
+		maxScroll := len(lines) - (modalHeight - 5) // Adjust for modal content area (matching line 550)
+		if maxScroll < 0 {
+			maxScroll = 0
+		}
+
+		scrollAmount := 3 // Scroll 3 lines at a time for smoother scrolling
+
+		if event.Button == core.MouseWheelUp {
+			p.viewScrollOffset -= scrollAmount
+			if p.viewScrollOffset < 0 {
+				p.viewScrollOffset = 0
+			}
+			return true // Properly consume the event
+		} else if event.Button == core.MouseWheelDown {
+			p.viewScrollOffset += scrollAmount
+			if p.viewScrollOffset > maxScroll {
+				p.viewScrollOffset = maxScroll
+			}
+			return true // Properly consume the event
+		}
+	}
+
+	// Check if click is outside the modal
+	if !core.IsWithinBounds(event.X, event.Y, modalX, modalY, modalWidth, modalHeight) {
+		if event.Type == core.MouseEventClick && event.Button == core.MouseButtonLeft {
+			// Click outside - return to list
+			p.currentMode = PromptModeList
+			p.viewScrollOffset = 0
+			return false
 		}
 	}
 
@@ -794,18 +1083,64 @@ func (p *PromptsPage) handleListInput(ev *tcell.EventKey) bool {
 
 // handleViewInput handles input in view mode
 func (p *PromptsPage) handleViewInput(ev *tcell.EventKey) bool {
-	// Let editor handle scrolling
-	if p.editor.HandleInput(ev) {
-		return false
+	_, h := p.screen.Size()
+	modalHeight := min(30, h-6)
+	contentHeight := modalHeight - 5 // Same as used in drawing (line 550)
+	pageSize := contentHeight - 1 // Leave one line for context when paging
+
+	lines := strings.Split(p.selectedPrompt.Content, "\n")
+	maxScroll := len(lines) - contentHeight
+	if maxScroll < 0 {
+		maxScroll = 0
 	}
 
 	switch ev.Key() {
 	case tcell.KeyEscape:
 		p.currentMode = PromptModeList
+		p.viewScrollOffset = 0 // Reset scroll when exiting
+		return false
+
+	case tcell.KeyUp:
+		if p.viewScrollOffset > 0 {
+			p.viewScrollOffset--
+		}
+		return false
+
+	case tcell.KeyDown:
+		if p.viewScrollOffset < maxScroll {
+			p.viewScrollOffset++
+		}
+		return false
+
+	case tcell.KeyPgUp:
+		p.viewScrollOffset -= pageSize
+		if p.viewScrollOffset < 0 {
+			p.viewScrollOffset = 0
+		}
+		return false
+
+	case tcell.KeyPgDn:
+		p.viewScrollOffset += pageSize
+		if p.viewScrollOffset > maxScroll {
+			p.viewScrollOffset = maxScroll
+		}
+		return false
+
+	case tcell.KeyHome:
+		p.viewScrollOffset = 0
+		return false
+
+	case tcell.KeyEnd:
+		p.viewScrollOffset = maxScroll
 		return false
 
 	case tcell.KeyRune:
 		switch ev.Rune() {
+		case 'm', 'M':
+			// Toggle markdown/raw view
+			p.showMarkdown = !p.showMarkdown
+			return false
+
 		case 'e', 'E':
 			if !p.selectedPrompt.IsDefault && !p.selectedPrompt.IsMCP {
 				p.startEdit(p.selectedPrompt)
@@ -816,11 +1151,25 @@ func (p *PromptsPage) handleViewInput(ev *tcell.EventKey) bool {
 			if !p.selectedPrompt.IsDefault && !p.selectedPrompt.IsMCP {
 				p.deletePrompt(p.selectedPrompt)
 				p.currentMode = PromptModeList
+				p.viewScrollOffset = 0
 			}
 			return false
 
 		case ' ':
-			p.togglePrompt(p.selectedPrompt)
+			// Check if Shift is pressed for page up
+			if ev.Modifiers()&tcell.ModShift != 0 {
+				// Shift+Space: Page up
+				p.viewScrollOffset -= pageSize
+				if p.viewScrollOffset < 0 {
+					p.viewScrollOffset = 0
+				}
+			} else {
+				// Space alone: Page down
+				p.viewScrollOffset += pageSize
+				if p.viewScrollOffset > maxScroll {
+					p.viewScrollOffset = maxScroll
+				}
+			}
 			return false
 		}
 	}
