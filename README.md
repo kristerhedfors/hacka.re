@@ -146,7 +146,6 @@ Full markdown rendering with:
 - Syntax highlighting for 20+ languages
 - Tables, lists, and formatting
 - LaTeX math rendering
-- Mermaid diagram support
 - Copy button for code blocks
 
 ### Conversation Management
