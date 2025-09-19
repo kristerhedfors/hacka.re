@@ -3,6 +3,7 @@ package pages
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/hacka-re/cli/internal/tui/internal/components"
@@ -28,12 +29,20 @@ type PromptsPage struct {
 	defaultPrompts []Prompt
 	customPrompts  []Prompt
 	mcpPrompts     []Prompt
-	menu           *components.FilterableMenu
 	editor         *components.Editor
 	currentMode    PromptMode
 	selectedPrompt *Prompt
 	editingPrompt  *Prompt
 	mcpConnected   bool // Whether MCP is connected
+
+	// List navigation - tracks actual prompt index (0-based)
+	selectedPromptIndex  int  // Index in the combined prompt list (0 to N-1)
+	scrollOffset        int
+
+	// Input fields for custom prompts
+	nameInput        string
+	editingName      bool
+	cursorPos        int
 }
 
 // PromptMode represents the current view mode
@@ -103,20 +112,10 @@ func NewPromptsPage(screen tcell.Screen, config *core.ConfigManager, state *core
 	}
 
 	// Initialize components
-	page.menu = components.NewFilterableMenu(screen, "System Prompts")
 	page.editor = components.NewEditor(screen)
 
-	// Configure menu layout
-	w, h := screen.Size()
-	menuWidth := 60
-	menuHeight := min(25, h-10)
-	infoWidth := 50
-
-	page.menu.SetDimensions(menuWidth, menuHeight)
-	page.menu.SetPosition((w-menuWidth-infoWidth-2)/2, (h-menuHeight)/2)
-	page.menu.SetInfoPanel(true, infoWidth)
-
 	// Configure editor layout
+	w, h := screen.Size()
 	editorWidth := min(80, w-10)
 	editorHeight := min(30, h-10)
 	page.editor.SetDimensions(editorWidth, editorHeight)
@@ -130,6 +129,12 @@ func NewPromptsPage(screen tcell.Screen, config *core.ConfigManager, state *core
 
 // loadPrompts loads available prompts
 func (p *PromptsPage) loadPrompts() {
+	cfg := p.config.Get()
+	enabledMap := make(map[string]bool)
+	for _, id := range cfg.EnabledPrompts {
+		enabledMap[id] = true
+	}
+
 	// Load default prompts from the prompts package
 	defaultPrompts := prompts.GetDefaultPrompts()
 	p.defaultPrompts = make([]Prompt, 0, len(defaultPrompts))
@@ -142,7 +147,7 @@ func (p *PromptsPage) loadPrompts() {
 			IsDefault:   true,
 			IsMCP:       false,
 			IsActive:    false,
-			IsEnabled:   false, // Default prompts start disabled
+			IsEnabled:   enabledMap[dp.ID], // Restore enabled state from config
 		})
 	}
 
@@ -159,7 +164,7 @@ func (p *PromptsPage) loadPrompts() {
 				IsDefault:   false,
 				IsMCP:       true,
 				IsActive:    false,
-				IsEnabled:   false, // MCP prompts also start disabled
+				IsEnabled:   enabledMap[mp.ID], // Restore enabled state from config
 			})
 		}
 	} else {
@@ -167,8 +172,19 @@ func (p *PromptsPage) loadPrompts() {
 	}
 
 	// Load custom prompts from config (user-created)
-	p.customPrompts = []Prompt{}
-	// TODO: Load from persistent storage when implemented
+	p.customPrompts = make([]Prompt, 0, len(cfg.CustomPrompts))
+	for _, cp := range cfg.CustomPrompts {
+		p.customPrompts = append(p.customPrompts, Prompt{
+			ID:          cp.ID,
+			Name:        cp.Name,
+			Content:     cp.Content,
+			Description: "", // No description for custom prompts
+			IsDefault:   false,
+			IsMCP:       false,
+			IsActive:    false,
+			IsEnabled:   enabledMap[cp.ID], // Restore enabled state from config
+		})
+	}
 
 	// Update menu items
 	p.updateMenuItems()
@@ -176,38 +192,29 @@ func (p *PromptsPage) loadPrompts() {
 
 // updateMenuItems refreshes the menu with current prompts
 func (p *PromptsPage) updateMenuItems() {
-	p.menu.Clear()
-	number := 0
-
-	// Add default prompts
-	for i := range p.defaultPrompts {
-		item := &PromptMenuItem{
-			prompt: &p.defaultPrompts[i],
-			number: number,
-		}
-		p.menu.AddItem(item)
-		number++
+	// Reset selection if out of bounds
+	totalItems := len(p.defaultPrompts) + len(p.customPrompts) + len(p.mcpPrompts)
+	if p.selectedPromptIndex >= totalItems {
+		p.selectedPromptIndex = 0
 	}
+}
 
-	// Add custom prompts
-	for i := range p.customPrompts {
-		item := &PromptMenuItem{
-			prompt: &p.customPrompts[i],
-			number: number,
-		}
-		p.menu.AddItem(item)
-		number++
-	}
+// getAllPrompts returns all prompts in order
+func (p *PromptsPage) getAllPrompts() []Prompt {
+	var allPrompts []Prompt
+	allPrompts = append(allPrompts, p.defaultPrompts...)
+	allPrompts = append(allPrompts, p.customPrompts...)
+	allPrompts = append(allPrompts, p.mcpPrompts...)
+	return allPrompts
+}
 
-	// Add MCP prompts (shown in custom section)
-	for i := range p.mcpPrompts {
-		item := &PromptMenuItem{
-			prompt: &p.mcpPrompts[i],
-			number: number,
-		}
-		p.menu.AddItem(item)
-		number++
+// getPromptAtIndex returns the prompt at the given index
+func (p *PromptsPage) getPromptAtIndex(index int) *Prompt {
+	allPrompts := p.getAllPrompts()
+	if index >= 0 && index < len(allPrompts) {
+		return &allPrompts[index]
 	}
+	return nil
 }
 
 // Draw renders the prompts page
@@ -226,33 +233,188 @@ func (p *PromptsPage) Draw() {
 
 // drawListMode renders the prompt list
 func (p *PromptsPage) drawListMode() {
-	p.menu.Draw()
+	w, h := p.screen.Size()
 
-	// Draw sections headers
-	w, _ := p.screen.Size()
+	// Calculate dimensions
+	listWidth := 70
+	listHeight := h - 10
+	listX := (w - listWidth) / 2
+	listY := 3
 
-	// Draw Default Prompts header
-	headerY := p.menu.GetY() - 2
-	defaultHeader := "Default Prompts"
-	p.DrawText(p.menu.GetX(), headerY, defaultHeader, tcell.StyleDefault.Bold(true))
+	// Draw border
+	p.drawListBorder(listX, listY, listWidth, listHeight)
 
-	// Draw Custom Prompts header if there are custom or MCP prompts
-	if len(p.customPrompts) > 0 || len(p.mcpPrompts) > 0 {
-		customY := headerY + len(p.defaultPrompts) + 3
-		customHeader := "Custom Prompts"
-		if p.mcpConnected {
-			customHeader = "Custom Prompts (including MCP)"
+	// Draw title
+	title := " System Prompts "
+	titleX := listX + (listWidth-len(title))/2
+	p.DrawText(titleX, listY, title, tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true))
+
+	// Calculate visible area
+	contentY := listY + 2
+	visibleHeight := listHeight - 4 // Account for borders and instructions
+
+	// Calculate display position for selected prompt
+	// We need to account for headers and spacing in the display
+	displayIndex := p.getDisplayIndex(p.selectedPromptIndex)
+
+	// Adjust scroll offset to keep selected item visible
+	if displayIndex < p.scrollOffset {
+		p.scrollOffset = displayIndex
+	} else if displayIndex >= p.scrollOffset + visibleHeight {
+		p.scrollOffset = displayIndex - visibleHeight + 1
+	}
+
+	// Draw prompts
+	currentY := contentY
+	itemIndex := 0
+
+	// Draw default prompts section
+	if len(p.defaultPrompts) > 0 {
+		// Only draw header if it's visible
+		if itemIndex >= p.scrollOffset && currentY < contentY + visibleHeight {
+			sectionHeader := "─── Default Prompts ───"
+			headerX := listX + (listWidth-len(sectionHeader))/2
+			p.DrawText(headerX, currentY, sectionHeader, tcell.StyleDefault.Foreground(tcell.ColorTeal))
+			currentY++
 		}
-		p.DrawText(p.menu.GetX(), customY, customHeader, tcell.StyleDefault.Bold(true))
+		itemIndex++
+
+		for i, prompt := range p.defaultPrompts {
+			if itemIndex >= p.scrollOffset && currentY < contentY + visibleHeight {
+				p.drawPromptItem(listX+2, currentY, listWidth-4, i, &prompt, i == p.selectedPromptIndex)
+				currentY++
+			}
+			itemIndex++
+		}
+	}
+
+	// Draw custom prompts section
+	if len(p.customPrompts) > 0 || len(p.mcpPrompts) > 0 {
+		// Add spacing
+		if itemIndex >= p.scrollOffset && currentY < contentY + visibleHeight {
+			currentY++ // Empty line for spacing
+		}
+		itemIndex++
+
+		// Only draw header if it's visible
+		if itemIndex >= p.scrollOffset && currentY < contentY + visibleHeight {
+			sectionHeader := "─── Custom Prompts ───"
+			if p.mcpConnected && len(p.mcpPrompts) > 0 {
+				sectionHeader = "─── Custom Prompts (including MCP) ───"
+			}
+			headerX := listX + (listWidth-len(sectionHeader))/2
+			p.DrawText(headerX, currentY, sectionHeader, tcell.StyleDefault.Foreground(tcell.ColorYellow).Bold(true))
+			currentY++
+		}
+		itemIndex++
+
+		for i, prompt := range p.customPrompts {
+			promptIdx := len(p.defaultPrompts) + i
+			if itemIndex >= p.scrollOffset && currentY < contentY + visibleHeight {
+				p.drawPromptItem(listX+2, currentY, listWidth-4, promptIdx, &prompt, promptIdx == p.selectedPromptIndex)
+				currentY++
+			}
+			itemIndex++
+		}
+
+		for i, prompt := range p.mcpPrompts {
+			promptIdx := len(p.defaultPrompts) + len(p.customPrompts) + i
+			if itemIndex >= p.scrollOffset && currentY < contentY + visibleHeight {
+				p.drawPromptItem(listX+2, currentY, listWidth-4, promptIdx, &prompt, promptIdx == p.selectedPromptIndex)
+				currentY++
+			}
+			itemIndex++
+		}
+	}
+
+	// Draw scroll indicators
+	if p.scrollOffset > 0 {
+		p.DrawText(listX+listWidth-3, contentY, "↑", tcell.StyleDefault.Foreground(tcell.ColorYellow))
+	}
+	totalItems := len(p.defaultPrompts) + len(p.customPrompts) + len(p.mcpPrompts) + 2 // +2 for section headers
+	if len(p.customPrompts) > 0 || len(p.mcpPrompts) > 0 {
+		totalItems++ // +1 for spacing line
+	}
+	if p.scrollOffset + visibleHeight < totalItems {
+		p.DrawText(listX+listWidth-3, contentY+visibleHeight-1, "↓", tcell.StyleDefault.Foreground(tcell.ColorYellow))
 	}
 
 	// Draw instructions at the bottom
-	instructions := " Enter:View | Space:Toggle | N:New | D:Delete | ESC:Back "
-	x := (w - len(instructions)) / 2
-	y := p.menu.GetY() + p.menu.GetHeight() + 1
+	instructions := " ↑↓:Navigate | Enter:View | Space:Toggle | N:New | D/Backspace:Delete | ESC:Back "
+	instructionsX := listX + (listWidth-len(instructions))/2
+	if instructionsX < listX + 2 {
+		// If instructions are too long, use shorter version
+		instructions = " ↑↓ Enter Space N D/⌫ ESC "
+		instructionsX = listX + (listWidth-len(instructions))/2
+	}
+	p.DrawText(instructionsX, listY+listHeight-2, instructions, tcell.StyleDefault.Foreground(tcell.ColorYellow))
+}
 
-	style := tcell.StyleDefault.Foreground(tcell.ColorYellow)
-	p.DrawText(x, y, instructions, style)
+// drawListBorder draws the border for the prompt list
+func (p *PromptsPage) drawListBorder(x, y, w, h int) {
+	// Clear background
+	bgStyle := tcell.StyleDefault.Background(tcell.ColorBlack)
+	for row := 0; row < h; row++ {
+		for col := 0; col < w; col++ {
+			p.screen.SetContent(x+col, y+row, ' ', nil, bgStyle)
+		}
+	}
+
+	// Draw border
+	style := tcell.StyleDefault.Foreground(tcell.ColorGreen)
+	// Top
+	p.screen.SetContent(x, y, '╔', nil, style)
+	for i := 1; i < w-1; i++ {
+		p.screen.SetContent(x+i, y, '═', nil, style)
+	}
+	p.screen.SetContent(x+w-1, y, '╗', nil, style)
+
+	// Sides
+	for i := 1; i < h-1; i++ {
+		p.screen.SetContent(x, y+i, '║', nil, style)
+		p.screen.SetContent(x+w-1, y+i, '║', nil, style)
+	}
+
+	// Bottom
+	p.screen.SetContent(x, y+h-1, '╚', nil, style)
+	for i := 1; i < w-1; i++ {
+		p.screen.SetContent(x+i, y+h-1, '═', nil, style)
+	}
+	p.screen.SetContent(x+w-1, y+h-1, '╝', nil, style)
+}
+
+// drawPromptItem draws a single prompt item
+func (p *PromptsPage) drawPromptItem(x, y, width, index int, prompt *Prompt, selected bool) {
+	// Determine style
+	style := tcell.StyleDefault.Foreground(tcell.ColorWhite)
+	if selected {
+		style = tcell.StyleDefault.Background(tcell.ColorBlue).Foreground(tcell.ColorWhite)
+		// Clear the entire line for selection highlight
+		for i := 0; i < width; i++ {
+			p.screen.SetContent(x+i, y, ' ', nil, style)
+		}
+	}
+
+	// Draw checkbox
+	checkbox := "☐"
+	if prompt.IsEnabled {
+		checkbox = "✓"
+	}
+	p.DrawText(x, y, checkbox, style)
+
+	// Draw number and name
+	text := fmt.Sprintf(" %d. %s", index+1, prompt.Name)
+	if len(text) > width-3 {
+		text = text[:width-6] + "..."
+	}
+	p.DrawText(x+2, y, text, style)
+
+	// Add type indicator
+	if prompt.IsDefault {
+		p.DrawText(x+width-10, y, "[default]", style)
+	} else if prompt.IsMCP {
+		p.DrawText(x+width-6, y, "[mcp]", style)
+	}
 }
 
 // drawViewMode renders the prompt viewer
@@ -320,19 +482,60 @@ func (p *PromptsPage) drawEditMode() {
 
 // drawCreateMode renders the prompt creation interface
 func (p *PromptsPage) drawCreateMode() {
-	_, h := p.screen.Size()
+	w, h := p.screen.Size()
 
 	// Draw title
 	title := " Create New System Prompt "
 	titleStyle := tcell.StyleDefault.Foreground(tcell.ColorGreen).Bold(true)
 	p.DrawCenteredText(2, title, titleStyle)
 
-	// Draw editor
+	// Calculate positions
+	formX := (w - 60) / 2
+	formY := 5
+
+	// Draw name input field
+	nameLabel := "Name: "
+	p.DrawText(formX, formY, nameLabel, tcell.StyleDefault.Bold(true))
+
+	// Draw name input box
+	nameBoxX := formX + len(nameLabel)
+	nameBoxWidth := 50
+	nameBoxStyle := tcell.StyleDefault.Background(tcell.ColorDarkGray)
+	if p.editingName {
+		nameBoxStyle = tcell.StyleDefault.Background(tcell.ColorDarkBlue)
+	}
+
+	// Draw input box background
+	for i := 0; i < nameBoxWidth; i++ {
+		p.screen.SetContent(nameBoxX+i, formY, ' ', nil, nameBoxStyle)
+	}
+
+	// Draw name text
+	displayName := p.nameInput
+	if len(displayName) > nameBoxWidth-2 {
+		displayName = displayName[len(displayName)-nameBoxWidth+2:]
+	}
+	p.DrawText(nameBoxX+1, formY, displayName, nameBoxStyle.Foreground(tcell.ColorWhite))
+
+	// Draw cursor if editing name
+	if p.editingName {
+		cursorX := nameBoxX + 1 + len(displayName)
+		if cursorX < nameBoxX + nameBoxWidth - 1 {
+			p.screen.SetContent(cursorX, formY, '█', nil, nameBoxStyle.Foreground(tcell.ColorYellow))
+		}
+	}
+
+	// Draw content label
+	p.DrawText(formX, formY+2, "Content:", tcell.StyleDefault.Bold(true))
+
+	// Adjust editor position to be below the input field
+	p.editor.SetPosition(formX, formY+3)
+	p.editor.SetDimensions(60, h-formY-6)
 	p.editor.SetReadOnly(false)
 	p.editor.Draw()
 
 	// Draw instructions
-	instructions := " Ctrl-S:Save | ESC:Cancel "
+	instructions := " Tab:Toggle Name/Content | Ctrl-S:Save | ESC:Cancel "
 	p.DrawCenteredText(h-2, instructions, tcell.StyleDefault.Foreground(tcell.ColorYellow))
 }
 
@@ -349,46 +552,206 @@ func (p *PromptsPage) HandleInput(ev *tcell.EventKey) bool {
 	return false
 }
 
-// handleListInput handles input in list mode
-func (p *PromptsPage) handleListInput(ev *tcell.EventKey) bool {
-	// Let menu handle navigation
-	item, exit := p.menu.HandleInput(ev)
-
-	if exit {
-		return true // Exit the page
+// HandleMouse processes mouse events
+func (p *PromptsPage) HandleMouse(event *core.MouseEvent) bool {
+	if p.currentMode != PromptModeList {
+		return false
 	}
 
-	if item != nil {
-		// Enter pressed - view the prompt
-		if menuItem, ok := item.(*PromptMenuItem); ok {
-			p.selectedPrompt = menuItem.prompt
-			p.editor.SetText(p.selectedPrompt.Content)
-			p.currentMode = PromptModeView
+	w, h := p.screen.Size()
+	listWidth := 70
+	listHeight := h - 10
+	listX := (w - listWidth) / 2
+	listY := 3
+
+	// Check if click is outside the list
+	if !core.IsWithinBounds(event.X, event.Y, listX, listY, listWidth, listHeight) {
+		if event.Type == core.MouseEventClick && event.Button == core.MouseButtonLeft {
+			return true // Exit on click outside
 		}
 		return false
 	}
 
-	// Handle other keys
+	switch event.Type {
+	case core.MouseEventScroll:
+		// Handle mouse wheel scrolling
+		totalPrompts := len(p.defaultPrompts) + len(p.customPrompts) + len(p.mcpPrompts)
+		if event.Button == core.MouseWheelUp {
+			if p.selectedPromptIndex > 0 {
+				p.selectedPromptIndex--
+			}
+		} else if event.Button == core.MouseWheelDown {
+			if p.selectedPromptIndex < totalPrompts - 1 {
+				p.selectedPromptIndex++
+			}
+		}
+
+	case core.MouseEventHover:
+		// Handle mouse hover
+		contentY := listY + 2
+		hoveredRow := event.Y - contentY + p.scrollOffset
+
+		// Find which prompt corresponds to this display row
+		promptIndex := p.getPromptIndexAtDisplayRow(hoveredRow)
+		if promptIndex >= 0 {
+			p.selectedPromptIndex = promptIndex
+		}
+
+	case core.MouseEventClick:
+		if event.Button == core.MouseButtonLeft {
+			// Calculate which item was clicked
+			contentY := listY + 2
+			clickedRow := event.Y - contentY + p.scrollOffset
+
+			// Find which prompt corresponds to this display row
+			promptIndex := p.getPromptIndexAtDisplayRow(clickedRow)
+			if promptIndex >= 0 {
+				p.selectedPromptIndex = promptIndex
+
+				// View the selected prompt
+				prompt := p.getPromptAtIndex(promptIndex)
+				if prompt != nil {
+					p.selectedPrompt = prompt
+					p.editor.SetText(p.selectedPrompt.Content)
+					p.currentMode = PromptModeView
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+// getDisplayIndex converts a prompt index to display row index (accounting for headers/spacing)
+func (p *PromptsPage) getDisplayIndex(promptIndex int) int {
+	// Start with 1 for the default header
+	displayIndex := 1
+
+	if promptIndex < len(p.defaultPrompts) {
+		// It's a default prompt
+		return displayIndex + promptIndex
+	}
+
+	// Move past default prompts
+	displayIndex += len(p.defaultPrompts)
+
+	// Add spacing and custom header if there are custom/MCP prompts
+	if len(p.customPrompts) > 0 || len(p.mcpPrompts) > 0 {
+		displayIndex += 2 // spacing + custom header
+
+		// Calculate position within custom/MCP prompts
+		customIndex := promptIndex - len(p.defaultPrompts)
+		return displayIndex + customIndex
+	}
+
+	return displayIndex
+}
+
+// getPromptIndexAtDisplayRow converts a display row to prompt index (-1 if not a prompt)
+func (p *PromptsPage) getPromptIndexAtDisplayRow(displayRow int) int {
+	currentRow := 0
+
+	// Skip default header
+	currentRow++
+	if displayRow < currentRow {
+		return -1
+	}
+
+	// Check default prompts
+	for i := range p.defaultPrompts {
+		if displayRow == currentRow {
+			return i
+		}
+		currentRow++
+	}
+
+	// Skip spacing and custom header if they exist
+	if len(p.customPrompts) > 0 || len(p.mcpPrompts) > 0 {
+		currentRow++ // spacing
+		if displayRow < currentRow {
+			return -1
+		}
+		currentRow++ // custom header
+		if displayRow < currentRow {
+			return -1
+		}
+
+		// Check custom prompts
+		for i := range p.customPrompts {
+			if displayRow == currentRow {
+				return len(p.defaultPrompts) + i
+			}
+			currentRow++
+		}
+
+		// Check MCP prompts
+		for i := range p.mcpPrompts {
+			if displayRow == currentRow {
+				return len(p.defaultPrompts) + len(p.customPrompts) + i
+			}
+			currentRow++
+		}
+	}
+
+	return -1
+}
+
+// handleListInput handles input in list mode
+func (p *PromptsPage) handleListInput(ev *tcell.EventKey) bool {
+	totalPrompts := len(p.defaultPrompts) + len(p.customPrompts) + len(p.mcpPrompts)
+
 	switch ev.Key() {
+	case tcell.KeyEscape:
+		return true // Exit the page
+
+	case tcell.KeyUp:
+		if p.selectedPromptIndex > 0 {
+			p.selectedPromptIndex--
+		}
+		return false
+
+	case tcell.KeyDown:
+		if p.selectedPromptIndex < totalPrompts - 1 {
+			p.selectedPromptIndex++
+		}
+		return false
+
+	case tcell.KeyEnter:
+		prompt := p.getPromptAtIndex(p.selectedPromptIndex)
+		if prompt != nil {
+			p.selectedPrompt = prompt
+			p.editor.SetText(p.selectedPrompt.Content)
+			p.currentMode = PromptModeView
+		}
+		return false
+
+	case tcell.KeyBackspace, tcell.KeyBackspace2:
+		// Delete selected prompt (only custom, non-MCP prompts)
+		prompt := p.getPromptAtIndex(p.selectedPromptIndex)
+		if prompt != nil && !prompt.IsDefault && !prompt.IsMCP {
+			p.deletePrompt(prompt)
+			// Adjust selection after deletion
+			if p.selectedPromptIndex >= totalPrompts - 1 && p.selectedPromptIndex > 0 {
+				p.selectedPromptIndex--
+			}
+		}
+		return false
+
 	case tcell.KeyRune:
 		switch ev.Rune() {
 		case ' ':
 			// Toggle enabled status
-			if item := p.menu.GetSelectedItem(); item != nil {
-				if menuItem, ok := item.(*PromptMenuItem); ok {
-					p.togglePrompt(menuItem.prompt)
-				}
+			prompt := p.getPromptAtIndex(p.selectedPromptIndex)
+			if prompt != nil {
+				p.togglePrompt(prompt)
 			}
 			return false
 
 		case 'e', 'E':
 			// Edit selected prompt (only for custom prompts)
-			if item := p.menu.GetSelectedItem(); item != nil {
-				if menuItem, ok := item.(*PromptMenuItem); ok {
-					if !menuItem.prompt.IsDefault && !menuItem.prompt.IsMCP {
-						p.startEdit(menuItem.prompt)
-					}
-				}
+			prompt := p.getPromptAtIndex(p.selectedPromptIndex)
+			if prompt != nil && !prompt.IsDefault && !prompt.IsMCP {
+				p.startEdit(prompt)
 			}
 			return false
 
@@ -399,11 +762,27 @@ func (p *PromptsPage) handleListInput(ev *tcell.EventKey) bool {
 
 		case 'd', 'D':
 			// Delete selected prompt (only custom, non-MCP prompts)
-			if item := p.menu.GetSelectedItem(); item != nil {
-				if menuItem, ok := item.(*PromptMenuItem); ok {
-					if !menuItem.prompt.IsDefault && !menuItem.prompt.IsMCP {
-						p.deletePrompt(menuItem.prompt)
-					}
+			prompt := p.getPromptAtIndex(p.selectedPromptIndex)
+			if prompt != nil && !prompt.IsDefault && !prompt.IsMCP {
+				p.deletePrompt(prompt)
+				// Adjust selection after deletion
+				if p.selectedPromptIndex >= totalPrompts - 1 && p.selectedPromptIndex > 0 {
+					p.selectedPromptIndex--
+				}
+			}
+			return false
+
+		case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			// Number key selection (1-indexed to 0-indexed)
+			num := int(ev.Rune() - '0') - 1
+			if num < totalPrompts {
+				p.selectedPromptIndex = num
+				// Directly view the prompt
+				prompt := p.getPromptAtIndex(num)
+				if prompt != nil {
+					p.selectedPrompt = prompt
+					p.editor.SetText(p.selectedPrompt.Content)
+					p.currentMode = PromptModeView
 				}
 			}
 			return false
@@ -451,6 +830,36 @@ func (p *PromptsPage) handleViewInput(ev *tcell.EventKey) bool {
 
 // handleEditInput handles input in edit/create mode
 func (p *PromptsPage) handleEditInput(ev *tcell.EventKey) bool {
+	// In create mode, handle field navigation
+	if p.currentMode == PromptModeCreate {
+		// Handle Tab key for field navigation (toggle between name and content)
+		if ev.Key() == tcell.KeyTab {
+			p.editingName = !p.editingName
+			return false
+		}
+
+		// Handle input in name field
+		if p.editingName {
+			switch ev.Key() {
+			case tcell.KeyBackspace, tcell.KeyBackspace2:
+				if len(p.nameInput) > 0 {
+					p.nameInput = p.nameInput[:len(p.nameInput)-1]
+				}
+				return false
+
+			case tcell.KeyRune:
+				p.nameInput += string(ev.Rune())
+				return false
+
+			case tcell.KeyEnter:
+				// Move to content field
+				p.editingName = false
+				return false
+			}
+		}
+	}
+
+	// Common handling for both edit and create modes
 	switch ev.Key() {
 	case tcell.KeyEscape:
 		// Cancel editing
@@ -464,9 +873,11 @@ func (p *PromptsPage) handleEditInput(ev *tcell.EventKey) bool {
 		return false
 
 	default:
-		// Let editor handle the input
-		if p.editor.HandleInput(ev) {
-			p.SetDirty(true)
+		// Let editor handle the input if not in name field
+		if !p.editingName {
+			if p.editor.HandleInput(ev) {
+				p.SetDirty(true)
+			}
 		}
 	}
 
@@ -498,14 +909,19 @@ func (p *PromptsPage) startEdit(prompt *Prompt) {
 // startCreate starts creating a new prompt
 func (p *PromptsPage) startCreate() {
 	p.editingPrompt = &Prompt{
-		ID:          fmt.Sprintf("custom-%d", len(p.customPrompts)),
+		ID:          fmt.Sprintf("custom-%d-%d", len(p.customPrompts), time.Now().Unix()),
 		Name:        "New Prompt",
 		Content:     "",
-		Description: "A new custom system prompt",
+		Description: "", // No description for custom prompts
 		IsDefault:   false,
 		IsMCP:       false,
-		IsEnabled:   false,
+		IsEnabled:   true, // Enable by default so it's added to system prompt
 	}
+
+	// Initialize input fields
+	p.nameInput = "New Prompt"
+	p.editingName = true  // Start with name field focused
+	p.cursorPos = len(p.nameInput)
 
 	p.editor.SetText("")
 	p.currentMode = PromptModeCreate
@@ -517,6 +933,10 @@ func (p *PromptsPage) savePrompt() {
 		return
 	}
 
+	// Update prompt with current field values
+	if p.currentMode == PromptModeCreate {
+		p.editingPrompt.Name = p.nameInput
+	}
 	p.editingPrompt.Content = p.editor.GetText()
 
 	// Check if this is a new prompt or update
@@ -534,12 +954,33 @@ func (p *PromptsPage) savePrompt() {
 		p.customPrompts = append(p.customPrompts, *p.editingPrompt)
 	}
 
+	// Save custom prompts to config
+	p.saveCustomPromptsToConfig()
+
 	// Update system prompt if needed
 	p.updateSystemPrompt()
 
 	p.SetDirty(false)
 	p.updateMenuItems()
 	p.currentMode = PromptModeList
+}
+
+// saveCustomPromptsToConfig persists custom prompts to configuration
+func (p *PromptsPage) saveCustomPromptsToConfig() {
+	// Convert custom prompts to config format
+	configPrompts := make([]core.CustomPrompt, 0, len(p.customPrompts))
+	for _, prompt := range p.customPrompts {
+		configPrompts = append(configPrompts, core.CustomPrompt{
+			ID:      prompt.ID,
+			Name:    prompt.Name,
+			Content: prompt.Content,
+		})
+	}
+
+	// Update config
+	p.config.Update(func(cfg *core.Config) {
+		cfg.CustomPrompts = configPrompts
+	})
 }
 
 // deletePrompt deletes a prompt
@@ -557,6 +998,10 @@ func (p *PromptsPage) deletePrompt(prompt *Prompt) {
 		}
 	}
 	p.customPrompts = newPrompts
+
+	// Save updated custom prompts to config
+	p.saveCustomPromptsToConfig()
+
 	p.updateMenuItems()
 }
 
@@ -593,35 +1038,40 @@ func (p *PromptsPage) togglePrompt(prompt *Prompt) {
 
 // updateSystemPrompt combines all enabled prompts into the system prompt
 func (p *PromptsPage) updateSystemPrompt() {
-	var enabledPrompts []string
+	var enabledPromptContents []string
+	var enabledPromptIDs []string
 
 	// Collect enabled default prompts
 	for _, prompt := range p.defaultPrompts {
 		if prompt.IsEnabled {
-			enabledPrompts = append(enabledPrompts, prompt.Content)
+			enabledPromptContents = append(enabledPromptContents, prompt.Content)
+			enabledPromptIDs = append(enabledPromptIDs, prompt.ID)
 		}
 	}
 
 	// Collect enabled custom prompts
 	for _, prompt := range p.customPrompts {
 		if prompt.IsEnabled {
-			enabledPrompts = append(enabledPrompts, prompt.Content)
+			enabledPromptContents = append(enabledPromptContents, prompt.Content)
+			enabledPromptIDs = append(enabledPromptIDs, prompt.ID)
 		}
 	}
 
 	// Collect enabled MCP prompts
 	for _, prompt := range p.mcpPrompts {
 		if prompt.IsEnabled {
-			enabledPrompts = append(enabledPrompts, prompt.Content)
+			enabledPromptContents = append(enabledPromptContents, prompt.Content)
+			enabledPromptIDs = append(enabledPromptIDs, prompt.ID)
 		}
 	}
 
 	// Combine all enabled prompts
-	combinedPrompt := strings.Join(enabledPrompts, "\n\n")
+	combinedPrompt := strings.Join(enabledPromptContents, "\n\n")
 
-	// Update config
+	// Update config - save both the combined prompt and the list of enabled IDs
 	p.config.Update(func(cfg *core.Config) {
 		cfg.SystemPrompt = combinedPrompt
+		cfg.EnabledPrompts = enabledPromptIDs
 	})
 }
 

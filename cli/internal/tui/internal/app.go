@@ -23,8 +23,8 @@ type App struct {
 	chatPanel      *components.ChatPanel
 	confirmDialog  *components.ConfirmDialog
 
-	// Configuration view pages (read-only)
-	promptsPage    *pages.PromptsReadOnlyPage
+	// Configuration view pages
+	promptsPage    *pages.PromptsPage
 	functionsPage  *pages.FunctionsPage
 	mcpServersPage *pages.MCPServersPage
 	ragPage        *pages.RAGPage
@@ -156,7 +156,7 @@ The chat interface supports both simple messages and complex conversations with 
 
 	a.mainMenu.AddItem(&components.BasicMenuItem{
 		Number:      2,
-		Title:       "Manage Prompts",
+		Title:       "System Prompts",
 		Description: "Create and manage system prompts",
 		Info: `Manage system prompts that define the AI's behavior and personality.
 
@@ -651,10 +651,10 @@ func (a *App) showChat() error {
 }
 
 func (a *App) showPrompts() error {
-	// Create read-only prompts page
+	// Create prompts page with full functionality
 	if a.promptsPage == nil {
-		// Use the read-only version for viewing configuration
-		a.promptsPage = pages.NewPromptsReadOnlyPage(a.screen, a.config, a.state, a.eventBus)
+		// Use the full version with create/edit capabilities
+		a.promptsPage = pages.NewPromptsPage(a.screen, a.config, a.state, a.eventBus)
 	}
 	a.currentPanel = PanelPrompts
 	a.needsRedraw = true
