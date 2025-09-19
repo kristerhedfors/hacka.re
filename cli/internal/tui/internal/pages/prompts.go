@@ -836,8 +836,9 @@ func (p *PromptsPage) HandleMouse(event *core.MouseEvent) bool {
 
 		// Find which prompt corresponds to this display row
 		promptIndex := p.getPromptIndexAtDisplayRow(hoveredRow)
-		if promptIndex >= 0 {
+		if promptIndex >= 0 && promptIndex != p.selectedPromptIndex {
 			p.selectedPromptIndex = promptIndex
+			return true // Trigger redraw when selection changes
 		}
 
 	case core.MouseEventClick:
