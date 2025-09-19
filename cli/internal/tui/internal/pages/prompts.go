@@ -858,6 +858,8 @@ func (p *PromptsPage) HandleMouse(event *core.MouseEvent) bool {
 					p.selectedPrompt = prompt
 					p.editor.SetText(p.selectedPrompt.Content)
 					p.currentMode = PromptModeView
+					p.viewScrollOffset = 0 // Reset scroll position when opening viewer
+					return true // Trigger redraw to show the viewer
 				}
 			}
 		}
