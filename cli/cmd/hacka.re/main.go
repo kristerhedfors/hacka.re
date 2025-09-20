@@ -72,6 +72,26 @@ func main() {
 			// Handle browse subcommand
 			BrowseCommand(os.Args[2:])
 			return
+		case "firefox", "ff":
+			// Handle firefox/ff subcommand
+			FirefoxCommand(os.Args[2:])
+			return
+		case "chrome":
+			// Handle chrome subcommand
+			ChromeCommand(os.Args[2:])
+			return
+		case "brave":
+			// Handle brave subcommand
+			BraveCommand(os.Args[2:])
+			return
+		case "edge":
+			// Handle edge subcommand
+			EdgeCommand(os.Args[2:])
+			return
+		case "safari":
+			// Handle safari subcommand
+			SafariCommand(os.Args[2:])
+			return
 		case "serve":
 			// Handle serve subcommand
 			ServeCommand(os.Args[2:])
@@ -157,7 +177,12 @@ func showMainHelp() {
 	fmt.Fprintf(os.Stderr, "hacka.re CLI - serverless agency\n\n")
 	fmt.Fprintf(os.Stderr, "Usage: %s [COMMAND] [OPTIONS] [ARGUMENTS]\n\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "Commands:\n")
-	fmt.Fprintf(os.Stderr, "  browse       Start web server and open browser\n")
+	fmt.Fprintf(os.Stderr, "  browse       Start web server and open default browser\n")
+	fmt.Fprintf(os.Stderr, "  firefox, ff  Start web server and open Firefox (with profile support)\n")
+	fmt.Fprintf(os.Stderr, "  chrome       Start web server and open Chrome (with profile support)\n")
+	fmt.Fprintf(os.Stderr, "  brave        Start web server and open Brave (with profile support)\n")
+	fmt.Fprintf(os.Stderr, "  edge         Start web server and open Edge (with profile support)\n")
+	fmt.Fprintf(os.Stderr, "  safari       Start web server and open Safari (macOS only)\n")
 	fmt.Fprintf(os.Stderr, "  serve        Start web server without opening browser\n")
 	fmt.Fprintf(os.Stderr, "  chat         Start interactive chat session with AI models\n")
 	fmt.Fprintf(os.Stderr, "  function     Manage JavaScript functions for tool calling\n")
