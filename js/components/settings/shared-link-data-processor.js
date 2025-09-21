@@ -9,6 +9,11 @@ function createSharedLinkDataProcessor() {
      * @returns {string} Masked API key
      */
     function maskApiKey(apiKey) {
+        // Special case for 'no-key' used by llamafile and local LLMs
+        if (apiKey === 'no-key') {
+            return 'no-key (local LLM)';
+        }
+
         if (!apiKey || apiKey.length < 14) {
             return "Invalid API key format";
         }

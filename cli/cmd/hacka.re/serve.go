@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/hacka-re/cli/internal/offline"
 	"github.com/hacka-re/cli/internal/share"
 	"github.com/hacka-re/cli/internal/utils"
 	"github.com/hacka-re/cli/internal/web"
@@ -39,6 +40,8 @@ func ServeCommand(args []string) {
 	verbose := serveFlags.Bool("verbose", false, "Verbose mode - log each request")
 	verboseShort := serveFlags.Bool("v", false, "Verbose mode - log each request (short form)")
 	veryVerbose := serveFlags.Bool("vv", false, "Very verbose mode - log requests with headers")
+	offlineMode := serveFlags.Bool("offline", false, "Start in offline mode with local llamafile")
+	offlineModeShort := serveFlags.Bool("o", false, "Start in offline mode (short form)")
 	help := serveFlags.Bool("help", false, "Show help message")
 	helpShort := serveFlags.Bool("h", false, "Show help message (short form)")
 	
@@ -52,6 +55,7 @@ func ServeCommand(args []string) {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		fmt.Fprintf(os.Stderr, "  -p, --port PORT       Port to serve on (default: 8080)\n")
 		fmt.Fprintf(os.Stderr, "  --host HOST           Host to bind to (default: localhost)\n")
+		fmt.Fprintf(os.Stderr, "  -o, --offline         Start in offline mode with local llamafile\n")
 		fmt.Fprintf(os.Stderr, "  -v, --verbose         Log each request (method, path, time)\n")
 		fmt.Fprintf(os.Stderr, "  -vv                   Very verbose - log requests with headers\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help            Show this help message\n\n")
@@ -87,7 +91,40 @@ func ServeCommand(args []string) {
 		serveFlags.Usage()
 		os.Exit(0)
 	}
-	
+
+	// Handle offline mode if requested
+	if *offlineMode || *offlineModeShort {
+		// Start offline mode first
+		fmt.Println("Starting offline mode...")
+		var llamafileManager *offline.LlamafileManager
+		offlineConfig, llamafileManager, err := offline.RunOfflineMode()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting offline mode: %v\n", err)
+			os.Exit(1)
+		}
+		// Ensure llamafile is stopped on exit
+		defer func() {
+			if llamafileManager != nil {
+				fmt.Println("Stopping llamafile server...")
+				llamafileManager.Stop()
+			}
+		}()
+
+		// Print offline mode info
+		offline.PrintOfflineModeInfo(offlineConfig)
+
+		// Override session with offline configuration
+		// The offline config already has the encrypted share URL and password
+		remainingArgs := serveFlags.Args()
+		if len(remainingArgs) == 0 {
+			// Use the offline share URL as the session
+			remainingArgs = []string{offlineConfig.ShareURL}
+		}
+
+		// Continue with regular serve flow using offline configuration
+		// Note: sessionLink and password will be handled below
+	}
+
 	// Determine port
 	serverPort := 8080
 	if *port != 0 {
