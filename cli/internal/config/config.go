@@ -69,6 +69,11 @@ type Config struct {
 	VoiceControl   bool `json:"voiceControl"`   // Voice input
 	StreamResponse bool `json:"streamResponse"` // Stream API responses
 
+	// Offline mode settings (not serialized)
+	IsOfflineMode         bool `json:"-"` // Offline mode flag
+	AllowRemoteMCP        bool `json:"-"` // Allow remote MCP in offline mode
+	AllowRemoteEmbeddings bool `json:"-"` // Allow remote embeddings in offline mode
+
 	// Function Calling
 	Functions        []share.Function        `json:"functions,omitempty"`
 	DefaultFunctions map[string]bool         `json:"defaultFunctions,omitempty"`

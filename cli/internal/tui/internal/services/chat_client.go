@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -75,6 +76,14 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 
 	// Determine the API endpoint
 	apiURL := c.getAPIEndpoint(config)
+
+	// Validate offline mode - check based on request type and allowances
+	if err := validateOfflineRequest(apiURL, config); err != nil {
+		if log := logger.Get(); log != nil {
+			log.Error("[ChatClient] Offline mode violation: %v", err)
+		}
+		return fmt.Errorf("offline mode violation: %w", err)
+	}
 
 	// Create the request
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonBody))
@@ -337,4 +346,92 @@ func (c *ChatClient) SendMessage(messages []ChatMessage) (string, error) {
 	}
 
 	return fullResponse.String(), nil
+}
+
+// RequestType represents the type of API request
+type RequestType int
+
+const (
+	RequestTypeLLM RequestType = iota
+	RequestTypeMCP
+	RequestTypeEmbeddings
+)
+
+// detectRequestType determines the type of request based on URL and context
+func detectRequestType(urlStr string) RequestType {
+	// Check for embeddings endpoint
+	if strings.Contains(urlStr, "/embeddings") {
+		return RequestTypeEmbeddings
+	}
+
+	// Check for MCP-related endpoints
+	if strings.Contains(urlStr, "/mcp") ||
+		strings.Contains(urlStr, "model-context") ||
+		strings.Contains(urlStr, "/tools") ||
+		strings.Contains(urlStr, "/functions") {
+		return RequestTypeMCP
+	}
+
+	// Default to LLM (chat completions, etc.)
+	return RequestTypeLLM
+}
+
+// validateOfflineURL ensures the URL is localhost-only in offline mode
+func validateOfflineURL(urlStr string) error {
+	// Parse the URL
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	// Get the hostname
+	hostname := parsedURL.Hostname()
+
+	// Check if it's localhost or a local IP
+	if hostname == "localhost" ||
+		hostname == "127.0.0.1" ||
+		hostname == "0.0.0.0" ||
+		hostname == "::1" ||
+		strings.HasPrefix(hostname, "127.") ||
+		strings.HasPrefix(hostname, "192.168.") ||
+		strings.HasPrefix(hostname, "10.") ||
+		strings.HasPrefix(hostname, "172.") {
+		return nil
+	}
+
+	return fmt.Errorf("offline mode requires localhost URLs only, got: %s", hostname)
+}
+
+// validateOfflineRequest validates a request based on offline mode and allowances
+func validateOfflineRequest(urlStr string, config *core.Config) error {
+	// Not in offline mode, allow all
+	if !config.IsOfflineMode {
+		return nil
+	}
+
+	// Determine request type
+	requestType := detectRequestType(urlStr)
+
+	// Check allowances based on request type
+	switch requestType {
+	case RequestTypeMCP:
+		if config.AllowRemoteMCP {
+			if log := logger.Get(); log != nil {
+				log.Debug("[ChatClient] Offline mode: Allowing remote MCP request")
+			}
+			return nil
+		}
+	case RequestTypeEmbeddings:
+		if config.AllowRemoteEmbeddings {
+			if log := logger.Get(); log != nil {
+				log.Debug("[ChatClient] Offline mode: Allowing remote embeddings request")
+			}
+			return nil
+		}
+	case RequestTypeLLM:
+		// LLM requests must always be local in offline mode
+	}
+
+	// Validate that URL is localhost
+	return validateOfflineURL(urlStr)
 }

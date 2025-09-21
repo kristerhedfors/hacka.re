@@ -65,6 +65,11 @@ func (c *CLIConfigAdapter) GetNamespace() string {
 	return c.Config.Namespace
 }
 
+// GetIsOfflineMode returns whether offline mode is enabled
+func (c *CLIConfigAdapter) GetIsOfflineMode() bool {
+	return c.Config.IsOfflineMode
+}
+
 // WrapConfig wraps CLI config for TUI compatibility
 func WrapConfig(cfg *config.Config) interfaces.CLIConfig {
 	return &CLIConfigAdapter{Config: cfg}

@@ -28,6 +28,11 @@ type Config struct {
 	VoiceControl  bool   `json:"voice_control"`
 	SystemPrompt  string `json:"system_prompt"`
 
+	// Offline mode settings (not serialized)
+	IsOfflineMode         bool `json:"-"` // Offline mode flag
+	AllowRemoteMCP        bool `json:"-"` // Allow remote MCP in offline mode
+	AllowRemoteEmbeddings bool `json:"-"` // Allow remote embeddings in offline mode
+
 	// UI Preferences
 	Theme        string `json:"theme"`          // dark, light, auto
 	PanelLayout  string `json:"panel_layout"`   // horizontal, vertical

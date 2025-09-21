@@ -165,6 +165,9 @@ func main() {
 	apiKey := flag.String("api-key", "", "API key for remote providers")
 	baseURL := flag.String("base-url", "", "Custom API base URL")
 	model := flag.String("model", "", "Model name")
+	// Granular offline mode controls
+	allowRemoteMCP := flag.Bool("allow-remote-mcp", false, "Allow remote MCP connections in offline mode")
+	allowRemoteEmbeddings := flag.Bool("allow-remote-embeddings", false, "Allow remote embeddings API in offline mode")
 	helpLLM := flag.Bool("help-llm", false, "Show local LLM setup guide")
 	help := flag.Bool("help", false, "Show help message")
 	h := flag.Bool("h", false, "Show help message")
@@ -199,6 +202,16 @@ func main() {
 	if shouldStartOffline {
 		// Build args from global flags
 		offlineArgs := args
+
+		// Check if first arg is a shared link
+		// This allows: hacka.re --offline "gpt=eyJlbmM..."
+		if len(args) > 0 && (strings.Contains(args[0], "gpt=") ||
+			strings.Contains(args[0], "eyJ") ||
+			strings.Contains(args[0], "hacka.re/#")) {
+			// Pass the shared link as the first argument
+			offlineArgs = args
+		}
+
 		if *llamafile != "" {
 			offlineArgs = append(offlineArgs, "--llamafile", *llamafile)
 		}
@@ -213,6 +226,12 @@ func main() {
 		}
 		if *model != "" {
 			offlineArgs = append(offlineArgs, "--model", *model)
+		}
+		if *allowRemoteMCP {
+			offlineArgs = append(offlineArgs, "--allow-remote-mcp")
+		}
+		if *allowRemoteEmbeddings {
+			offlineArgs = append(offlineArgs, "--allow-remote-embeddings")
 		}
 		OfflineCommand(offlineArgs)
 		return

@@ -174,3 +174,26 @@ func ShowLocalLLMHelp() {
 	fmt.Println("For detailed setup of each provider, see:")
 	fmt.Println("https://hacka.re/about/local-llm-toolbox.html")
 }
+
+// ShowOfflineModeWithSharedLinkInfo displays info when using shared link in offline mode
+func ShowOfflineModeWithSharedLinkInfo(originalProvider string, localProvider string) {
+	fmt.Println("\n🔒 Offline Mode Safety Override")
+	fmt.Println("════════════════════════════════")
+	fmt.Println("Shared link configuration has been overridden for offline mode:")
+	if originalProvider != "" && originalProvider != localProvider {
+		fmt.Printf("  • Provider: %s → %s\n", originalProvider, localProvider)
+	}
+	fmt.Println("  • API endpoint: → localhost only")
+	fmt.Println("  • External APIs: → blocked")
+	fmt.Println()
+	fmt.Println("✓ Your shared link has been safely opened in offline mode")
+	fmt.Println("✓ All LLM requests will stay on your local machine")
+
+	if localProvider == "ollama" || localProvider == "llamafile" || localProvider == "custom" {
+		fmt.Printf("✓ Using local provider: %s\n", localProvider)
+	}
+
+	fmt.Println()
+	fmt.Println("Note: Ensure you have a local LLM running (Ollama, Llamafile, etc.)")
+	fmt.Println()
+}
