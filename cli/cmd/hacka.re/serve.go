@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -92,12 +93,35 @@ func ServeCommand(args []string) {
 		os.Exit(0)
 	}
 
+	// Track if we're coming from offline mode
+	var fromOfflineMode bool
+	var remainingArgs []string
+
 	// Handle offline mode if requested
 	if *offlineMode || *offlineModeShort {
+		fromOfflineMode = true
+
+		// Get remaining args to check for shared link
+		remainingArgs = serveFlags.Args()
+
+		// Process shared link if provided for offline mode
+		var fullSharedConfig *share.SharedConfig
+		var sharedLinkPassword string
+		if len(remainingArgs) > 0 {
+			// Parse the shared link and extract configuration
+			_, fullConfig, password, err := offline.ParseSharedLinkForOffline(remainingArgs[0])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error parsing shared link: %v\n", err)
+				os.Exit(1)
+			}
+			fullSharedConfig = fullConfig
+			sharedLinkPassword = password
+		}
+
 		// Start offline mode first
 		fmt.Println("Starting offline mode...")
 		var llamafileManager *offline.LlamafileManager
-		offlineConfig, llamafileManager, err := offline.RunOfflineMode(nil)
+		offlineConfig, llamafileManager, err := offline.RunOfflineMode(fullSharedConfig, sharedLinkPassword)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error starting offline mode: %v\n", err)
 			os.Exit(1)
@@ -113,16 +137,15 @@ func ServeCommand(args []string) {
 		// Print offline mode info
 		offline.PrintOfflineModeInfo(offlineConfig)
 
-		// Override session with offline configuration
-		// The offline config already has the encrypted share URL and password
-		remainingArgs := serveFlags.Args()
-		if len(remainingArgs) == 0 {
-			// Use the offline share URL as the session
-			remainingArgs = []string{offlineConfig.ShareURL}
-		}
+		// Use the offline share URL as the session
+		// This already contains the correct encrypted data with the original password
+		remainingArgs = []string{offlineConfig.ShareURL}
 
 		// Continue with regular serve flow using offline configuration
 		// Note: sessionLink and password will be handled below
+	} else {
+		// Get non-flag arguments (shared link components) for non-offline mode
+		remainingArgs = serveFlags.Args()
 	}
 
 	// Determine port
@@ -149,9 +172,6 @@ func ServeCommand(args []string) {
 	} else if *verbose || *verboseShort {
 		verbosityLevel = 1
 	}
-	
-	// Get non-flag arguments (shared link components)
-	remainingArgs := serveFlags.Args()
 
 	// Check for session from environment first, then command line
 	var sessionLink string
@@ -178,39 +198,57 @@ func ServeCommand(args []string) {
 	// Process session if provided
 	var sharedConfigFragment string
 	if sessionLink != "" {
-		// Parse the session link
-		fmt.Printf("Processing session from %s...\n", sessionSource)
+		// If we're coming from offline mode, the sessionLink is already processed
+		// and contains the correctly encrypted share URL from offline.RunOfflineMode
+		if fromOfflineMode {
+			// The offline mode has already created the proper share URL
+			// We just need to extract the fragment part for the web interface
+			if strings.Contains(sessionLink, "#gpt=") {
+				// Extract fragment from the full URL (https://hacka.re/#gpt=...)
+				parts := strings.Split(sessionLink, "#")
+				if len(parts) > 1 {
+					sharedConfigFragment = parts[1]
+				}
+			} else if strings.HasPrefix(sessionLink, "gpt=") {
+				// It's already a fragment
+				sharedConfigFragment = sessionLink
+			}
+			// Skip the "Session loaded successfully!" message since offline mode already printed its info
+		} else {
+			// Normal processing for non-offline mode
+			fmt.Printf("Processing session from %s...\n", sessionSource)
 
-		// Ask for password
-		password, err := utils.GetPassword("Enter password for session: ")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
-			os.Exit(1)
+			// Ask for password
+			password, err := utils.GetPassword("Enter password for session: ")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error reading password: %v\n", err)
+				os.Exit(1)
+			}
+
+			// Parse the URL/fragment
+			sharedConfig, err := share.ParseURL(sessionLink, password)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error parsing session: %v\n", err)
+				fmt.Println("\nThe password may be incorrect or the link may be corrupted.")
+				os.Exit(1)
+			}
+
+			// Validate the configuration
+			if err := share.ValidateConfig(sharedConfig); err != nil {
+				fmt.Fprintf(os.Stderr, "Invalid session configuration: %v\n", err)
+				os.Exit(1)
+			}
+
+			// Create a new shareable URL fragment for the web interface
+			sharedConfigFragment, err = createFragmentFromConfigServe(sharedConfig, password)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error creating fragment: %v\n", err)
+				os.Exit(1)
+			}
+
+			fmt.Println("✓ Session loaded successfully!")
+			fmt.Println()
 		}
-
-		// Parse the URL/fragment
-		sharedConfig, err := share.ParseURL(sessionLink, password)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing session: %v\n", err)
-			fmt.Println("\nThe password may be incorrect or the link may be corrupted.")
-			os.Exit(1)
-		}
-
-		// Validate the configuration
-		if err := share.ValidateConfig(sharedConfig); err != nil {
-			fmt.Fprintf(os.Stderr, "Invalid session configuration: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Create a new shareable URL fragment for the web interface
-		sharedConfigFragment, err = createFragmentFromConfigServe(sharedConfig, password)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating fragment: %v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Println("✓ Session loaded successfully!")
-		fmt.Println()
 	}
 	
 	// Print banner

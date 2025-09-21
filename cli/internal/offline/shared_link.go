@@ -8,25 +8,26 @@ import (
 	"github.com/hacka-re/cli/internal/utils"
 )
 
-// ParseSharedLinkForOffline parses a shared link and returns both configuration and full shared config for offline mode
-func ParseSharedLinkForOffline(input string) (*Configuration, *share.SharedConfig, error) {
+// ParseSharedLinkForOffline parses a shared link and returns configuration, full shared config, and password for offline mode
+func ParseSharedLinkForOffline(input string) (*Configuration, *share.SharedConfig, string, error) {
 	// First try without password to see if one is needed
+	var password string
 	sharedConfig, err := share.ParseURL(input, "")
 	if err != nil {
 		// If decryption failed, prompt for password
 		if strings.Contains(err.Error(), "decrypt") || strings.Contains(err.Error(), "password") {
-			password, pwErr := utils.GetPassword("Enter password for shared configuration: ")
-			if pwErr != nil {
-				return nil, nil, fmt.Errorf("failed to get password: %w", pwErr)
+			password, err = utils.GetPassword("Enter password for shared configuration: ")
+			if err != nil {
+				return nil, nil, "", fmt.Errorf("failed to get password: %w", err)
 			}
 
 			// Try again with password
 			sharedConfig, err = share.ParseURL(input, password)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to parse shared link: %w", err)
+				return nil, nil, "", fmt.Errorf("failed to parse shared link: %w", err)
 			}
 		} else {
-			return nil, nil, fmt.Errorf("failed to parse shared link: %w", err)
+			return nil, nil, "", fmt.Errorf("failed to parse shared link: %w", err)
 		}
 	}
 
@@ -42,7 +43,7 @@ func ParseSharedLinkForOffline(input string) (*Configuration, *share.SharedConfi
 		config.APIProvider = detectProviderFromURL(config.BaseURL)
 	}
 
-	return config, sharedConfig, nil
+	return config, sharedConfig, password, nil
 }
 
 // OverrideForOfflineMode overrides configuration to ensure offline/localhost only

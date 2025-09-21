@@ -10,18 +10,20 @@ import (
 
 // Config holds the offline mode configuration
 type Config struct {
-	LlamafilePath string
-	ModelName     string
-	Port          int
-	Password      string
-	ShareURL      string
-	WebPort       int
+	LlamafilePath       string
+	ModelName           string
+	Port                int
+	Password            string
+	ShareURL            string
+	WebPort             int
+	UsingOriginalPassword bool  // If true, don't print password (user already has it)
 }
 
 // RunOfflineMode starts the offline mode with llamafile
 // Returns the config and the LlamafileManager (caller must call manager.Stop())
 // If originalSharedConfig is provided, it preserves prompts, welcome messages, functions, etc.
-func RunOfflineMode(originalSharedConfig *share.SharedConfig) (*Config, *LlamafileManager, error) {
+// If originalPassword is provided, it uses that instead of generating a new one
+func RunOfflineMode(originalSharedConfig *share.SharedConfig, originalPassword string) (*Config, *LlamafileManager, error) {
 	config := &Config{
 		WebPort: 8000, // Default web server port
 	}
@@ -69,11 +71,21 @@ func RunOfflineMode(originalSharedConfig *share.SharedConfig) (*Config, *Llamafi
 	}
 	config.ModelName = modelName
 
-	// 4. Generate secure password
-	password, err := crypto.GenerateSecurePassword()
-	if err != nil {
-		manager.Stop()
-		return nil, nil, fmt.Errorf("failed to generate password: %w", err)
+	// 4. Use original password if provided, otherwise generate a new one
+	var password string
+	if originalPassword != "" {
+		// Use the original password from the shared link
+		password = originalPassword
+		config.UsingOriginalPassword = true
+	} else {
+		// Generate a new secure password
+		var err error
+		password, err = crypto.GenerateSecurePassword()
+		if err != nil {
+			manager.Stop()
+			return nil, nil, fmt.Errorf("failed to generate password: %w", err)
+		}
+		config.UsingOriginalPassword = false
 	}
 	config.Password = password
 
@@ -130,13 +142,21 @@ func PrintOfflineModeInfo(config *Config) {
 	fmt.Printf("║ 🌐 Web Server: http://localhost:%-10d ║\n", config.WebPort)
 	fmt.Println("╚════════════════════════════════════════════╝")
 	fmt.Println()
-	fmt.Println("🔑 Password for encrypted link:")
-	fmt.Printf("   %s\n", config.Password)
-	fmt.Println()
+
+	// Only print password if it's a newly generated one
+	if !config.UsingOriginalPassword {
+		fmt.Println("🔑 Password for encrypted link:")
+		fmt.Printf("   %s\n", config.Password)
+		fmt.Println()
+	}
+
 	fmt.Println("📎 Share link (contains encrypted configuration):")
 	fmt.Printf("   %s\n", config.ShareURL)
-	fmt.Println()
-	fmt.Println("Copy the password above to decrypt the configuration in your browser.")
+
+	if !config.UsingOriginalPassword {
+		fmt.Println()
+		fmt.Println("Copy the password above to decrypt the configuration in your browser.")
+	}
 }
 
 // truncateString truncates a string to the specified length
