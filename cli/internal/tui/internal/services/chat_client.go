@@ -150,6 +150,26 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 			continue
 		}
 
+		// Check for error response in body
+		// Some providers (e.g., Berget) return errors with 200 status code
+		if strings.Contains(line, `"error"`) && strings.Contains(line, `"message"`) {
+			var errResp struct {
+				Error struct {
+					Message string `json:"message"`
+					Type    string `json:"type"`
+					Code    string `json:"code"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal([]byte(line), &errResp); err == nil && errResp.Error.Message != "" {
+				errMsg := fmt.Sprintf("API Error: %s (type: %s, code: %s)",
+					errResp.Error.Message, errResp.Error.Type, errResp.Error.Code)
+				if log := logger.Get(); log != nil {
+					log.Error("[ChatClient] %s", errMsg)
+				}
+				return fmt.Errorf(errMsg)
+			}
+		}
+
 		// Parse SSE format
 		if strings.HasPrefix(line, "data: ") {
 			data := strings.TrimPrefix(line, "data: ")

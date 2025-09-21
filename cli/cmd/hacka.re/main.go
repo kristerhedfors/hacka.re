@@ -31,8 +31,11 @@ func main() {
 	// Initialize logger based on environment variable or debug flag
 	logLevel := os.Getenv("HACKARE_LOG_LEVEL")
 	if logLevel == "DEBUG" || logLevel == "debug" || debugMode {
-		// Use FIXED log path for consistent debugging
-		logPath := "/tmp/hacka_debug.log"
+		// Use log path from environment or default
+		logPath := os.Getenv("HACKARE_LOG_PATH")
+		if logPath == "" {
+			logPath = "/tmp/hacka_debug.log"
+		}
 
 		if err := logger.InitializeWithPath(logPath, true); err != nil {
 			// Only show this warning if we can't initialize logging
@@ -61,7 +64,7 @@ func main() {
 
 		// Notify user that debug mode is enabled
 		if debugMode {
-			fmt.Fprintf(os.Stderr, "Debug mode enabled. Log file: /tmp/hacka_debug.log\n")
+			fmt.Fprintf(os.Stderr, "Debug mode enabled. Log file: %s\n", logPath)
 		}
 	}
 
