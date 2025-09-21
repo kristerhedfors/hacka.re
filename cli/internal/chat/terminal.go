@@ -142,7 +142,8 @@ func (tc *TerminalChat) registerCommands() {
 				return tc.modalHandlers.OpenTUI()
 			}
 			// Fallback to static display if TUI not available
-			fmt.Println("\n════ Function Calling ════\n")
+			fmt.Println("\n════ Function Calling ════")
+			fmt.Println()
 			fmt.Println("Default Functions:")
 			fmt.Println("  ▶ RC4 Encryption (2 functions)")
 			fmt.Println("    ✓ rc4_encrypt - Encrypt with RC4")
@@ -166,7 +167,8 @@ func (tc *TerminalChat) registerCommands() {
 		Aliases:     []string{"p", "prompt"},
 		Description: "Show system prompts configuration",
 		Handler: func() error {
-			fmt.Println("\n════ System Prompts ════\n")
+			fmt.Println("\n════ System Prompts ════")
+			fmt.Println()
 			fmt.Println("Default Prompts:")
 			fmt.Println("  ✓ README.md provider - Generate comprehensive documentation")
 			fmt.Println("  ✓ Function library - Load all default functions")
@@ -184,7 +186,8 @@ func (tc *TerminalChat) registerCommands() {
 		Aliases:     []string{"servers"},
 		Description: "Show MCP server connections",
 		Handler: func() error {
-			fmt.Println("\n════ MCP Servers ════\n")
+			fmt.Println("\n════ MCP Servers ════")
+			fmt.Println()
 			fmt.Println("Quick Connectors:")
 			fmt.Println("  🔗 GitHub (PAT) - Not connected")
 			fmt.Println("  📧 Gmail (OAuth) - Not connected")
@@ -204,8 +207,10 @@ func (tc *TerminalChat) registerCommands() {
 		Aliases:     []string{"knowledge", "kb"},
 		Description: "Show RAG configuration",
 		Handler: func() error {
-			fmt.Println("\n════ RAG Configuration ════\n")
-			fmt.Println("☐ Enable RAG (Knowledge Base)\n")
+			fmt.Println("\n════ RAG Configuration ════")
+			fmt.Println()
+			fmt.Println("☐ Enable RAG (Knowledge Base)")
+			fmt.Println()
 			fmt.Println("EU Regulatory Documents:")
 			fmt.Println("  ☐ eIDAS Regulation")
 			fmt.Println("  ☐ PSD2 Directive")
@@ -227,7 +232,8 @@ func (tc *TerminalChat) registerCommands() {
 		Aliases:     []string{"link"},
 		Description: "Show share configuration",
 		Handler: func() error {
-			fmt.Println("\n════ Share Configuration ════\n")
+			fmt.Println("\n════ Share Configuration ════")
+			fmt.Println()
 			fmt.Println("Configuration to Share:")
 			fmt.Println("  ✓ API Settings")
 			fmt.Println("  ✓ Model Configuration")

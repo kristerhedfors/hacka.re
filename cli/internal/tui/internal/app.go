@@ -1,7 +1,7 @@
 package internal
 
 import (
-	// "fmt" // Unused - socket mode disabled
+	"fmt"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -712,7 +712,7 @@ func (a *App) handleMouseEvent(ev *tcell.EventMouse) {
 	mouseEvent := a.mouseManager.ProcessEvent(ev)
 
 	// Publish mouse event to event bus for any interested components
-	a.eventBus.PublishAsync(core.EventType("mouse_"+string(mouseEvent.Type)), mouseEvent)
+	a.eventBus.PublishAsync(core.EventType(fmt.Sprintf("mouse_%d", mouseEvent.Type)), mouseEvent)
 
 	// Handle exit confirmation dialog if it's showing
 	if a.showConfirmExit && a.confirmDialog != nil {
