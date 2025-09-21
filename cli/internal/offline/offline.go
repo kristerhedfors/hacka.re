@@ -19,7 +19,8 @@ type Config struct {
 }
 
 // RunOfflineMode starts the offline mode with llamafile
-func RunOfflineMode() (*Config, error) {
+// Returns the config and the LlamafileManager (caller must call manager.Stop())
+func RunOfflineMode() (*Config, *LlamafileManager, error) {
 	config := &Config{
 		WebPort: 8000, // Default web server port
 	}
@@ -31,7 +32,7 @@ func RunOfflineMode() (*Config, error) {
 		var err error
 		llamafilePath, err = AutoDetectLlamafile()
 		if err != nil {
-			return nil, fmt.Errorf("llamafile not found: %w\nPlease set HACKARE_LLAMAFILE environment variable to the path of your llamafile", err)
+			return nil, nil, fmt.Errorf("llamafile not found: %w\nPlease set HACKARE_LLAMAFILE environment variable to the path of your llamafile", err)
 		}
 		fmt.Printf("Auto-detected llamafile: %s\n", llamafilePath)
 	}
@@ -40,12 +41,12 @@ func RunOfflineMode() (*Config, error) {
 	// 2. Create and start llamafile manager
 	manager, err := NewLlamafileManager(llamafilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create llamafile manager: %w", err)
+		return nil, nil, fmt.Errorf("failed to create llamafile manager: %w", err)
 	}
 
 	fmt.Println("Starting llamafile server...")
 	if err := manager.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start llamafile: %w", err)
+		return nil, nil, fmt.Errorf("failed to start llamafile: %w", err)
 	}
 
 	// Store port
@@ -71,7 +72,7 @@ func RunOfflineMode() (*Config, error) {
 	password, err := crypto.GenerateSecurePassword()
 	if err != nil {
 		manager.Stop()
-		return nil, fmt.Errorf("failed to generate password: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate password: %w", err)
 	}
 	config.Password = password
 
@@ -86,15 +87,12 @@ func RunOfflineMode() (*Config, error) {
 	shareURL, err := share.CreateShareableURL(sharedConfig, password, "https://hacka.re/")
 	if err != nil {
 		manager.Stop()
-		return nil, fmt.Errorf("failed to create share link: %w", err)
+		return nil, nil, fmt.Errorf("failed to create share link: %w", err)
 	}
 	config.ShareURL = shareURL
 
-	// Store manager for later cleanup (caller should defer manager.Stop())
-	// Note: In real implementation, we'd return the manager or store it globally
-	// For now, we'll handle this in the command implementation
-
-	return config, nil
+	// Return both config and manager so caller can properly cleanup
+	return config, manager, nil
 }
 
 // PrintOfflineModeInfo displays the offline mode configuration to the user

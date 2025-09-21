@@ -96,11 +96,19 @@ func ServeCommand(args []string) {
 	if *offlineMode || *offlineModeShort {
 		// Start offline mode first
 		fmt.Println("Starting offline mode...")
-		offlineConfig, err := offline.RunOfflineMode()
+		var llamafileManager *offline.LlamafileManager
+		offlineConfig, llamafileManager, err := offline.RunOfflineMode()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error starting offline mode: %v\n", err)
 			os.Exit(1)
 		}
+		// Ensure llamafile is stopped on exit
+		defer func() {
+			if llamafileManager != nil {
+				fmt.Println("Stopping llamafile server...")
+				llamafileManager.Stop()
+			}
+		}()
 
 		// Print offline mode info
 		offline.PrintOfflineModeInfo(offlineConfig)

@@ -371,7 +371,12 @@ window.ModelsDevData = (function() {
         if (baseUrl.includes('perplexity.ai')) return 'perplexity';
         if (baseUrl.includes('berget.ai')) return 'inference';  // Berget.AI uses inference provider
         if (baseUrl.includes('localhost:11434')) return 'ollama';
-        
+        if (baseUrl.includes('localhost:8080')) return 'llamafile';
+        if (baseUrl.includes('localhost:1234')) return 'lmstudio';
+        if (baseUrl.includes('localhost:4891')) return 'gpt4all';
+        // Generic localhost detection for other local LLMs
+        if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) return 'local';
+
         return null;
     }
     

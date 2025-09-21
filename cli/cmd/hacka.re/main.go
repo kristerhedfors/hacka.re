@@ -65,8 +65,38 @@ func main() {
 		}
 	}
 
-	// Check if first arg is a subcommand
-	if len(os.Args) > 1 {
+	// Check for offline mode flag FIRST
+	// This allows "hacka.re -o ff" to work correctly
+	isOfflineMode := false
+	offlineFlagIndex := -1
+	for i, arg := range os.Args[1:] {
+		if arg == "-o" || arg == "--offline" {
+			isOfflineMode = true
+			offlineFlagIndex = i + 1 // +1 because we started from os.Args[1:]
+			break
+		}
+	}
+
+	// If offline mode is specified, handle it specially
+	if isOfflineMode && len(os.Args) > offlineFlagIndex+1 {
+		// Check if the next argument after -o/--offline is a browser command
+		nextArg := os.Args[offlineFlagIndex+1]
+		switch nextArg {
+		case "browse", "firefox", "ff", "chrome", "brave", "edge", "safari":
+			// This is "hacka.re -o BROWSER" - run offline mode with browser
+			// The offline command will handle starting the browser
+			offlineArgs := []string{nextArg}
+			// Add any additional arguments after the browser command
+			if len(os.Args) > offlineFlagIndex+2 {
+				offlineArgs = append(offlineArgs, os.Args[offlineFlagIndex+2:]...)
+			}
+			OfflineCommand(offlineArgs)
+			return
+		}
+	}
+
+	// Check if first arg is a subcommand (normal flow when not in offline mode)
+	if len(os.Args) > 1 && !isOfflineMode {
 		switch os.Args[1] {
 		case "browse":
 			// Handle browse subcommand
@@ -129,6 +159,13 @@ func main() {
 	flag.Bool("d", false, "Enable debug logging (short form)")  // Already handled above
 	offline := flag.Bool("offline", false, "Start in offline mode with local llamafile")
 	o := flag.Bool("o", false, "Start in offline mode (short form)")
+	// Global API configuration flags
+	llamafile := flag.String("llamafile", "", "Path to llamafile executable")
+	apiProvider := flag.String("api-provider", "", "API provider (openai, groq, ollama, etc.)")
+	apiKey := flag.String("api-key", "", "API key for remote providers")
+	baseURL := flag.String("base-url", "", "Custom API base URL")
+	model := flag.String("model", "", "Model name")
+	helpLLM := flag.Bool("help-llm", false, "Show local LLM setup guide")
 	help := flag.Bool("help", false, "Show help message")
 	h := flag.Bool("h", false, "Show help message")
 	
@@ -143,6 +180,13 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Show LLM help if requested
+	if *helpLLM {
+		// Import cycle prevents direct call, so we'll print here
+		showLocalLLMHelp()
+		os.Exit(0)
+	}
+
 	// Check flags
 	shouldDumpJSON := *jsonDump || *view
 	shouldStartChat := *chatMode || *c
@@ -153,7 +197,24 @@ func main() {
 
 	// Handle offline mode
 	if shouldStartOffline {
-		OfflineCommand(args)
+		// Build args from global flags
+		offlineArgs := args
+		if *llamafile != "" {
+			offlineArgs = append(offlineArgs, "--llamafile", *llamafile)
+		}
+		if *apiProvider != "" {
+			offlineArgs = append(offlineArgs, "--api-provider", *apiProvider)
+		}
+		if *apiKey != "" {
+			offlineArgs = append(offlineArgs, "--api-key", *apiKey)
+		}
+		if *baseURL != "" {
+			offlineArgs = append(offlineArgs, "--base-url", *baseURL)
+		}
+		if *model != "" {
+			offlineArgs = append(offlineArgs, "--model", *model)
+		}
+		OfflineCommand(offlineArgs)
 		return
 	}
 
@@ -182,6 +243,46 @@ func main() {
 }
 
 // showMainHelp displays the main help message including subcommands
+// showLocalLLMHelp displays the local LLM help inline to avoid import cycle
+func showLocalLLMHelp() {
+	fmt.Println("╔════════════════════════════════════════════════════════════════╗")
+	fmt.Println("║                    Local LLM Setup Guide                       ║")
+	fmt.Println("╚════════════════════════════════════════════════════════════════╝")
+	fmt.Println()
+
+	fmt.Println("hacka.re supports multiple local LLM runtimes:")
+	fmt.Println()
+
+	providers := []struct {
+		name     string
+		port     string
+		apiKey   string
+		provider string
+	}{
+		{"Llamafile", "8080", "no-key", "llamafile"},
+		{"Ollama", "11434", "no-key", "ollama"},
+		{"LM Studio", "1234", "no-key", "lmstudio"},
+		{"GPT4All", "4891", "no-key", "gpt4all"},
+		{"LocalAI", "8080", "no-key", "localai"},
+	}
+
+	fmt.Println("┌─────────────┬──────────┬────────────┬──────────────────────┐")
+	fmt.Println("│ Runtime     │ Port     │ API Key    │ Provider Flag        │")
+	fmt.Println("├─────────────┼──────────┼────────────┼──────────────────────┤")
+
+	for _, p := range providers {
+		fmt.Printf("│ %-11s │ %-8s │ %-10s │ --api-provider %-5s │\n",
+			p.name, p.port, p.apiKey, p.provider)
+	}
+
+	fmt.Println("└─────────────┴──────────┴────────────┴──────────────────────┘")
+	fmt.Println()
+	fmt.Println("All local providers use 'no-key' as the API key value.")
+	fmt.Println()
+	fmt.Println("For detailed setup of each provider, see:")
+	fmt.Println("https://hacka.re/about/local-llm-toolbox.html")
+}
+
 func showMainHelp() {
 	fmt.Fprintf(os.Stderr, "hacka.re CLI - serverless agency\n\n")
 	fmt.Fprintf(os.Stderr, "Usage: %s [COMMAND] [OPTIONS] [ARGUMENTS]\n\n", os.Args[0])
@@ -199,11 +300,17 @@ func showMainHelp() {
 	fmt.Fprintf(os.Stderr, "  shodan       Shodan IP intelligence service commands\n")
 	fmt.Fprintf(os.Stderr, "  (no command) Launch settings or process shared configuration\n\n")
 	fmt.Fprintf(os.Stderr, "Options:\n")
-	fmt.Fprintf(os.Stderr, "  --offline, -o Start in offline mode with local llamafile\n")
-	fmt.Fprintf(os.Stderr, "  --json-dump   Decrypt configuration and output as JSON\n")
-	fmt.Fprintf(os.Stderr, "  --view        Same as --json-dump\n")
-	fmt.Fprintf(os.Stderr, "  --debug, -d   Enable debug logging to /tmp/hacka_debug.log\n")
-	fmt.Fprintf(os.Stderr, "  --help, -h    Show this help message\n\n")
+	fmt.Fprintf(os.Stderr, "  --offline, -o        Start in offline mode with local LLM\n")
+	fmt.Fprintf(os.Stderr, "  --llamafile PATH     Path to llamafile executable\n")
+	fmt.Fprintf(os.Stderr, "  --api-provider NAME  API provider (openai, groq, ollama, etc.)\n")
+	fmt.Fprintf(os.Stderr, "  --api-key KEY        API key for remote providers\n")
+	fmt.Fprintf(os.Stderr, "  --base-url URL       Custom API base URL\n")
+	fmt.Fprintf(os.Stderr, "  --model NAME         Model name\n")
+	fmt.Fprintf(os.Stderr, "  --json-dump          Decrypt configuration and output as JSON\n")
+	fmt.Fprintf(os.Stderr, "  --view               Same as --json-dump\n")
+	fmt.Fprintf(os.Stderr, "  --debug, -d          Enable debug logging to /tmp/hacka_debug.log\n")
+	fmt.Fprintf(os.Stderr, "  --help-llm           Show local LLM setup guide\n")
+	fmt.Fprintf(os.Stderr, "  --help, -h           Show this help message\n\n")
 	fmt.Fprintf(os.Stderr, "Arguments (for no command):\n")
 	fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL (https://hacka.re/#gpt=...)\n")
 	fmt.Fprintf(os.Stderr, "  FRAGMENT     Fragment with prefix (gpt=...)\n")
