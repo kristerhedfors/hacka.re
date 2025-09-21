@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -367,40 +368,59 @@ func StartServerAndBrowser(config *ServerConfig, launcher *BrowserLauncher) erro
 	// Process session if provided
 	var sharedConfigFragment string
 	if config.SessionLink != "" {
-		// Parse the session link
-		fmt.Printf("Processing session from %s...\n", config.SessionSource)
-
-		// Ask for password if not provided
-		password := config.Password
-		if password == "" {
-			var err error
-			password, err = utils.GetPassword("Enter password for session: ")
-			if err != nil {
-				return fmt.Errorf("error reading password: %w", err)
+		// Check if SessionLink is already a fragment or full URL
+		// If it starts with "gpt=" or contains "#gpt=", extract the fragment directly
+		if strings.HasPrefix(config.SessionLink, "gpt=") {
+			// It's already a fragment, use it directly
+			sharedConfigFragment = config.SessionLink
+			fmt.Printf("Processing session from %s...\n", config.SessionSource)
+			fmt.Println("✓ Session loaded successfully!")
+			fmt.Println()
+		} else if strings.Contains(config.SessionLink, "#gpt=") {
+			// It's a full URL, extract the fragment part
+			parts := strings.Split(config.SessionLink, "#")
+			if len(parts) > 1 {
+				sharedConfigFragment = parts[1]
+				fmt.Printf("Processing session from %s...\n", config.SessionSource)
+				fmt.Println("✓ Session loaded successfully!")
+				fmt.Println()
 			}
-		}
+		} else {
+			// Parse the session link (for backwards compatibility with other formats)
+			fmt.Printf("Processing session from %s...\n", config.SessionSource)
 
-		// Parse the URL/fragment
-		sharedConfig, err := share.ParseURL(config.SessionLink, password)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing session: %v\n", err)
-			fmt.Println("\nThe password may be incorrect or the link may be corrupted.")
-			return err
-		}
+			// Ask for password if not provided
+			password := config.Password
+			if password == "" {
+				var err error
+				password, err = utils.GetPassword("Enter password for session: ")
+				if err != nil {
+					return fmt.Errorf("error reading password: %w", err)
+				}
+			}
 
-		// Validate the configuration
-		if err := share.ValidateConfig(sharedConfig); err != nil {
-			return fmt.Errorf("invalid session configuration: %w", err)
-		}
+			// Parse the URL/fragment
+			sharedConfig, err := share.ParseURL(config.SessionLink, password)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error parsing session: %v\n", err)
+				fmt.Println("\nThe password may be incorrect or the link may be corrupted.")
+				return err
+			}
 
-		// Create a new shareable URL fragment for the web interface
-		sharedConfigFragment, err = CreateFragmentFromConfig(sharedConfig, password)
-		if err != nil {
-			return fmt.Errorf("error creating fragment: %w", err)
-		}
+			// Validate the configuration
+			if err := share.ValidateConfig(sharedConfig); err != nil {
+				return fmt.Errorf("invalid session configuration: %w", err)
+			}
 
-		fmt.Println("✓ Session loaded successfully!")
-		fmt.Println()
+			// Create a new shareable URL fragment for the web interface
+			sharedConfigFragment, err = CreateFragmentFromConfig(sharedConfig, password)
+			if err != nil {
+				return fmt.Errorf("error creating fragment: %w", err)
+			}
+
+			fmt.Println("✓ Session loaded successfully!")
+			fmt.Println()
+		}
 	}
 
 	// Print banner

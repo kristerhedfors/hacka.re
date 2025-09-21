@@ -6,6 +6,23 @@ A Golang command-line interface for [hacka.re](https://hacka.re) - an architectu
 
 The hacka.re CLI is a Golang implementation that serves as an experimental platform to explore how quickly the complete feature set of the hacka.re web application can be implemented in a terminal environment. It demonstrates that with a clear architectural vision, complex web features can be rapidly adapted to console interfaces.
 
+## Recent Updates (2024-01)
+
+### New Features
+- 🔧 **`dump` Command**: Inspect and decrypt shared link contents as JSON with optional password flag
+- 🌐 **Browser-Specific Commands**: Launch in Firefox, Chrome, Brave, Edge, or Safari with profile support
+- 📡 **`serve` Command**: Start web server without opening browser, with verbose logging options
+- 🤖 **Enhanced Offline Mode**: Auto-detect local LLMs, override shared links to use local models
+- 🔑 **Password Preservation**: Offline mode reuses original passwords when converting shared links
+- 🔗 **Session Environment Variables**: Support for `HACKARE_LINK`, `HACKARE_SESSION`, and `HACKARE_CONFIG` (all synonymous)
+
+### Improvements
+- Fixed duplicate share link generation in offline mode
+- Fixed command parsing for `serve -o` and other subcommand+flag combinations
+- Improved offline mode to preserve prompts, functions, and welcome messages from shared links
+- Added support for custom base URLs without requiring provider specification
+- Enhanced browser profile support across all browser commands
+
 ## Current Implementation Status
 
 ### ✅ Core Features Implemented
@@ -82,8 +99,15 @@ The CLI uses a subcommand structure for different operations:
 ```
 
 Available commands:
-- `browse` - Start local web server to browse hacka.re interface
+- `browse` - Start local web server and open browser with hacka.re interface
+- `serve` - Start web server without opening browser (server-only mode)
 - `chat` - Start interactive chat session with AI models
+- `dump` - Decrypt and inspect shared link contents as JSON
+- `firefox`, `ff` - Open hacka.re in Firefox with optional profile
+- `chrome` - Open hacka.re in Chrome with optional profile
+- `brave` - Open hacka.re in Brave with optional profile
+- `edge` - Open hacka.re in Microsoft Edge with optional profile
+- `safari` - Open hacka.re in Safari (macOS only)
 - (no command) - Launch settings or process shared configuration
 
 ### Browse Command (Web Interface)
@@ -103,7 +127,73 @@ Start a local web server to use the full hacka.re web interface:
 
 # Use environment variable for port
 HACKARE_WEB_PORT=8888 ./hacka.re browse
+
+# Load with shared configuration
+./hacka.re browse "gpt=eyJlbmM..."
+
+# Start in offline mode (see Offline Mode section below)
+./hacka.re browse --offline
+./hacka.re browse -o
 ```
+
+### Serve Command (Web Server Only)
+
+Start the web server without opening a browser:
+
+```bash
+# Start on default port 8080
+./hacka.re serve
+
+# Custom port and host
+./hacka.re serve -p 3000 --host 0.0.0.0
+
+# Verbose logging (shows each request)
+./hacka.re serve -v
+./hacka.re serve --verbose
+
+# Very verbose (includes headers)
+./hacka.re serve -vv
+
+# With shared configuration
+./hacka.re serve "gpt=eyJlbmM..."
+
+# Offline mode
+./hacka.re serve --offline
+./hacka.re serve -o
+```
+
+### Browser-Specific Commands
+
+Open hacka.re in a specific browser with optional profile support:
+
+```bash
+# Firefox
+./hacka.re firefox
+./hacka.re ff  # short form
+./hacka.re firefox --profile "work"
+./hacka.re ff -P "personal"
+
+# Chrome
+./hacka.re chrome
+./hacka.re chrome --profile-directory="Profile 1"
+
+# Brave
+./hacka.re brave
+./hacka.re brave --profile-directory="Dev"
+
+# Edge
+./hacka.re edge
+./hacka.re edge --profile-directory="Default"
+
+# Safari (macOS only, no profile support)
+./hacka.re safari
+```
+
+All browser commands support:
+- Loading shared configurations
+- Setting custom ports with `-p` or `--port`
+- Offline mode with `-o` or `--offline`
+- Environment variable `HACKARE_WEB_PORT`
 
 ### Chat Command (Terminal Chat)
 
@@ -149,9 +239,38 @@ Load configuration from a shared hacka.re link (three formats supported):
 
 You'll be prompted for the password to decrypt the configuration.
 
-### View/JSON Dump Mode
+### Dump Command (Inspect Shared Links)
 
-Decrypt and output configuration as JSON without launching the UI:
+The `dump` subcommand decrypts and displays shared link contents as JSON:
+
+```bash
+# Basic usage - prompts for password
+./hacka.re dump "gpt=eyJlbmM..."
+
+# Provide password via command line
+./hacka.re dump "gpt=eyJlbmM..." --password mypassword
+
+# Works with all formats
+./hacka.re dump "https://hacka.re/#gpt=..."  # Full URL
+./hacka.re dump "gpt=eyJlbmM..."              # Fragment
+./hacka.re dump "eyJlbmM..."                  # Raw data
+
+# Pipe to jq for processing
+./hacka.re dump "gpt=..." --password pass | jq '.model'
+
+# Save to file
+./hacka.re dump "gpt=..." > config.json
+```
+
+This is useful for:
+- Inspecting shared configurations before loading
+- Debugging encrypted links
+- Automating configuration extraction
+- Verifying link contents
+
+### View/JSON Dump Mode (Legacy)
+
+For backward compatibility, the main command also supports JSON output:
 
 ```bash
 # Output decrypted configuration to stdout (using --json-dump)
@@ -159,23 +278,156 @@ Decrypt and output configuration as JSON without launching the UI:
 
 # Same functionality using --view (shorter alias)
 ./hacka.re --view "gpt=..."
-
-# Pipe to jq for processing
-./hacka.re --view "gpt=..." | jq '.apiKey'
-
-# Save to file
-./hacka.re --json-dump "https://hacka.re/#gpt=..." > config.json
 ```
 
-This is useful for:
-- Inspecting shared configurations before loading
-- Automating configuration extraction
-- Integrating with other tools
-- Debugging encrypted links
+Note: The `dump` subcommand is preferred over these legacy flags.
+
+## Offline Mode (Local LLM Support)
+
+The `--offline` or `-o` flag enables offline mode for using local Large Language Models (LLMs) without any external API connections.
+
+### Basic Usage
+
+```bash
+# Start offline mode with auto-detected local LLM
+./hacka.re --offline
+./hacka.re -o  # short form
+
+# With specific browser
+./hacka.re -o firefox
+./hacka.re --offline chrome
+
+# With serve command (no browser)
+./hacka.re serve --offline
+./hacka.re serve -o
+
+# With browse command
+./hacka.re browse --offline
+```
+
+### Supported Local LLM Providers
+
+Offline mode automatically detects and configures:
+- **Llamafile** - Single-file LLM executables
+- **Ollama** - Local model server (port 11434)
+- **LM Studio** - Desktop app for local models (port 1234)
+- **GPT4All** - Privacy-focused local models (port 4891)
+- **LocalAI** - OpenAI-compatible local API (port 8080)
+- **Custom** - Any OpenAI-compatible local endpoint
+
+### Configuration via Environment Variables
+
+```bash
+# Specify llamafile path
+HACKARE_LLAMAFILE=/path/to/model.llamafile ./hacka.re -o
+
+# Use custom local endpoint
+HACKARE_BASE_URL="http://localhost:11434/v1" ./hacka.re -o
+
+# Specify model name
+HACKARE_MODEL="llama2:7b" ./hacka.re -o
+
+# Set API provider explicitly
+HACKARE_API_PROVIDER="ollama" ./hacka.re -o
+
+# Custom llamafile port
+HACKARE_LLAMAFILE_PORT=8080 ./hacka.re -o
+```
+
+### Offline Mode with Shared Links
+
+Offline mode can override external API configurations in shared links, forcing them to use local models instead:
+
+```bash
+# Convert any shared link to use local LLM
+./hacka.re -o "gpt=eyJlbmM..."
+
+# This will:
+# 1. Decrypt the shared configuration
+# 2. Preserve prompts, functions, and settings
+# 3. Override the API endpoint to use local LLM
+# 4. Use the original password for the new share link
+```
+
+### Key Features
+
+1. **Privacy First**: All processing happens locally, no data leaves your machine
+2. **Auto-Detection**: Automatically finds and configures local LLM servers
+3. **Configuration Override**: Can convert any shared link to use local models
+4. **Password Preservation**: When overriding shared links, uses the original password
+5. **Zero Configuration**: Works out of the box with common local LLM setups
+
+### Security Controls
+
+```bash
+# Allow remote MCP connections in offline mode
+./hacka.re -o --allow-remote-mcp
+
+# Allow remote embeddings API in offline mode
+./hacka.re -o --allow-remote-embeddings
+```
+
+### Examples
+
+```bash
+# Start offline chat with Ollama
+HACKARE_API_PROVIDER=ollama ./hacka.re chat --offline
+
+# Serve web interface with llamafile
+HACKARE_LLAMAFILE=./llama-7b.llamafile ./hacka.re serve -o
+
+# Open in Firefox with LM Studio
+HACKARE_BASE_URL="http://localhost:1234/v1" ./hacka.re -o firefox
+
+# Convert OpenAI config to local
+./hacka.re -o "gpt=eyJlbmM..."  # Enter original password when prompted
+```
+
+### Troubleshooting
+
+If offline mode fails to start:
+1. Ensure your local LLM server is running
+2. Check the port is not blocked by firewall
+3. Set `HACKARE_BASE_URL` explicitly if auto-detection fails
+4. Use `HACKARE_LLAMAFILE` to specify the exact path
 
 ## Configuration
 
 The CLI stores configuration in `~/.config/hacka.re/config.json`.
+
+### Session Environment Variables
+
+The CLI supports loading shared configurations from environment variables. These three variables are **synonymous** and represent the same thing - a session (encrypted configuration):
+
+```bash
+# All three are equivalent - use whichever you prefer
+HACKARE_LINK="gpt=eyJlbmM..."     # Option 1
+HACKARE_SESSION="gpt=eyJlbmM..."  # Option 2
+HACKARE_CONFIG="gpt=eyJlbmM..."   # Option 3
+
+# They accept all the same formats
+HACKARE_LINK="https://hacka.re/#gpt=..."  # Full URL
+HACKARE_SESSION="gpt=eyJlbmM..."          # Fragment
+HACKARE_CONFIG="eyJlbmM..."               # Raw data
+
+# Examples
+HACKARE_SESSION="gpt=..." ./hacka.re browse
+HACKARE_LINK="gpt=..." ./hacka.re chat
+HACKARE_CONFIG="eyJlbmM..." ./hacka.re serve
+```
+
+**Important**: Only set ONE of these variables. Setting multiple will cause an error.
+
+### Port Configuration
+
+```bash
+# Set default port for web server
+HACKARE_WEB_PORT=3000 ./hacka.re browse
+HACKARE_WEB_PORT=8888 ./hacka.re serve
+
+# Command line flags take precedence
+HACKARE_WEB_PORT=3000 ./hacka.re browse -p 9000  # Uses port 9000
+```
 
 ### Supported Providers
 

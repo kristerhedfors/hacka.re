@@ -95,9 +95,20 @@ func main() {
 		}
 	}
 
-	// Check if first arg is a subcommand (normal flow when not in offline mode)
-	if len(os.Args) > 1 && !isOfflineMode {
-		switch os.Args[1] {
+	// Check if first arg is a subcommand
+	if len(os.Args) > 1 {
+		// When offline mode is detected, we need to check if it's being used with a command
+		// For example: "hacka.re serve -o" where "serve" is the command and "-o" is a flag for serve
+		commandArg := os.Args[1]
+
+		// If offline mode was detected but it's not the first argument,
+		// then it's likely a flag for a subcommand
+		if isOfflineMode && offlineFlagIndex > 0 {
+			// The offline flag is NOT the first argument, so we have a command
+			isOfflineMode = false  // Let the command handle the offline flag itself
+		}
+
+		switch commandArg {
 		case "browse":
 			// Handle browse subcommand
 			BrowseCommand(os.Args[2:])
@@ -129,6 +140,10 @@ func main() {
 		case "chat":
 			// Handle chat subcommand
 			ChatCommand(os.Args[2:])
+			return
+		case "dump":
+			// Handle dump subcommand
+			DumpCommand(os.Args[2:])
 			return
 		case "function":
 			// Handle function subcommand
@@ -165,6 +180,9 @@ func main() {
 	apiKey := flag.String("api-key", "", "API key for remote providers")
 	baseURL := flag.String("base-url", "", "Custom API base URL")
 	model := flag.String("model", "", "Model name")
+	// Granular offline mode controls
+	allowRemoteMCP := flag.Bool("allow-remote-mcp", false, "Allow remote MCP connections in offline mode")
+	allowRemoteEmbeddings := flag.Bool("allow-remote-embeddings", false, "Allow remote embeddings API in offline mode")
 	helpLLM := flag.Bool("help-llm", false, "Show local LLM setup guide")
 	help := flag.Bool("help", false, "Show help message")
 	h := flag.Bool("h", false, "Show help message")
@@ -199,6 +217,16 @@ func main() {
 	if shouldStartOffline {
 		// Build args from global flags
 		offlineArgs := args
+
+		// Check if first arg is a shared link
+		// This allows: hacka.re --offline "gpt=eyJlbmM..."
+		if len(args) > 0 && (strings.Contains(args[0], "gpt=") ||
+			strings.Contains(args[0], "eyJ") ||
+			strings.Contains(args[0], "hacka.re/#")) {
+			// Pass the shared link as the first argument
+			offlineArgs = args
+		}
+
 		if *llamafile != "" {
 			offlineArgs = append(offlineArgs, "--llamafile", *llamafile)
 		}
@@ -213,6 +241,12 @@ func main() {
 		}
 		if *model != "" {
 			offlineArgs = append(offlineArgs, "--model", *model)
+		}
+		if *allowRemoteMCP {
+			offlineArgs = append(offlineArgs, "--allow-remote-mcp")
+		}
+		if *allowRemoteEmbeddings {
+			offlineArgs = append(offlineArgs, "--allow-remote-embeddings")
 		}
 		OfflineCommand(offlineArgs)
 		return
@@ -295,6 +329,7 @@ func showMainHelp() {
 	fmt.Fprintf(os.Stderr, "  safari       Start web server and open Safari (macOS only)\n")
 	fmt.Fprintf(os.Stderr, "  serve        Start web server without opening browser\n")
 	fmt.Fprintf(os.Stderr, "  chat         Start interactive chat session with AI models\n")
+	fmt.Fprintf(os.Stderr, "  dump         Inspect and decrypt shared link contents as JSON\n")
 	fmt.Fprintf(os.Stderr, "  function     Manage JavaScript functions for tool calling\n")
 	fmt.Fprintf(os.Stderr, "  mcp          Model Context Protocol server and tools\n")
 	fmt.Fprintf(os.Stderr, "  shodan       Shodan IP intelligence service commands\n")

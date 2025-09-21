@@ -20,6 +20,10 @@ type Configuration struct {
 
 	// Mode detection
 	IsOfflineMode bool
+
+	// Granular remote allowances
+	AllowRemoteMCP        bool
+	AllowRemoteEmbeddings bool
 }
 
 // ValidateOfflineMode validates that offline mode configuration is consistent
@@ -32,14 +36,35 @@ func ValidateOfflineMode(config *Configuration) error {
 	hasRemoteConfig := false
 	conflictDetails := []string{}
 
-	if config.APIKey != "" && config.APIKey != "no-key" {
-		hasRemoteConfig = true
-		// Mask API key for security
-		maskedKey := config.APIKey
-		if len(maskedKey) > 10 {
-			maskedKey = maskedKey[:10] + "..."
+	// Check for non-local API keys ONLY if they haven't been overridden
+	// The override function sets placeholder keys for local providers
+	localPlaceholders := []string{"no-key", "ollama", "lmstudio", "gpt4all", "localai", "local", "llamafile"}
+	isLocalPlaceholder := false
+	for _, placeholder := range localPlaceholders {
+		if config.APIKey == placeholder {
+			isLocalPlaceholder = true
+			break
 		}
-		conflictDetails = append(conflictDetails, fmt.Sprintf("API Key: %s", maskedKey))
+	}
+
+	// Only flag as conflict if it's a real remote API key that wasn't overridden
+	if config.APIKey != "" && !isLocalPlaceholder {
+		// Check if this looks like a real API key (starts with sk-, gsk_, etc.)
+		// But ONLY if we're not using a local provider
+		if !isLocalProvider(config.APIProvider) &&
+		   (strings.HasPrefix(config.APIKey, "sk-") ||
+		    strings.HasPrefix(config.APIKey, "sk_") ||
+		    strings.HasPrefix(config.APIKey, "gsk_") ||
+		    strings.HasPrefix(config.APIKey, "key-") ||
+		    len(config.APIKey) > 20) {
+			hasRemoteConfig = true
+			// Mask API key for security
+			maskedKey := config.APIKey
+			if len(maskedKey) > 10 {
+				maskedKey = maskedKey[:10] + "..."
+			}
+			conflictDetails = append(conflictDetails, fmt.Sprintf("API Key: %s", maskedKey))
+		}
 	}
 
 	if config.APIProvider != "" && !isLocalProvider(config.APIProvider) {
@@ -140,35 +165,37 @@ func GetConfigFromEnvironment() *Configuration {
 }
 
 // MergeConfigurations merges configurations with proper precedence
-// Priority: CLI flags > Environment > Config file > Defaults
-func MergeConfigurations(cli, env, file *Configuration) *Configuration {
+// Priority: CLI flags > Shared Link > Environment > Config file > Defaults
+func MergeConfigurations(cli, shared, env *Configuration) *Configuration {
 	merged := &Configuration{}
 
-	// Start with file config
-	if file != nil {
-		*merged = *file
+	// Start with environment config (lowest priority)
+	if env != nil {
+		*merged = *env
 	}
 
-	// Override with environment
-	if env != nil {
-		if env.LlamafilePath != "" {
-			merged.LlamafilePath = env.LlamafilePath
+	// Override with shared link config
+	if shared != nil {
+		if shared.LlamafilePath != "" {
+			merged.LlamafilePath = shared.LlamafilePath
 		}
-		if env.LlamafilePort != 0 {
-			merged.LlamafilePort = env.LlamafilePort
+		if shared.LlamafilePort != 0 {
+			merged.LlamafilePort = shared.LlamafilePort
 		}
-		if env.APIProvider != "" {
-			merged.APIProvider = env.APIProvider
+		if shared.APIProvider != "" {
+			merged.APIProvider = shared.APIProvider
 		}
-		if env.APIKey != "" {
-			merged.APIKey = env.APIKey
+		if shared.APIKey != "" {
+			merged.APIKey = shared.APIKey
 		}
-		if env.BaseURL != "" {
-			merged.BaseURL = env.BaseURL
+		if shared.BaseURL != "" {
+			merged.BaseURL = shared.BaseURL
 		}
-		if env.Model != "" {
-			merged.Model = env.Model
+		if shared.Model != "" {
+			merged.Model = shared.Model
 		}
+		// Note: We don't override remote allowances from shared links
+		// These are security-sensitive and should only come from CLI flags
 	}
 
 	// Override with CLI flags (highest priority)
@@ -193,6 +220,9 @@ func MergeConfigurations(cli, env, file *Configuration) *Configuration {
 		}
 		// Offline mode flag from CLI is definitive
 		merged.IsOfflineMode = cli.IsOfflineMode
+		// Remote allowances from CLI are definitive
+		merged.AllowRemoteMCP = cli.AllowRemoteMCP
+		merged.AllowRemoteEmbeddings = cli.AllowRemoteEmbeddings
 	}
 
 	return merged
