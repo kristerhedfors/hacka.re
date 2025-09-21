@@ -47,7 +47,7 @@ class TestCliBrowseCommand:
         assert result.returncode == 0
         # Help output might be in stderr
         output = result.stdout + result.stderr
-        assert "Start a local web server to browse hacka.re interface" in output
+        assert "Start a local web server and open the default browser" in output
         assert "-p, --port PORT" in output
         assert "HACKARE_WEB_PORT" in output
         

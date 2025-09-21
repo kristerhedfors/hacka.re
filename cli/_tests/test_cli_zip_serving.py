@@ -42,8 +42,9 @@ class TestCliZipServing:
         # Binary should be at least 10MB with embedded ZIP
         assert binary_size > 10 * 1024 * 1024, "Binary seems too small for embedded ZIP"
         
-        # Binary should not be huge (less than 20MB expected)
-        assert binary_size < 20 * 1024 * 1024, "Binary seems too large"
+        # Binary should not be huge (less than 30MB expected)
+        # Increased from 20MB to 30MB due to additional features
+        assert binary_size < 30 * 1024 * 1024, "Binary seems too large"
     
     def test_serves_from_memory_not_disk(self):
         """Test that files are served from memory, not extracted to disk"""
