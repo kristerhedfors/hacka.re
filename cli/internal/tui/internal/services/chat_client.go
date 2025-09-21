@@ -141,25 +141,17 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 	scanner := bufio.NewScanner(resp.Body)
 	chunkCount := 0
 	totalContent := 0
-	lineCount := 0
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		lineCount++
-
-		// Log first few lines for debugging
-		if lineCount <= 3 {
-			if log := logger.Get(); log != nil {
-				log.Debug("[ChatClient] Line %d: %s", lineCount, line)
-			}
-		}
 
 		// Skip empty lines
 		if line == "" {
 			continue
 		}
 
-		// Check for error response (Berget returns errors with 200 status)
+		// Check for error response in body
+		// Some providers (e.g., Berget) return errors with 200 status code
 		if strings.Contains(line, `"error"`) && strings.Contains(line, `"message"`) {
 			var errResp struct {
 				Error struct {
@@ -223,10 +215,7 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 	}
 
 	if log := logger.Get(); log != nil {
-		if lineCount == 0 {
-			log.Warn("[ChatClient] No lines received from streaming response")
-		}
-		log.Info("[ChatClient] Streaming completed - lines: %d, chunks: %d, chars: %d", lineCount, chunkCount, totalContent)
+		log.Info("[ChatClient] Streaming completed successfully")
 	}
 
 	return nil

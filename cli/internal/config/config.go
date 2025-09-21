@@ -302,17 +302,22 @@ func detectProviderFromAPIKey(apiKey string) (provider Provider, baseURL string,
 
 	trimmedKey := strings.TrimSpace(apiKey)
 
-	// Check for Berget.AI keys
+	// Check for Berget.AI keys (sk_ber_*)
 	if matched, _ := regexp.MatchString(`^sk_ber_[A-Za-z0-9\-_]{30,}$`, trimmedKey); matched {
 		return ProviderBerget, "https://api.berget.ai/v1", "mistral-small-2503"
 	}
 
-	// Check for OpenAI keys
-	if matched, _ := regexp.MatchString(`^sk-proj-[A-Za-z0-9\-_]{50,}$`, trimmedKey); matched {
+	// Check for OpenAI project keys (sk-proj-*)
+	if matched, _ := regexp.MatchString(`^sk-proj-[A-Za-z0-9\-_]{40,}$`, trimmedKey); matched {
 		return ProviderOpenAI, "https://api.openai.com/v1", "gpt-5-nano"
 	}
 
-	// Check for Groq keys
+	// Check for OpenAI legacy keys (sk-*)
+	if matched, _ := regexp.MatchString(`^sk-[A-Za-z0-9]{40,}$`, trimmedKey); matched {
+		return ProviderOpenAI, "https://api.openai.com/v1", "gpt-5-nano"
+	}
+
+	// Check for Groq keys (gsk_*)
 	if matched, _ := regexp.MatchString(`^gsk_[A-Za-z0-9]{50,}$`, trimmedKey); matched {
 		return ProviderGroq, "https://api.groq.com/openai/v1", "llama-3.3-70b-versatile"
 	}

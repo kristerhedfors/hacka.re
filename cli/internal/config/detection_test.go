@@ -22,8 +22,15 @@ func TestDetectProviderFromAPIKey(t *testing.T) {
 			wantModel:    "mistral-small-2503",
 		},
 		{
-			name:         "OpenAI key",
+			name:         "OpenAI project key",
 			apiKey:       "sk-proj-12345678901234567890123456789012345678901234567890",
+			wantProvider: ProviderOpenAI,
+			wantBaseURL:  "https://api.openai.com/v1",
+			wantModel:    "gpt-5-nano",
+		},
+		{
+			name:         "OpenAI legacy key",
+			apiKey:       "sk-1234567890123456789012345678901234567890",
 			wantProvider: ProviderOpenAI,
 			wantBaseURL:  "https://api.openai.com/v1",
 			wantModel:    "gpt-5-nano",
