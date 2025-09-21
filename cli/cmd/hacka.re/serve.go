@@ -97,7 +97,7 @@ func ServeCommand(args []string) {
 		// Start offline mode first
 		fmt.Println("Starting offline mode...")
 		var llamafileManager *offline.LlamafileManager
-		offlineConfig, llamafileManager, err := offline.RunOfflineMode()
+		offlineConfig, llamafileManager, err := offline.RunOfflineMode(nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error starting offline mode: %v\n", err)
 			os.Exit(1)

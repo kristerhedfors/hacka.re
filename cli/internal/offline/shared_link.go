@@ -8,8 +8,8 @@ import (
 	"github.com/hacka-re/cli/internal/utils"
 )
 
-// ParseSharedLinkForOffline parses a shared link and returns configuration for offline mode
-func ParseSharedLinkForOffline(input string) (*Configuration, error) {
+// ParseSharedLinkForOffline parses a shared link and returns both configuration and full shared config for offline mode
+func ParseSharedLinkForOffline(input string) (*Configuration, *share.SharedConfig, error) {
 	// First try without password to see if one is needed
 	sharedConfig, err := share.ParseURL(input, "")
 	if err != nil {
@@ -17,16 +17,16 @@ func ParseSharedLinkForOffline(input string) (*Configuration, error) {
 		if strings.Contains(err.Error(), "decrypt") || strings.Contains(err.Error(), "password") {
 			password, pwErr := utils.GetPassword("Enter password for shared configuration: ")
 			if pwErr != nil {
-				return nil, fmt.Errorf("failed to get password: %w", pwErr)
+				return nil, nil, fmt.Errorf("failed to get password: %w", pwErr)
 			}
 
 			// Try again with password
 			sharedConfig, err = share.ParseURL(input, password)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse shared link: %w", err)
+				return nil, nil, fmt.Errorf("failed to parse shared link: %w", err)
 			}
 		} else {
-			return nil, fmt.Errorf("failed to parse shared link: %w", err)
+			return nil, nil, fmt.Errorf("failed to parse shared link: %w", err)
 		}
 	}
 
@@ -42,7 +42,7 @@ func ParseSharedLinkForOffline(input string) (*Configuration, error) {
 		config.APIProvider = detectProviderFromURL(config.BaseURL)
 	}
 
-	return config, nil
+	return config, sharedConfig, nil
 }
 
 // OverrideForOfflineMode overrides configuration to ensure offline/localhost only
@@ -118,6 +118,11 @@ func OverrideForOfflineMode(config *Configuration) *Configuration {
 			result.APIProvider = "ollama"
 		}
 	}
+
+	// Clear the model field to let the local server's model be auto-detected
+	// This prevents confusion when the original shared link had a remote model
+	// that doesn't exist on the local server
+	result.Model = ""
 
 	// Ensure offline mode flag is set
 	result.IsOfflineMode = true

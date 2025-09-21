@@ -20,7 +20,8 @@ type Config struct {
 
 // RunOfflineMode starts the offline mode with llamafile
 // Returns the config and the LlamafileManager (caller must call manager.Stop())
-func RunOfflineMode() (*Config, *LlamafileManager, error) {
+// If originalSharedConfig is provided, it preserves prompts, welcome messages, functions, etc.
+func RunOfflineMode(originalSharedConfig *share.SharedConfig) (*Config, *LlamafileManager, error) {
 	config := &Config{
 		WebPort: 8000, // Default web server port
 	}
@@ -77,10 +78,34 @@ func RunOfflineMode() (*Config, *LlamafileManager, error) {
 	config.Password = password
 
 	// 5. Create shared configuration
-	sharedConfig := &share.SharedConfig{
-		BaseURL:  manager.BaseURL,
-		Model:    modelName,
-		APIKey:   "no-key", // Llamafile doesn't require API key
+	// If we have an original shared config, preserve its prompts, welcome messages, functions, etc.
+	var sharedConfig *share.SharedConfig
+	if originalSharedConfig != nil {
+		// Copy the original config to preserve all fields
+		sharedConfig = &share.SharedConfig{
+			BaseURL:          manager.BaseURL,
+			Model:            modelName,
+			APIKey:           "no-key", // Llamafile doesn't require API key
+			// Preserve original fields
+			MaxTokens:        originalSharedConfig.MaxTokens,
+			Temperature:      originalSharedConfig.Temperature,
+			SystemPrompt:     originalSharedConfig.SystemPrompt,
+			WelcomeMessage:   originalSharedConfig.WelcomeMessage,
+			Theme:            originalSharedConfig.Theme,
+			Functions:        originalSharedConfig.Functions,
+			DefaultFunctions: originalSharedConfig.DefaultFunctions,
+			Prompts:          originalSharedConfig.Prompts,
+			RAGEnabled:       originalSharedConfig.RAGEnabled,
+			RAGDocuments:     originalSharedConfig.RAGDocuments,
+			CustomData:       originalSharedConfig.CustomData,
+		}
+	} else {
+		// Create minimal config if no original provided
+		sharedConfig = &share.SharedConfig{
+			BaseURL:  manager.BaseURL,
+			Model:    modelName,
+			APIKey:   "no-key", // Llamafile doesn't require API key
+		}
 	}
 
 	// 6. Create encrypted share link
