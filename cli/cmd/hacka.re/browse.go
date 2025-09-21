@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/hacka-re/cli/internal/browser"
+	"github.com/hacka-re/cli/internal/offline"
 	"github.com/hacka-re/cli/internal/share"
 	"github.com/hacka-re/cli/internal/web"
 )
@@ -19,6 +20,8 @@ func BrowseCommand(args []string) {
 	port := browseFlags.Int("port", 0, "Port to serve on (default: 8080 or HACKARE_WEB_PORT)")
 	portShort := browseFlags.Int("p", 0, "Port to serve on (short form)")
 	host := browseFlags.String("host", "localhost", "Host to bind to")
+	offlineMode := browseFlags.Bool("offline", false, "Start in offline mode with local llamafile")
+	offlineModeShort := browseFlags.Bool("o", false, "Start in offline mode (short form)")
 	help := browseFlags.Bool("help", false, "Show help message")
 	helpShort := browseFlags.Bool("h", false, "Show help message (short form)")
 
@@ -29,6 +32,7 @@ func BrowseCommand(args []string) {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		fmt.Fprintf(os.Stderr, "  -p, --port PORT       Port to serve on (default: 8080)\n")
 		fmt.Fprintf(os.Stderr, "  --host HOST           Host to bind to (default: localhost)\n")
+		fmt.Fprintf(os.Stderr, "  -o, --offline         Start in offline mode with local llamafile\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help            Show this help message\n\n")
 		fmt.Fprintf(os.Stderr, "Arguments:\n")
 		fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL to load session from\n")
@@ -66,6 +70,22 @@ func BrowseCommand(args []string) {
 		os.Exit(0)
 	}
 
+	// Handle offline mode if requested
+	var offlineConfig *offline.Config
+	if *offlineMode || *offlineModeShort {
+		// Start offline mode first
+		fmt.Println("Starting offline mode...")
+		var err error
+		offlineConfig, err = offline.RunOfflineMode()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting offline mode: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Print offline mode info
+		offline.PrintOfflineModeInfo(offlineConfig)
+	}
+
 	// Determine port
 	serverPort := 8080
 	if *port != 0 {
@@ -98,8 +118,12 @@ func BrowseCommand(args []string) {
 		os.Exit(1)
 	}
 
-	// Determine session source: command line takes precedence over environment
-	if len(remainingArgs) > 0 {
+	// Determine session source: offline mode takes precedence, then command line, then environment
+	if offlineConfig != nil {
+		// Use offline configuration
+		sessionLink = offlineConfig.ShareURL
+		sessionSource = "offline mode"
+	} else if len(remainingArgs) > 0 {
 		sessionLink = remainingArgs[0]
 		sessionSource = "command line"
 	} else if envSession != "" {
@@ -118,6 +142,11 @@ func BrowseCommand(args []string) {
 		Verbose:       0,
 		SessionLink:   sessionLink,
 		SessionSource: sessionSource,
+	}
+
+	// Add offline password if in offline mode
+	if offlineConfig != nil {
+		config.Password = offlineConfig.Password
 	}
 
 	// Start server and open default browser

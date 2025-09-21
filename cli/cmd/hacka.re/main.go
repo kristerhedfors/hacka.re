@@ -127,6 +127,8 @@ func main() {
 	c := flag.Bool("c", false, "(Deprecated) Use 'hacka.re chat' instead")
 	flag.Bool("debug", false, "Enable debug logging to /tmp/hacka_debug.log")  // Already handled above
 	flag.Bool("d", false, "Enable debug logging (short form)")  // Already handled above
+	offline := flag.Bool("offline", false, "Start in offline mode with local llamafile")
+	o := flag.Bool("o", false, "Start in offline mode (short form)")
 	help := flag.Bool("help", false, "Show help message")
 	h := flag.Bool("h", false, "Show help message")
 	
@@ -140,14 +142,21 @@ func main() {
 		showMainHelp()
 		os.Exit(0)
 	}
-	
+
 	// Check flags
 	shouldDumpJSON := *jsonDump || *view
 	shouldStartChat := *chatMode || *c
-	
+	shouldStartOffline := *offline || *o
+
 	// Get non-flag arguments
 	args := flag.Args()
-	
+
+	// Handle offline mode
+	if shouldStartOffline {
+		OfflineCommand(args)
+		return
+	}
+
 	// Handle legacy chat mode flags (redirect to chat subcommand)
 	if shouldStartChat {
 		fmt.Fprintf(os.Stderr, "Note: --chat flag is deprecated. Use 'hacka.re chat' instead.\n\n")
@@ -190,10 +199,11 @@ func showMainHelp() {
 	fmt.Fprintf(os.Stderr, "  shodan       Shodan IP intelligence service commands\n")
 	fmt.Fprintf(os.Stderr, "  (no command) Launch settings or process shared configuration\n\n")
 	fmt.Fprintf(os.Stderr, "Options:\n")
-	fmt.Fprintf(os.Stderr, "  --json-dump  Decrypt configuration and output as JSON\n")
-	fmt.Fprintf(os.Stderr, "  --view       Same as --json-dump\n")
-	fmt.Fprintf(os.Stderr, "  --debug, -d  Enable debug logging to /tmp/hacka_debug.log\n")
-	fmt.Fprintf(os.Stderr, "  --help, -h   Show this help message\n\n")
+	fmt.Fprintf(os.Stderr, "  --offline, -o Start in offline mode with local llamafile\n")
+	fmt.Fprintf(os.Stderr, "  --json-dump   Decrypt configuration and output as JSON\n")
+	fmt.Fprintf(os.Stderr, "  --view        Same as --json-dump\n")
+	fmt.Fprintf(os.Stderr, "  --debug, -d   Enable debug logging to /tmp/hacka_debug.log\n")
+	fmt.Fprintf(os.Stderr, "  --help, -h    Show this help message\n\n")
 	fmt.Fprintf(os.Stderr, "Arguments (for no command):\n")
 	fmt.Fprintf(os.Stderr, "  URL          Full hacka.re URL (https://hacka.re/#gpt=...)\n")
 	fmt.Fprintf(os.Stderr, "  FRAGMENT     Fragment with prefix (gpt=...)\n")
@@ -205,6 +215,8 @@ func showMainHelp() {
 	fmt.Fprintf(os.Stderr, "  %s serve \"gpt=eyJlbmM...\"             # Serve with shared config\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "  %s chat                                # Start chat session\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "  %s chat \"gpt=eyJlbmM...\"              # Chat with shared config\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s --offline                           # Start offline mode with llamafile\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "  %s -o                                  # Short form for offline mode\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "  %s                                     # Launch settings modal\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "  %s --json-dump \"eyJlbmM...\"           # Decrypt and output JSON\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "\nRun '%s COMMAND --help' for more information on a command.\n", os.Args[0])
