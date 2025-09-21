@@ -43,11 +43,18 @@ func GetDefaultFunctionGroups() []DefaultFunctionGroup {
 
 // LoadDefaultFunctions loads a specific group of default functions into the registry
 func LoadDefaultFunctions(registry *Registry, groupID string) error {
-	groups := GetDefaultFunctionGroups()
-
-	for _, group := range groups {
-		if group.ID == groupID {
-			return loadFunctionGroup(registry, group)
+	// Use the simplified approach that we know works
+	switch groupID {
+	case "rc4-encryption", "rc4":
+		return LoadRC4Defaults(registry)
+	case "math-utilities", "math":
+		return LoadMathDefaults(registry)
+	default:
+		groups := GetDefaultFunctionGroups()
+		for _, group := range groups {
+			if group.ID == groupID {
+				return loadFunctionGroup(registry, group)
+			}
 		}
 	}
 

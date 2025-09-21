@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/hacka-re/cli/internal/share"
@@ -164,8 +165,46 @@ func (c *Config) SaveToFile(path string) error {
 func (c *Config) LoadFromSharedConfig(shared *share.SharedConfig) {
 	if shared.APIKey != "" {
 		c.APIKey = shared.APIKey
-	}
-	if shared.BaseURL != "" {
+
+		// Try to detect provider from API key
+		provider, detectedBaseURL, defaultModel := detectProviderFromAPIKey(shared.APIKey)
+
+		// If we detected a provider from the API key
+		if provider != "" {
+			// Check if shared config has a BaseURL that doesn't match the detected provider
+			if shared.BaseURL != "" {
+				// Check if the BaseURL matches the detected provider
+				detectedProvider := detectProvider(shared.BaseURL)
+				if detectedProvider != provider {
+					// Mismatch! The API key suggests one provider but BaseURL is for another
+					// Trust the API key detection over the BaseURL
+					c.Provider = provider
+					c.BaseURL = detectedBaseURL
+					// Use detected model if no model specified
+					if shared.Model == "" && defaultModel != "" {
+						c.Model = defaultModel
+					}
+				} else {
+					// They match, use the shared config's BaseURL
+					c.BaseURL = shared.BaseURL
+					c.Provider = provider
+				}
+			} else {
+				// No BaseURL in shared config, use detected values
+				c.Provider = provider
+				c.BaseURL = detectedBaseURL
+				// Use detected model if no model specified
+				if shared.Model == "" && defaultModel != "" {
+					c.Model = defaultModel
+				}
+			}
+		} else if shared.BaseURL != "" {
+			// No detection from API key, use BaseURL from shared config
+			c.BaseURL = shared.BaseURL
+			c.Provider = detectProvider(shared.BaseURL)
+		}
+	} else if shared.BaseURL != "" {
+		// No API key, just use BaseURL
 		c.BaseURL = shared.BaseURL
 		c.Provider = detectProvider(shared.BaseURL)
 	}
@@ -253,6 +292,32 @@ func GetConfigPath() string {
 		return "hacka.re.json"
 	}
 	return filepath.Join(homeDir, ".config", "hacka.re", "config.json")
+}
+
+// detectProviderFromAPIKey detects the provider based on API key patterns
+func detectProviderFromAPIKey(apiKey string) (provider Provider, baseURL string, model string) {
+	if apiKey == "" {
+		return "", "", ""
+	}
+
+	trimmedKey := strings.TrimSpace(apiKey)
+
+	// Check for Berget.AI keys
+	if matched, _ := regexp.MatchString(`^sk_ber_[A-Za-z0-9\-_]{30,}$`, trimmedKey); matched {
+		return ProviderBerget, "https://api.berget.ai/v1", "mistral-small-2503"
+	}
+
+	// Check for OpenAI keys
+	if matched, _ := regexp.MatchString(`^sk-proj-[A-Za-z0-9\-_]{50,}$`, trimmedKey); matched {
+		return ProviderOpenAI, "https://api.openai.com/v1", "gpt-5-nano"
+	}
+
+	// Check for Groq keys
+	if matched, _ := regexp.MatchString(`^gsk_[A-Za-z0-9]{50,}$`, trimmedKey); matched {
+		return ProviderGroq, "https://api.groq.com/openai/v1", "llama-3.3-70b-versatile"
+	}
+
+	return "", "", ""
 }
 
 // detectProvider attempts to detect the provider from the base URL

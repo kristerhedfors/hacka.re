@@ -141,13 +141,41 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 	scanner := bufio.NewScanner(resp.Body)
 	chunkCount := 0
 	totalContent := 0
+	lineCount := 0
 
 	for scanner.Scan() {
 		line := scanner.Text()
+		lineCount++
+
+		// Log first few lines for debugging
+		if lineCount <= 3 {
+			if log := logger.Get(); log != nil {
+				log.Debug("[ChatClient] Line %d: %s", lineCount, line)
+			}
+		}
 
 		// Skip empty lines
 		if line == "" {
 			continue
+		}
+
+		// Check for error response (Berget returns errors with 200 status)
+		if strings.Contains(line, `"error"`) && strings.Contains(line, `"message"`) {
+			var errResp struct {
+				Error struct {
+					Message string `json:"message"`
+					Type    string `json:"type"`
+					Code    string `json:"code"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal([]byte(line), &errResp); err == nil && errResp.Error.Message != "" {
+				errMsg := fmt.Sprintf("API Error: %s (type: %s, code: %s)",
+					errResp.Error.Message, errResp.Error.Type, errResp.Error.Code)
+				if log := logger.Get(); log != nil {
+					log.Error("[ChatClient] %s", errMsg)
+				}
+				return fmt.Errorf(errMsg)
+			}
 		}
 
 		// Parse SSE format
@@ -195,7 +223,10 @@ func (c *ChatClient) StreamCompletion(messages []ChatMessage, callback Streaming
 	}
 
 	if log := logger.Get(); log != nil {
-		log.Info("[ChatClient] Streaming completed successfully")
+		if lineCount == 0 {
+			log.Warn("[ChatClient] No lines received from streaming response")
+		}
+		log.Info("[ChatClient] Streaming completed - lines: %d, chunks: %d, chars: %d", lineCount, chunkCount, totalContent)
 	}
 
 	return nil
