@@ -130,7 +130,16 @@ func (c *Client) sendRequestWithRetry(request ChatRequest, messages []Message, s
 	logger.Get().Debug("Request body: %s", string(body))
 
 	// Create HTTP request
-	url := strings.TrimSuffix(c.config.BaseURL, "/") + "/chat/completions"
+	// Handle BaseURL that already includes /v1 (e.g., llamafile, ollama)
+	baseURL := strings.TrimSuffix(c.config.BaseURL, "/")
+	var url string
+	if strings.HasSuffix(baseURL, "/v1") {
+		// BaseURL already includes /v1, just add the endpoint
+		url = baseURL + "/chat/completions"
+	} else {
+		// Add the full path
+		url = baseURL + "/v1/chat/completions"
+	}
 	logger.Get().Debug("Base URL: %s, Final URL: %s", c.config.BaseURL, url)
 	logger.Get().Info("API URL: %s", url)
 	logger.Get().Debug("Base URL from config: %s", c.config.BaseURL)
