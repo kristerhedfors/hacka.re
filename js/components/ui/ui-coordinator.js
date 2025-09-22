@@ -240,7 +240,14 @@ window.UICoordinator = (function() {
         function generateShareQRCode(link) {
             return shareUIManager.generateShareQRCode(link);
         }
-        
+
+        /**
+         * Print the share link with QR code
+         */
+        function printShareLink() {
+            return shareUIManager.printShareLink();
+        }
+
         // Public API
         return {
             // Modal management
@@ -254,13 +261,14 @@ window.UICoordinator = (function() {
             hideFunctionModal,
             showModelSelectorModal,
             hideModelSelectorModal,
-            
+
             // Share UI management
             togglePasswordVisibility,
             toggleMessageHistoryInput,
             updateLinkLengthBar,
             generateShareQRCode,
-            
+            printShareLink,
+
             // Display updates
             updateModelInfoDisplay,
             updateContextUsage

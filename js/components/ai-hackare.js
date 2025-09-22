@@ -386,8 +386,15 @@ window.AIHackareComponent = (function() {
                     this.shareManager.copyGeneratedLink(this.chatManager.addSystemMessage.bind(this.chatManager));
                 });
             }
-            
-            
+
+            // Print share link button
+            if (this.elements.printShareLinkBtn) {
+                this.elements.printShareLinkBtn.addEventListener('click', () => {
+                    this.uiManager.printShareLink();
+                });
+            }
+
+
             // Close modal when clicking outside
             window.addEventListener('click', (e) => {
                 if (e.target === this.elements.shareModal) {

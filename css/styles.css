@@ -2410,13 +2410,15 @@ footer a:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
 
-#copy-generated-link {
+#copy-generated-link,
+#print-share-link {
     background-color: var(--primary-color);
     color: var(--light-text);
     border-radius: var(--border-radius);
 }
 
-#copy-generated-link:hover {
+#copy-generated-link:hover,
+#print-share-link:hover {
     background-color: var(--primary-dark);
 }
 

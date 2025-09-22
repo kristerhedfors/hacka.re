@@ -50,6 +50,8 @@ window.DOMElements = (function() {
             generatedLinkContainer: document.getElementById('generated-link-container'),
             generatedLink: document.getElementById('generated-link'),
             copyGeneratedLinkBtn: document.getElementById('copy-generated-link'),
+            printShareLinkBtn: document.getElementById('print-share-link'),
+            sharePrintInfo: document.getElementById('share-print-info'),
             showSystemPromptBtn: document.getElementById('show-system-prompt-btn'),
             shareQrCodeContainer: document.getElementById('share-qr-code-container'),
             qrCodeWarning: document.getElementById('qr-code-warning'),
