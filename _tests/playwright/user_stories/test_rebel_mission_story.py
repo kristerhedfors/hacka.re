@@ -309,23 +309,41 @@ class RebelMissionStory:
         self.highlight_element(page, "#send-btn")
         page.locator("#send-btn").click()
 
-        # Wait for response
-        print("⏳ Waiting for AI response...")
+        # Wait for response to START
+        print("⏳ Waiting for AI response to start...")
         try:
+            # Wait for assistant message to appear
+            page.wait_for_selector(".message.assistant", state="visible", timeout=10000)
+            print("📝 AI response started...")
+
+            # Wait for response to COMPLETE (no longer generating)
+            print("⏳ Waiting for AI response to complete...")
             page.wait_for_function(
                 "() => !document.querySelector('#send-btn').hasAttribute('data-generating')",
                 timeout=30000
             )
-            self.dramatic_pause(page, 2000, "AI response received")
 
-            # Wait for the assistant message to appear
-            page.wait_for_selector(".message.assistant .message-content", state="visible", timeout=5000)
+            # Extra pause to ensure streaming is fully done
+            page.wait_for_timeout(2000)
+            print("✅ AI response complete")
 
-            # Get the response
-            response = page.locator(".message.assistant .message-content").last
-            response_text = response.inner_text()
+            # Now get the full response - wait a bit for DOM to update
+            page.wait_for_timeout(500)
+
+            # Try to get the assistant's response
+            assistant_messages = page.locator(".message.assistant .message-content")
+            message_count = assistant_messages.count()
+
+            if message_count > 0:
+                # Get the last assistant message
+                response = assistant_messages.last
+                response_text = response.inner_text()
+                print(f"📝 Response received: {len(response_text)} characters")
+            else:
+                raise Exception("No assistant messages found")
+
         except Exception as e:
-            print(f"⚠️ Failed to get AI response, using fallback prompt")
+            print(f"⚠️ Failed to get AI response: {e}, using fallback prompt")
             response_text = """MISSION BRIEFING: OPERATION DEATH STAR
 
 You are a Rebel Alliance operative on a critical mission to destroy the Death Star.
@@ -338,42 +356,99 @@ Secondary Objectives:
 - Ensure the survival of key personnel
 
 Remember: The fate of the galaxy rests in your hands. May the Force be with you."""
+
         print(f"📝 AI Response Preview: {response_text[:100]}...")
 
+        # Take screenshot of the complete response
         screenshot_with_markdown(page, "04_prompt_response", {
             "Status": "System prompt generated",
             "Response Length": f"{len(response_text)} characters"
         })
 
+        # Wait a bit so viewer can see the response
+        page.wait_for_timeout(1000)
+
         # === STEP 4: Save as System Prompt ===
         self.log_step("Save System Prompt", "Save the response as 'Mission' prompt")
 
+        # First, we need to copy the AI response to clipboard
+        # Select the last assistant message
+        print("📋 Selecting AI response text...")
+        page.wait_for_timeout(300)
+
+        # Triple-click to select all text in the response
+        last_message = page.locator(".message.assistant .message-content").last
+        copied_successfully = False
+
+        if last_message.is_visible():
+            try:
+                # Triple click to select all text
+                last_message.click(click_count=3)
+                page.wait_for_timeout(500)  # Let selection settle
+
+                # Copy to clipboard (Cmd+C on Mac)
+                page.keyboard.press("Meta+C")
+                copied_successfully = True
+                print("✅ Response copied to clipboard")
+                page.wait_for_timeout(300)
+            except:
+                print("⚠️ Could not copy response to clipboard")
+                copied_successfully = False
+
         # Open prompts modal
+        print("📝 Opening prompts modal...")
         self.highlight_element(page, "#prompts-btn")
         page.locator("#prompts-btn").click()
-        self.dramatic_pause(page, 1000, "Opening prompts modal...")
+        page.wait_for_timeout(1000)  # Wait for modal animation
 
-        # Add new prompt
-        if page.locator("#add-prompt-btn").is_visible():
-            page.locator("#add-prompt-btn").click()
-            self.dramatic_pause(page, 500)
+        # Look for the custom prompt textarea (it's the main textarea in the modal)
+        print("🎯 Looking for prompt textarea...")
+        page.wait_for_timeout(500)
 
-            # Fill prompt details
-            page.locator("#prompt-name").fill("Mission: Destroy Death Star")
-            page.locator("#prompt-content").fill(response_text)
+        # The prompts modal has a textarea for custom prompts
+        prompt_textarea = page.locator("#prompts-modal textarea").first
 
-            # Save prompt
-            page.locator("#save-prompt-btn").click()
-            self.dramatic_pause(page, 1000, "Prompt saved")
+        if prompt_textarea.is_visible():
+            print("📝 Found prompt textarea")
+            page.wait_for_timeout(300)
 
-        screenshot_with_markdown(page, "05_prompt_saved", {
-            "Status": "System prompt saved",
-            "Name": "Mission: Destroy Death Star"
-        })
+            # Click to focus the textarea
+            prompt_textarea.click()
+            page.wait_for_timeout(300)
+
+            # Clear any existing content
+            prompt_textarea.fill("")  # Clear it first
+            page.wait_for_timeout(200)
+
+            # Type the mission briefing header
+            print("✍️ Typing mission briefing...")
+            prompt_textarea.type("MISSION BRIEFING: DESTROY THE DEATH STAR\n\n", delay=10)
+            page.wait_for_timeout(300)
+
+            # Type the actual prompt content (or paste if we copied it)
+            if copied_successfully:
+                # We copied it earlier, so paste
+                page.keyboard.press("Meta+V")
+                print("📋 Pasted AI response")
+            else:
+                # Type the response text
+                prompt_textarea.type(response_text, delay=5)
+                print("✍️ Typed prompt content")
+
+            page.wait_for_timeout(800)  # Let user see the filled prompt
+
+            screenshot_with_markdown(page, "05_prompt_configured", {
+                "Status": "System prompt configured",
+                "Title": "MISSION BRIEFING: DESTROY THE DEATH STAR"
+            })
+        else:
+            print("⚠️ No textarea found in prompts modal")
 
         # Close prompts modal
+        print("✅ Closing prompts modal")
+        page.wait_for_timeout(500)
         page.locator("#close-prompts-modal").click()
-        self.dramatic_pause(page, 500)
+        page.wait_for_timeout(500)
 
         # === STEP 5: Create Function ===
         self.log_step("Create Torpedo Function", "Create blow_up_death_star function")
