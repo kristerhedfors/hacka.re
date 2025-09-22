@@ -162,8 +162,16 @@ if [[ $? -eq 0 ]]; then
     echo ""
     echo -e "${GREEN}${BOLD}✅ Story recorded successfully!${NC}"
 
-    # Find the latest video
-    VIDEO_FILE=$(ls -t ../../videos/user_stories/${STORY}_*.webm 2>/dev/null | head -1)
+    # Find the latest video (prefer MP4 over WebM)
+    VIDEO_FILE=$(ls -t ../../videos/user_stories/${STORY}_*_presentation.mp4 2>/dev/null | head -1)
+
+    # Fallback to WebM if MP4 not found
+    if [[ -z "$VIDEO_FILE" ]]; then
+        VIDEO_FILE=$(ls -t ../../videos/user_stories/${STORY}_*.webm 2>/dev/null | head -1)
+        if [[ -n "$VIDEO_FILE" ]]; then
+            echo -e "${YELLOW}⚠️ MP4 conversion not available (install ffmpeg for optimized videos)${NC}"
+        fi
+    fi
 
     if [[ -n "$VIDEO_FILE" ]]; then
         echo -e "${GREEN}📹 Video saved: ${VIDEO_FILE}${NC}"
@@ -171,6 +179,11 @@ if [[ $? -eq 0 ]]; then
         # Get file size
         SIZE=$(du -h "$VIDEO_FILE" | cut -f1)
         echo -e "${BLUE}📦 Size: ${SIZE}${NC}"
+
+        # Check if it's presentation-optimized
+        if [[ "$VIDEO_FILE" == *"_presentation.mp4" ]]; then
+            echo -e "${GREEN}✨ Presentation-optimized (H.264, 15fps, 854x666)${NC}"
+        fi
 
         # Open video if requested
         if [[ "$OPEN_VIDEO" == true ]]; then

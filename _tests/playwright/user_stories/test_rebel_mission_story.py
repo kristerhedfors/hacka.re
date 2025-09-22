@@ -92,7 +92,7 @@ class RebelMissionStory:
         page.wait_for_timeout(duration)
 
     def type_naturally(self, page: Page, selector: str, text: str):
-        """Type text with natural human-like speed"""
+        """Type text at natural speed for presentations"""
         import random
 
         input_element = page.locator(selector)
@@ -101,28 +101,32 @@ class RebelMissionStory:
         # Clear existing content first
         input_element.clear()
 
-        # Split text into chunks for more natural typing
-        # Type in word chunks with brief pauses between
-        words = text.split(' ')
+        # For presentations, type in smooth chunks with consistent speed
+        # This creates a professional appearance without being too slow
+        if len(text) <= 30:
+            # Short messages: type quickly but visibly
+            input_element.type(text, delay=15)
+        else:
+            # Longer messages: type in natural phrases
+            # Split on punctuation and conjunctions for natural breaks
+            import re
+            # Split on punctuation, conjunctions, or every 5-7 words
+            chunks = re.split(r'([,!?.]|\band\b|\bor\b|\bbut\b)', text)
+            chunks = [c.strip() for c in chunks if c.strip()]
 
-        for i, word in enumerate(words):
-            # Type each word quickly
-            if i > 0:
-                input_element.type(' ', delay=10)
+            for i, chunk in enumerate(chunks):
+                if i > 0 and chunk not in '.,!?':
+                    input_element.type(' ', delay=5)
 
-            # Type most of the word instantly
-            if len(word) > 3:
-                # Type first part quickly (1.7x faster)
-                input_element.type(word[:-2], delay=0)
-                # Type last 2 chars with slight delay for natural feel (1.7x faster)
-                input_element.type(word[-2:], delay=random.randint(6, 12))
-            else:
-                # Short words typed quickly
-                input_element.type(word, delay=3)
+                # Type each chunk smoothly
+                input_element.type(chunk, delay=8)
 
-            # Small pause between words occasionally (1.7x faster)
-            if random.random() < 0.2:  # 20% chance
-                page.wait_for_timeout(random.randint(30, 60))
+                # Brief pause after punctuation
+                if chunk in '.,!?':
+                    page.wait_for_timeout(150)
+                elif i < len(chunks) - 1:
+                    # Small pause between chunks
+                    page.wait_for_timeout(50)
 
     def smooth_scroll_to(self, page: Page, selector: str):
         """Smoothly scroll element into view for better video"""
@@ -239,30 +243,50 @@ class RebelMissionStory:
         base_url_select = page.locator("#base-url-select")
         base_url_select.select_option(ACTIVE_TEST_CONFIG["provider_value"])
 
-        # Short wait for models to load
-        page.wait_for_timeout(1000)
-        model_select = page.locator("#model-select")
-        if model_select.is_visible():
-            # Select GPT-4.1 model
-            model_select.select_option("gpt-4.1")
-            print("✅ Selected GPT-4.1 model")
+        # Enable YOLO mode FIRST (before selecting model)
+        # This prevents the model from being reset
+        print("🎯 Enabling YOLO mode first...")
+        page.wait_for_timeout(300)  # Pause to see settings
 
-        # Enable YOLO mode for auto-execution
         yolo_checkbox = page.locator("#yolo-mode")
         if not yolo_checkbox.is_checked():
             # Handle confirmation dialog
             page.on("dialog", lambda dialog: dialog.accept())
             yolo_checkbox.click()
-            print("✅ YOLO mode enabled - auto-execute functions!")
+            print("✅ YOLO mode enabled")
+            page.wait_for_timeout(300)  # Pause after YOLO
+
+        # NOW select the model (after YOLO is enabled)
+        page.wait_for_timeout(1000)  # Wait for models to load
+        model_select = page.locator("#model-select")
+        selected_model = "gpt-4.1"  # Store the model we're selecting
+
+        if model_select.is_visible():
+            # Select GPT-4.1 model
+            print(f"📊 Selecting {selected_model} model...")
+            page.wait_for_timeout(300)  # Pause before selection
+
+            model_select.select_option(selected_model)
+            print(f"✅ Selected {selected_model} model")
+            page.wait_for_timeout(300)  # Pause to see selection
+
+            # Verify model stayed selected
+            current_value = model_select.input_value()
+            if current_value == selected_model:
+                print(f"✅ Model confirmed: {current_value}")
+            else:
+                print(f"⚠️ Model is {current_value}, expected {selected_model}")
+            page.wait_for_timeout(300)  # Final pause
 
         screenshot_with_markdown(page, "02_api_configured", {
             "Status": "API Configured",
             "Provider": ACTIVE_TEST_CONFIG["provider_value"],
-            "Model": ACTIVE_TEST_CONFIG["model"],
+            "Model": selected_model,  # Use the actual selected model
             "YOLO": "Enabled"
         })
 
-        # Close settings
+        # Close settings with pause
+        page.wait_for_timeout(300)  # Pause before closing
         page.locator("#close-settings").click()
         self.dramatic_pause(page, 500, "Settings saved")
 
@@ -536,7 +560,65 @@ function blow_up_death_star(torpedo) {
 
             if latest_video != target_path:
                 shutil.move(latest_video, target_path)
-                print(f"📹 Video saved to: {target_path}")
+                print(f"📹 WebM saved to: {target_path}")
+
+            # Convert to presentation-optimized MP4
+            self._convert_to_presentation_mp4(target_path)
+
+    def _convert_to_presentation_mp4(self, webm_path):
+        """Convert WebM to presentation-optimized MP4"""
+        import subprocess
+        import os
+
+        mp4_path = webm_path.replace('.webm', '_presentation.mp4')
+
+        # Check if ffmpeg is available
+        try:
+            subprocess.run(['ffmpeg', '-version'], capture_output=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("⚠️ FFmpeg not found. Install it for MP4 conversion.")
+            return
+
+        print("🎬 Converting to presentation-optimized MP4...")
+
+        # Presentation-optimized conversion command
+        # - Scale to 854x666 for smaller file size
+        # - 15 fps for smooth UI demos
+        # - H.264 codec for universal compatibility
+        # - CRF 28 for balanced quality/size
+        # - No audio (most demos don't need it)
+        cmd = [
+            'ffmpeg',
+            '-i', webm_path,
+            '-vf', 'scale=854:666',  # Reduced resolution
+            '-r', '15',  # Reduced framerate
+            '-c:v', 'h264',  # H.264 codec
+            '-preset', 'slow',  # Better compression
+            '-crf', '28',  # Balanced quality
+            '-pix_fmt', 'yuv420p',  # Compatibility
+            '-movflags', '+faststart',  # Instant playback
+            '-an',  # No audio
+            '-y',  # Overwrite output
+            mp4_path
+        ]
+
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                # Get file sizes
+                webm_size = os.path.getsize(webm_path) / (1024 * 1024)  # MB
+                mp4_size = os.path.getsize(mp4_path) / (1024 * 1024)  # MB
+
+                print(f"✅ MP4 created: {mp4_path}")
+                print(f"📦 Size: {webm_size:.1f}MB → {mp4_size:.1f}MB")
+
+                # Remove original WebM
+                os.remove(webm_path)
+                print(f"🗑️ Removed original WebM")
+            else:
+                print(f"❌ FFmpeg error: {result.stderr}")
+        except Exception as e:
+            print(f"❌ Conversion failed: {e}")
 
 
 def test_rebel_mission_story():

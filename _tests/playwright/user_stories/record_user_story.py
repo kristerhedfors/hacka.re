@@ -101,12 +101,22 @@ story.run_story()
     if result.returncode == 0:
         print(f"\n✅ Story recorded successfully!")
 
-        # Find and display the video path
+        # Find and display the video path (now looking for MP4)
         video_dir = Path("../../videos/user_stories")
-        latest_videos = sorted(video_dir.glob(f"{story_name}_*.webm"), key=os.path.getmtime)
+        # Look for presentation MP4 files first
+        latest_videos = sorted(video_dir.glob(f"{story_name}_*_presentation.mp4"), key=os.path.getmtime)
+
+        # Fallback to WebM if MP4 not found (ffmpeg might not be installed)
+        if not latest_videos:
+            latest_videos = sorted(video_dir.glob(f"{story_name}_*.webm"), key=os.path.getmtime)
+
         if latest_videos:
             latest_video = latest_videos[-1]
             print(f"📹 Video saved: {latest_video}")
+
+            # Show file size
+            size_mb = os.path.getsize(latest_video) / (1024 * 1024)
+            print(f"📦 Size: {size_mb:.1f}MB")
 
             # Optionally open the video
             if kwargs.get('open'):
