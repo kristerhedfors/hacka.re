@@ -587,14 +587,174 @@ window.ShareUIManager = (function() {
                 }
             }
         }
-        
+
+        /**
+         * Print the share link with QR code
+         */
+        function printShareLink() {
+            const link = elements.generatedLink ? elements.generatedLink.value : '';
+            if (!link) {
+                console.error('No link to print');
+                return;
+            }
+
+            // Get the QR code image if it exists
+            const qrCodeCanvas = elements.shareQrCodeContainer ? elements.shareQrCodeContainer.querySelector('canvas') : null;
+            const qrCodeImage = elements.shareQrCodeContainer ? elements.shareQrCodeContainer.querySelector('img') : null;
+
+            // Create a print window
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            if (!printWindow) {
+                alert('Please allow pop-ups to print the share link');
+                return;
+            }
+
+            // Build the print HTML
+            let printHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>hacka.re Share Link</title>
+                    <style>
+                        @media print {
+                            body { margin: 0; }
+                            .no-print { display: none !important; }
+                        }
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                            text-align: center;
+                            padding: 40px;
+                            max-width: 600px;
+                            margin: 0 auto;
+                        }
+                        h1 {
+                            color: #333;
+                            font-size: 24px;
+                            margin-bottom: 20px;
+                        }
+                        .qr-container {
+                            margin: 30px auto;
+                            display: inline-block;
+                            padding: 20px;
+                            border: 1px solid #ddd;
+                            border-radius: 8px;
+                            background: white;
+                        }
+                        .qr-container canvas,
+                        .qr-container img {
+                            max-width: 250px;
+                            height: auto;
+                        }
+                        .link-container {
+                            margin: 30px 0;
+                            padding: 15px;
+                            background: #f5f5f5;
+                            border-radius: 8px;
+                            word-break: break-all;
+                            font-family: 'Courier New', monospace;
+                            font-size: 12px;
+                            line-height: 1.4;
+                        }
+                        .info-text {
+                            margin-top: 30px;
+                            font-size: 14px;
+                            color: #666;
+                            line-height: 1.6;
+                            font-style: italic;
+                        }
+                        .print-date {
+                            margin-top: 40px;
+                            font-size: 11px;
+                            color: #999;
+                        }
+                        .no-print button {
+                            margin-top: 20px;
+                            padding: 10px 20px;
+                            font-size: 16px;
+                            background: #007bff;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        }
+                        .no-print button:hover {
+                            background: #0056b3;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>hacka.re Configuration Share Link</h1>
+            `;
+
+            // Add QR code if available
+            if (qrCodeCanvas || qrCodeImage) {
+                printHTML += '<div class="qr-container">';
+
+                if (qrCodeCanvas) {
+                    // Convert canvas to data URL
+                    const dataURL = qrCodeCanvas.toDataURL('image/png');
+                    printHTML += `<img src="${dataURL}" alt="QR Code" />`;
+                } else if (qrCodeImage) {
+                    // Use existing image
+                    printHTML += `<img src="${qrCodeImage.src}" alt="QR Code" />`;
+                }
+
+                printHTML += '</div>';
+            }
+
+            // Add the link text
+            printHTML += `
+                <div class="link-container">
+                    <strong>URL:</strong><br/>
+                    ${link}
+                </div>
+            `;
+
+            // Add the info text
+            printHTML += `
+                <div class="info-text">
+                    Self-contained encrypted link - scan QR or copy URL to share configuration
+                </div>
+            `;
+
+            // Add print date
+            const now = new Date();
+            printHTML += `
+                <div class="print-date">
+                    Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}
+                </div>
+            `;
+
+            // Add print button (hidden during actual print)
+            printHTML += `
+                <div class="no-print">
+                    <button onclick="window.print()">Print This Page</button>
+                </div>
+            `;
+
+            printHTML += `
+                </body>
+                </html>
+            `;
+
+            // Write the content and trigger print
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
+
+            // Trigger print after a short delay to ensure rendering
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+
         // Public API
         return {
             initializeShareModal,
             togglePasswordVisibility,
             toggleMessageHistoryInput,
             updateLinkLengthBar,
-            generateShareQRCode
+            generateShareQRCode,
+            printShareLink
         };
     }
     
