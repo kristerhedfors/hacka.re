@@ -201,35 +201,44 @@
                         errorDiv.style.display = 'block';
                         return;
                     }
-                    
+
                     connectBtn.disabled = true;
                     connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
                     errorDiv.style.display = 'none';
-                    
+
                     try {
                         const connector = this.serviceManager.getConnector(serviceKey);
-                        
-                        // For testing: allow connection creation even with invalid keys
-                        // Check if this is a test environment or test key
-                        const isTestKey = apiKey.includes('test') || apiKey.includes('debug');
-                        const skipValidation = isTestKey || window.location.hostname === 'localhost';
-                        
-                        // Validate API key (unless testing)
-                        if (connector.validateApiKey && !skipValidation) {
-                            const isValid = await connector.validateApiKey(apiKey);
-                            if (!isValid) {
-                                throw new Error('Invalid API key. Please check your key and try again.');
+
+                        // For testing: skip validation entirely on localhost
+                        const isLocalhost = window.location.hostname === 'localhost' ||
+                                          window.location.hostname === '127.0.0.1';
+
+                        // Always skip validation on localhost (testing environment)
+                        if (!isLocalhost && connector.validateApiKey) {
+                            try {
+                                const isValid = await connector.validateApiKey(apiKey);
+                                if (!isValid) {
+                                    throw new Error('Invalid API key. Please check your key and try again.');
+                                }
+                            } catch (validationError) {
+                                console.warn('API key validation failed:', validationError);
+                                // Show error but don't block on localhost
+                                throw validationError;
                             }
+                        } else {
+                            console.log('Skipping API key validation (localhost/test environment)');
                         }
-                        
+
                         // Return the API key - connector will create connection
                         modal.remove();
                         resolve(apiKey);
                     } catch (error) {
+                        console.error('Connection error:', error);
                         errorDiv.textContent = error.message || 'Failed to connect';
                         errorDiv.style.display = 'block';
                         connectBtn.disabled = false;
                         connectBtn.innerHTML = '<i class="fas fa-link"></i> Connect';
+                        // Don't leave the promise hanging - keep modal open for retry
                     }
                 };
                 

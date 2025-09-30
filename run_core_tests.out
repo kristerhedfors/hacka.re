@@ -17,72 +17,28 @@ Port: 8000
 Project Root: /Users/user/dev/hacka.re
 ==================================================
 Checking for existing HTTP server processes on port 8000...
-No existing processes found on port 8000.
+Found existing processes: 18248
+Killing existing processes...
+Processes killed.
 Changing to project root directory: /Users/user/dev/hacka.re
 Starting Python HTTP server on port 8000...
-Server started successfully with PID: 38402
-Server is now running at http://localhost:8000
-Server PID saved to: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
-==================================================
-Server is ready. You can now run your tests.
-To stop the server, run: kill -9 $(cat /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt)
-==================================================
-Running Core Functionality tests with chromium browser in batches...
+Failed to start server.
+Running Core Functionality tests with chromium browser (PARALLEL mode: 4 workers)...
 Test filter: test_page or test_api or test_chat or test_welcome_modal
 
-\n=== Batch 1: Page Tests ===
+=== Running Core Tests ===
 ============================= test session starts ==============================
 platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
 rootdir: /Users/user/dev/hacka.re/_tests/playwright
 configfile: pytest.ini
-plugins: asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
+plugins: xdist-3.8.0, asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
 asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 4 items
+created: 4/4 workers
+4 workers [0 items]
 
-test_page.py::test_page_loads[chromium0] PASSED                          [ 25%]
-test_page.py::test_chat_interface_elements[chromium0] PASSED             [ 50%]
-test_page.py::test_page_loads[chromium1] PASSED                          [ 75%]
-test_page.py::test_chat_interface_elements[chromium1] PASSED             [100%]
+scheduling tests via LoadFileScheduling
 
-============================== 4 passed in 7.04s ===============================
-\n=== Batch 2: API Tests ===
-============================= test session starts ==============================
-platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
-rootdir: /Users/user/dev/hacka.re/_tests/playwright
-configfile: pytest.ini
-plugins: asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
-asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 4 items
-
-test_api.py::test_api_key_configuration[chromium0] PASSED                [ 25%]
-test_api.py::test_model_selection[chromium0] PASSED                      [ 50%]
-test_api.py::test_api_key_configuration[chromium1] PASSED                [ 75%]
-test_api.py::test_model_selection[chromium1] PASSED                      [100%]
-
-============================== 4 passed in 18.01s ==============================
-\n=== Batch 3: Chat Tests ===
-============================= test session starts ==============================
-platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
-rootdir: /Users/user/dev/hacka.re/_tests/playwright
-configfile: pytest.ini
-plugins: asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
-asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 2 items
-
-test_chat.py::test_chat_message_send_receive[chromium0] PASSED           [ 50%]
-test_chat.py::test_chat_message_send_receive[chromium1] PASSED           [100%]
-
-============================== 2 passed in 23.29s ==============================
-\n=== Batch 4: Welcome Modal Tests ===
-============================= test session starts ==============================
-platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
-rootdir: /Users/user/dev/hacka.re/_tests/playwright
-configfile: pytest.ini
-plugins: asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
-asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 0 items
-
-============================ no tests ran in 0.01s =============================
+============================ no tests ran in 0.41s =============================
 Generating test results markdown files...
 No arguments provided. Using default files.
 Processing default files...
@@ -100,9 +56,8 @@ You can view the markdown report with: glow -p run_tests.out_bundle.md
 These files can be used by the coding assistant LLM to analyze test results
 Stopping HTTP server...
 ===== Stopping HTTP Server for hacka.re Tests =====
-Found server process with PID: 38402
-Stopping server...
-Server stopped.
-Removed PID file: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+PID file not found: /Users/user/dev/hacka.re/_tests/playwright/server_pid.txt
+Checking for any HTTP server processes on port 8000...
+No existing processes found on port 8000.
 ==================================================
 Server stopped.

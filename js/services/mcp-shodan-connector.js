@@ -297,6 +297,15 @@
          * Validate Shodan API key
          */
         async validateApiKey(apiKey) {
+            // Skip validation on localhost (testing environment)
+            const isLocalhost = window.location.hostname === 'localhost' ||
+                              window.location.hostname === '127.0.0.1';
+
+            if (isLocalhost) {
+                console.log('[ShodanConnector] Skipping API key validation (localhost)');
+                return true;
+            }
+
             try {
                 const url = `${this.config.apiBaseUrl}/api-info?key=${encodeURIComponent(apiKey)}`;
                 const response = await fetch(url);

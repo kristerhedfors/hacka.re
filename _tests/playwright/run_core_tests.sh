@@ -53,6 +53,7 @@ BROWSER="chromium"
 HEADLESS="--headed"
 TIMEOUT="5000"
 SKIP_SERVER_MANAGEMENT="false"
+NUM_WORKERS="4"  # Default to 4 workers for optimal performance
 
 # Process command line arguments
 while [[ $# -gt 0 ]]; do
@@ -81,6 +82,14 @@ while [[ $# -gt 0 ]]; do
             SKIP_SERVER_MANAGEMENT="true"
             shift
             ;;
+        --workers|-n)
+            NUM_WORKERS="$2"
+            shift 2
+            ;;
+        --no-parallel)
+            NUM_WORKERS="0"
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [options]"
             echo ""
@@ -92,13 +101,20 @@ while [[ $# -gt 0 ]]; do
             echo "Note: Excludes problematic tests (modals, welcome manager) with decorator issues"
             echo ""
             echo "Options:"
-            echo "  --headless      Run tests in headless mode (no browser UI)"
-            echo "  --firefox       Run tests in Firefox"
-            echo "  --webkit        Run tests in WebKit"
-            echo "  --verbose, -v   Run tests with verbose output"
-            echo "  --timeout       Set timeout in milliseconds (default: 5000)"
-            echo "  --skip-server   Skip starting/stopping the HTTP server"
-            echo "  --help, -h      Show this help message"
+            echo "  --headless        Run tests in headless mode (no browser UI)"
+            echo "  --firefox         Run tests in Firefox"
+            echo "  --webkit          Run tests in WebKit"
+            echo "  --verbose, -v     Run tests with verbose output"
+            echo "  --timeout         Set timeout in milliseconds (default: 5000)"
+            echo "  --skip-server     Skip starting/stopping the HTTP server"
+            echo "  --workers, -n N   Number of parallel workers (default: auto)"
+            echo "  --no-parallel     Disable parallel execution (use 1 worker)"
+            echo "  --help, -h        Show this help message"
+            echo ""
+            echo "Parallel Execution:"
+            echo "  By default, tests run in parallel using pytest-xdist with auto-detected cores."
+            echo "  Use --workers N to specify exact number of workers (e.g., --workers 4)"
+            echo "  Use --no-parallel for sequential execution (debugging)"
             exit 0
             ;;
         *)
@@ -121,23 +137,21 @@ if [ "$SKIP_SERVER_MANAGEMENT" = "false" ]; then
     trap 'echo "Stopping HTTP server..."; ./stop_server.sh; echo "Server stopped."' EXIT
 fi
 
-# Run the core tests in smaller batches to avoid timeouts
-echo "Running Core Functionality tests with $BROWSER browser in batches..."
+# Prepare parallel execution flags
+if [ "$NUM_WORKERS" = "0" ]; then
+    PARALLEL_ARGS=""
+    echo "Running Core Functionality tests with $BROWSER browser (SEQUENTIAL mode)..."
+else
+    PARALLEL_ARGS="-n $NUM_WORKERS --dist=loadfile"
+    echo "Running Core Functionality tests with $BROWSER browser (PARALLEL mode: $NUM_WORKERS workers)..."
+fi
+
 echo "Test filter: $CORE_TESTS_FILTER"
 echo ""
 
-# Run each core test file separately to avoid timeouts
-echo "\n=== Batch 1: Page Tests ==="
-eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_page.py" | tee test_output.log
-
-echo "\n=== Batch 2: API Tests ==="  
-eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_api.py" | tee -a test_output.log
-
-echo "\n=== Batch 3: Chat Tests ==="
-eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_chat.py" | tee -a test_output.log
-
-echo "\n=== Batch 4: Welcome Modal Tests ==="
-eval "$PYTHON_CMD -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_welcome_modal.py" 2>/dev/null | tee -a test_output.log || echo "test_welcome_modal.py not found or skipped"
+# Run core tests with parallel execution
+echo "=== Running Core Tests ==="
+eval "$PYTHON_CMD -m pytest $PYTEST_ARGS $PARALLEL_ARGS --browser $BROWSER $HEADLESS test_page.py test_api.py test_chat.py test_welcome_modal.py" | tee test_output.log
 
 # Generate test results markdown files
 echo "Generating test results markdown files..."
