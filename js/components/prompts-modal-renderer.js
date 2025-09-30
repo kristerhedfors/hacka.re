@@ -170,12 +170,12 @@ window.PromptsModalRenderer = (function() {
         promptName.title = 'Click to view prompt content';
         promptItem.appendChild(promptName);
         
-        // Create info button instead of delete
-        const infoIcon = document.createElement('button');
-        infoIcon.className = 'prompt-item-info';
-        infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
-        infoIcon.title = 'About this prompt';
-        promptItem.appendChild(infoIcon);
+        // Create view button instead of delete
+        const viewIcon = document.createElement('button');
+        viewIcon.className = 'prompt-item-info';
+        viewIcon.innerHTML = '<i class="fas fa-eye"></i>';
+        viewIcon.title = 'View prompt';
+        promptItem.appendChild(viewIcon);
         
         return promptItem;
     }
@@ -489,6 +489,35 @@ window.PromptsModalRenderer = (function() {
     }
 
     /**
+     * Render a simple prompt viewer modal (plain text, no markdown)
+     * @param {Object} prompt - Prompt object
+     * @returns {HTMLElement} Simple modal element
+     */
+    function renderSimplePromptViewerModal(prompt) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'simple-prompt-viewer-modal';
+
+        // Create simple modal content
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px; max-height: 70vh;">
+                <div class="settings-header">
+                    <h2>${escapeHtml(prompt.name)}</h2>
+                    <button type="button" class="btn icon-btn" id="close-simple-prompt-viewer" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="scrollable-content" style="padding: 20px; max-height: calc(70vh - 80px); overflow-y: auto;">
+                    <pre id="simple-prompt-viewer-content" style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; line-height: 1.5; margin: 0;"></pre>
+                </div>
+            </div>
+        `;
+
+        return modal;
+    }
+
+    /**
      * Escape HTML to prevent XSS
      * @param {string} text - Text to escape
      * @returns {string} Escaped text
@@ -512,6 +541,7 @@ window.PromptsModalRenderer = (function() {
         renderNoPromptsMessage,
         renderInfoPopup,
         renderPromptViewerModal,
+        renderSimplePromptViewerModal,
         getPromptDescription,
         getFileIcon,
         escapeHtml

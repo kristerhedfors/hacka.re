@@ -246,6 +246,60 @@ window.PromptsEventHandlers = (function() {
     }
     
     /**
+     * Show the simple prompt viewer modal
+     * @param {Object} prompt - Prompt object to display
+     */
+    function showSimplePromptViewerModal(prompt) {
+        // Remove any existing viewer modal
+        const existingModal = document.getElementById('simple-prompt-viewer-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Create and add the modal
+        const modal = window.PromptsModalRenderer.renderSimplePromptViewerModal(prompt);
+        document.body.appendChild(modal);
+
+        // Populate content (plain text only, no markdown)
+        const content = modal.querySelector('#simple-prompt-viewer-content');
+        if (content) {
+            content.textContent = prompt.content;
+        }
+
+        // Set up close button
+        const closeBtn = modal.querySelector('#close-simple-prompt-viewer');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            });
+        }
+
+        // Show modal with animation
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
+
+        // Close on click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            }
+        });
+
+        // Close on ESC key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    /**
      * Create info button handler for default prompts
      * @param {Object} prompt - Default prompt object
      * @param {HTMLElement} infoIcon - Info icon element
@@ -254,24 +308,12 @@ window.PromptsEventHandlers = (function() {
     function createInfoHandler(prompt, infoIcon) {
         return function(e) {
             e.stopPropagation(); // Prevent triggering parent click events
-            
-            // Create and show info popup
-            const popup = PromptsModalRenderer.renderInfoPopup(prompt);
-            
-            // Position the popup near the info icon
-            const rect = infoIcon.getBoundingClientRect();
-            popup.style.position = 'absolute';
-            popup.style.top = `${rect.bottom + window.scrollY + 10}px`;
-            popup.style.left = `${rect.left + window.scrollX - 200}px`; // Offset to center
-            
-            // Add to body
-            document.body.appendChild(popup);
-            
-            // Set up close handlers
-            setupInfoPopupHandlers(popup, infoIcon);
+
+            // Show simple prompt viewer modal
+            showSimplePromptViewerModal(prompt);
         };
     }
-    
+
     /**
      * Setup handlers for info popup
      * @param {HTMLElement} popup - Popup element
@@ -443,6 +485,7 @@ window.PromptsEventHandlers = (function() {
         createClearHandler,
         createSaveHandler,
         setupInfoPopupHandlers,
-        showPromptViewerModal
+        showPromptViewerModal,
+        showSimplePromptViewerModal
     };
 })();

@@ -315,7 +315,7 @@ window.PromptLibrarySelector = (function() {
                         ${prompt.shortDesc ? `<div class="prompt-short-desc">${escapeHtml(prompt.shortDesc)}</div>` : ''}
                     </div>
                     <button class="icon-btn prompt-info-btn" data-prompt-id="${prompt.id}" title="View full prompt">
-                        <i class="fas fa-info-circle"></i>
+                        <i class="fas fa-eye"></i>
                     </button>
                 </div>
             `;
@@ -362,13 +362,64 @@ window.PromptLibrarySelector = (function() {
     }
 
     /**
-     * Show full prompt info in an alert-style modal
+     * Show full prompt info in a simple modal
      * @param {Object} prompt - Prompt object
      */
     function showPromptInfo(prompt) {
-        const infoText = `${prompt.name}\n\nCollection: ${prompt.collection}\n\n${prompt.shortDesc ? prompt.shortDesc + '\n\n' : ''}Full Prompt:\n${prompt.content}\n\nClick a prompt or press Enter to populate the chat input with this prompt.`;
+        // Remove any existing viewer modal
+        const existingModal = document.getElementById('prompt-library-viewer-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
 
-        alert(infoText);
+        // Create simple modal
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.id = 'prompt-library-viewer-modal';
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px; max-height: 70vh;">
+                <div class="settings-header">
+                    <h2>${escapeHtml(prompt.name)}</h2>
+                    <button type="button" class="btn icon-btn" id="close-prompt-library-viewer" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="scrollable-content" style="padding: 20px; max-height: calc(70vh - 80px); overflow-y: auto;">
+                    <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; line-height: 1.5; margin: 0;">${escapeHtml(prompt.content)}</pre>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Set up close button
+        const closeBtn = modal.querySelector('#close-prompt-library-viewer');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            });
+        }
+
+        // Close on click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            }
+        });
+
+        // Close on ESC key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
     }
 
     /**
