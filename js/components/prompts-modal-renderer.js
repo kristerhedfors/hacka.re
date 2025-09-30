@@ -365,10 +365,10 @@ window.PromptsModalRenderer = (function() {
     function renderInfoPopup(prompt) {
         const popup = document.createElement('div');
         popup.className = 'prompt-info-popup';
-        
-        // Get description based on prompt ID
-        let description = getPromptDescription(prompt.id);
-        
+
+        // Get description - prefer prompt's own description/shortDesc, then fall back to ID-based lookup
+        let description = prompt.description || prompt.shortDesc || getPromptDescription(prompt.id);
+
         // Create popup content
         popup.innerHTML = `
             <div class="prompt-info-header">
@@ -380,7 +380,7 @@ window.PromptsModalRenderer = (function() {
                 <p class="prompt-info-hint">Click on the prompt name to view its content in the editor.</p>
             </div>
         `;
-        
+
         return popup;
     }
     

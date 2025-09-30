@@ -203,42 +203,40 @@ function initializeDefaultPrompts() {
     }
     
     /**
-     * Get all selected default prompts
+     * Get all selected default prompts (supports recursive nesting)
      * @returns {Array} Array of selected default prompt objects
      */
     function getSelectedDefaultPrompts() {
         const selectedIds = getSelectedDefaultPromptIds();
         const selectedPrompts = [];
-        
-        // Iterate through all prompts, including nested ones
-        DEFAULT_PROMPTS.forEach(prompt => {
+
+        // Recursive helper function to traverse nested prompts
+        function collectSelectedPrompts(prompt) {
             // Check if this prompt is selected
             if (selectedIds.includes(prompt.id)) {
-                selectedPrompts.push(prompt);
+                // If the content is a function, we need to evaluate it
+                if (prompt.id === 'function-library' &&
+                    window.FunctionLibraryPrompt &&
+                    typeof window.FunctionLibraryPrompt.content === 'function') {
+                    // Create a copy with the re-evaluated content
+                    selectedPrompts.push({
+                        ...prompt,
+                        content: window.FunctionLibraryPrompt.content()
+                    });
+                } else {
+                    selectedPrompts.push(prompt);
+                }
             }
-            
-            // Check if this is a section with nested items
+
+            // If this is a section, recursively check its items
             if (prompt.isSection && prompt.items && prompt.items.length > 0) {
-                // Check each nested item
-                prompt.items.forEach(nestedPrompt => {
-                    if (selectedIds.includes(nestedPrompt.id)) {
-                        // If the content is a function, we need to evaluate it
-                        if (nestedPrompt.id === 'function-library' && 
-                            window.FunctionLibraryPrompt && 
-                            typeof window.FunctionLibraryPrompt.content === 'function') {
-                            // Create a copy with the re-evaluated content
-                            selectedPrompts.push({
-                                ...nestedPrompt,
-                                content: window.FunctionLibraryPrompt.content()
-                            });
-                        } else {
-                            selectedPrompts.push(nestedPrompt);
-                        }
-                    }
-                });
+                prompt.items.forEach(collectSelectedPrompts);
             }
-        });
-        
+        }
+
+        // Iterate through all top-level prompts recursively
+        DEFAULT_PROMPTS.forEach(collectSelectedPrompts);
+
         return selectedPrompts;
     }
     

@@ -387,16 +387,19 @@ function createPromptsListManager() {
                 }
             };
             
-            // Bind events for all prompts (including nested ones)
-            defaultPrompts.forEach(defaultPrompt => {
-                if (defaultPrompt.isSection && defaultPrompt.items) {
-                    // Bind events for items in nested sections
-                    defaultPrompt.items.forEach(bindPromptEvents);
+            // Recursive function to bind events for all prompts (including deeply nested ones)
+            const bindEventsRecursively = (prompt) => {
+                if (prompt.isSection && prompt.items) {
+                    // This is a section - recursively process its items
+                    prompt.items.forEach(bindEventsRecursively);
                 } else {
-                    // Bind events for top-level prompts
-                    bindPromptEvents(defaultPrompt);
+                    // This is a regular prompt - bind its events
+                    bindPromptEvents(prompt);
                 }
-            });
+            };
+
+            // Bind events for all prompts recursively
+            defaultPrompts.forEach(bindEventsRecursively);
         }
         
         // Bind expand/collapse events for section headers
