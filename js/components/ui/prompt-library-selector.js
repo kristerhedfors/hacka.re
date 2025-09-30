@@ -19,7 +19,41 @@ window.PromptLibrarySelector = (function() {
     function init(domElements) {
         elements = domElements;
         setupEventListeners();
+
+        // Set initial button visibility based on setting
+        updateButtonVisibility();
+
         console.log('🚀 PromptLibrarySelector initialized');
+    }
+
+    /**
+     * Update button visibility based on settings
+     */
+    function updateButtonVisibility() {
+        if (!elements.promptLibraryBtn) return;
+
+        const isEnabled = window.PromptLibraryIconManager &&
+                         window.PromptLibraryIconManager.isPromptLibraryIconEnabled();
+
+        elements.promptLibraryBtn.style.display = isEnabled ? '' : 'none';
+    }
+
+    /**
+     * Show the prompt library button
+     */
+    function showButton() {
+        if (elements.promptLibraryBtn) {
+            elements.promptLibraryBtn.style.display = '';
+        }
+    }
+
+    /**
+     * Hide the prompt library button
+     */
+    function hideButton() {
+        if (elements.promptLibraryBtn) {
+            elements.promptLibraryBtn.style.display = 'none';
+        }
     }
 
     /**
@@ -556,6 +590,9 @@ window.PromptLibrarySelector = (function() {
         init: init,
         showModal: showModal,
         hideModal: hideModal,
-        isModalVisible: isModalVisible
+        isModalVisible: isModalVisible,
+        showButton: showButton,
+        hideButton: hideButton,
+        updateButtonVisibility: updateButtonVisibility
     };
 })();

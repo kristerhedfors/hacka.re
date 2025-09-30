@@ -298,6 +298,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             DebugService.log('Prompt Library Selector initialization deferred - dependencies not ready');
         }
+
+        // Initialize Prompt Library Icon Manager
+        if (window.PromptLibraryIconManager && window.aiHackare && window.aiHackare.elements) {
+            const promptLibraryIconManager = window.PromptLibraryIconManager.createPromptLibraryIconManager(window.aiHackare.elements);
+            promptLibraryIconManager.init();
+            DebugService.log('Prompt Library Icon Manager initialized');
+        } else {
+            DebugService.log('Prompt Library Icon Manager initialization deferred - dependencies not ready');
+        }
     }, 1000);
     
     // Initialize title and subtitle from localStorage if available
