@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-09-30 09:41:32",
+  "timestamp": "2025-09-30 13:57:37",
   "results": [
     {
       "scenario": "Small text (10 chars)",
       "textLength": 10,
-      "typingTime": 112.66129091382027,
+      "typingTime": 157.06608281470835,
       "expectedMaxTime": 50,
       "passed": false,
       "totalEvents": 0,
@@ -13,7 +13,7 @@
       "textareaStyle": {
         "height": "48px",
         "scrollHeight": 48,
-        "clientHeight": 46,
+        "clientHeight": 48,
         "overflow": "auto hidden",
         "resize": "none"
       }
@@ -21,7 +21,7 @@
     {
       "scenario": "Medium text (50 chars)",
       "textLength": 50,
-      "typingTime": 144.26487497985363,
+      "typingTime": 166.75191605463624,
       "expectedMaxTime": 100,
       "passed": true,
       "totalEvents": 0,
@@ -30,7 +30,7 @@
       "textareaStyle": {
         "height": "48px",
         "scrollHeight": 48,
-        "clientHeight": 46,
+        "clientHeight": 48,
         "overflow": "auto hidden",
         "resize": "none"
       }
@@ -38,7 +38,7 @@
     {
       "scenario": "Large text (100 chars)",
       "textLength": 100,
-      "typingTime": 127.44691711850464,
+      "typingTime": 156.86045913025737,
       "expectedMaxTime": 200,
       "passed": true,
       "totalEvents": 0,
@@ -47,7 +47,7 @@
       "textareaStyle": {
         "height": "48px",
         "scrollHeight": 48,
-        "clientHeight": 46,
+        "clientHeight": 48,
         "overflow": "auto hidden",
         "resize": "none"
       }

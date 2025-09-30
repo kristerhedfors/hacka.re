@@ -125,24 +125,45 @@ def test_new_crypto_share_link(page: Page, serve_hacka_re):
     print("\n✅ Share link test completed successfully!")
 
 
-def test_share_link_with_conversation(page: Page, serve_hacka_re):
+def test_share_link_with_conversation(page: Page, serve_hacka_re, api_key):
     """Test that conversations are preserved in share links"""
-    
+
     # Navigate to the application
     page.goto(serve_hacka_re)
     dismiss_welcome_modal(page)
-    
+
+    # Set up API key first
+    settings_btn = page.locator("#settings-btn")
+    settings_btn.click()
+
+    settings_modal = page.locator("#settings-modal")
+    expect(settings_modal).to_be_visible()
+
+    # Set API key
+    api_key_input = page.locator("#api-key-update")
+    api_key_input.fill(api_key)
+
+    # Close settings
+    page.locator("#close-settings").click()
+    expect(settings_modal).to_be_hidden()
+
     # Send a test message
     message_input = page.locator("#message-input")
     message_input.fill("Test message for share link")
     
     send_btn = page.locator("#send-btn")
     send_btn.click()
-    
-    # Wait for response
+
+    # Wait for generation to complete (data-generating attribute removed)
+    page.wait_for_function(
+        "() => !document.querySelector('#send-btn').hasAttribute('data-generating')",
+        timeout=30000
+    )
+
+    # Wait for response message to appear
     assistant_message = page.locator(".message.assistant").first
     expect(assistant_message).to_be_visible(timeout=10000)
-    
+
     # Create a share link with conversation
     share_btn = page.locator("#share-btn")
     share_btn.click()
