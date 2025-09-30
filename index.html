@@ -1089,6 +1089,29 @@ async function getCurrentTimeInBerlin() {
             </div>
         </div>
 
+        <!-- Prompt library selection modal with live search -->
+        <div id="prompt-library-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Select Prompt</h2>
+                    <button type="button" class="close-btn" id="close-prompt-library-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="model-selection-body">
+                    <div class="model-search-container">
+                        <input type="text" id="prompt-library-search-input" class="model-search-input" placeholder="Type to search prompts..." autocomplete="off">
+                    </div>
+                    <div id="prompt-library-list-container" class="model-list-container">
+                        <div class="loading-models">Loading prompts...</div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" id="prompt-library-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
@@ -1184,6 +1207,9 @@ async function getCurrentTimeInBerlin() {
                     <div class="input-with-actions">
                         <button id="clear-chat-btn" class="icon-btn" title="Clear chat history">
                             <i class="fas fa-trash"></i>
+                        </button>
+                        <button id="prompt-library-btn" class="icon-btn" title="Open prompt library">
+                            <i class="fas fa-book"></i>
                         </button>
                         <form id="chat-form">
                             <div id="message-input-wrapper" class="message-input-wrapper">
@@ -1381,6 +1407,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/ui/context-usage-display.js"></script>
     <script src="js/components/ui/model-info-display.js"></script>
     <script src="js/components/ui/model-selection-manager.js"></script>
+    <script src="js/components/ui/prompt-library-selector.js"></script>
     <script src="js/components/ui/share-ui-manager.js"></script>
     <script src="js/components/ui/ui-coordinator.js"></script>
     <!-- Legacy UI manager wrapper -->

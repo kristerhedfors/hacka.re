@@ -3205,6 +3205,33 @@ body:has(.modal.active) #chat-input-container {
     font-style: italic;
 }
 
+/* Prompt Library Selector Specific Styles */
+.prompt-item {
+    position: relative;
+}
+
+.prompt-short-desc {
+    font-size: 0.75rem;
+    color: var(--secondary-text-color);
+    margin-top: 0.25rem;
+    line-height: 1.3;
+}
+
+.prompt-info-btn {
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    transition: color 0.2s ease;
+}
+
+.prompt-info-btn:hover {
+    color: var(--primary-color);
+}
+
 .modal-actions {
     display: flex;
     justify-content: flex-end;
