@@ -35,11 +35,6 @@ function initializeDefaultPrompts() {
         DEFAULT_PROMPTS.push(window.LlmSecurityLiteracyPrompt);
     }
 
-    // 4. OpenAI Prompt Packs (173 professional prompts organized by role)
-    if (window.OpenAIPromptPacksSection) {
-        DEFAULT_PROMPTS.push(window.OpenAIPromptPacksSection);
-    }
-
     console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts/sections`);
     console.log("Default prompts loaded:", DEFAULT_PROMPTS.map(p => p.name));
 }
