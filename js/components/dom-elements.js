@@ -142,6 +142,14 @@ window.DOMElements = (function() {
             modelListContainer: document.getElementById('model-list-container'),
             modelSelectionCancel: document.getElementById('model-selection-cancel'),
             modelSelectionSelect: document.getElementById('model-selection-select'),
+
+            // Prompt library modal elements
+            promptLibraryBtn: document.getElementById('prompt-library-btn'),
+            promptLibraryModal: document.getElementById('prompt-library-modal'),
+            closePromptLibraryModal: document.getElementById('close-prompt-library-modal'),
+            promptLibrarySearchInput: document.getElementById('prompt-library-search-input'),
+            promptLibraryListContainer: document.getElementById('prompt-library-list-container'),
+            promptLibraryCancel: document.getElementById('prompt-library-cancel'),
             
             // RAG modal elements
             ragBtn: document.getElementById('rag-btn'),

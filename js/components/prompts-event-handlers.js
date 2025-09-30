@@ -111,22 +111,194 @@ window.PromptsEventHandlers = (function() {
     }
     
     /**
-     * Create default prompt name click handler for viewing content
+     * Create default prompt name click handler for viewing content in modal
      * @param {Object} prompt - Default prompt object
-     * @param {Function} onView - Callback for viewing
      * @returns {Function} Event handler function
      */
-    function createDefaultPromptViewHandler(prompt, onView) {
+    function createDefaultPromptViewHandler(prompt) {
         return function(e) {
             e.stopPropagation(); // Prevent triggering parent click events
-            
-            // Notify caller to show prompt content
-            if (onView) {
-                onView(prompt);
-            }
+
+            // Show the prompt viewer modal
+            showPromptViewerModal(prompt);
         };
     }
+
+    /**
+     * Show the prompt viewer modal for a default prompt
+     * @param {Object} prompt - Prompt object to display
+     */
+    function showPromptViewerModal(prompt) {
+        // Remove any existing viewer modal
+        const existingModal = document.getElementById('default-prompt-viewer-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Create and add the modal
+        const modal = window.PromptsModalRenderer.renderPromptViewerModal(prompt);
+        document.body.appendChild(modal);
+
+        // Populate content
+        const rawContent = modal.querySelector('#prompt-viewer-raw-content');
+        const renderedContent = modal.querySelector('#prompt-viewer-rendered-content');
+
+        if (rawContent) {
+            rawContent.textContent = prompt.content;
+        }
+
+        if (renderedContent && window.marked) {
+            try {
+                const html = window.marked.parse(prompt.content);
+                if (window.DOMPurify) {
+                    renderedContent.innerHTML = window.DOMPurify.sanitize(html);
+                } else {
+                    renderedContent.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error rendering markdown:', error);
+                renderedContent.textContent = prompt.content;
+            }
+        } else if (renderedContent) {
+            renderedContent.textContent = prompt.content;
+        }
+
+        // Set up tab switching
+        const tabButtons = modal.querySelectorAll('.tab-btn');
+        const tabPanes = modal.querySelectorAll('.tab-pane');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tab;
+
+                // Update button states
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                // Update pane visibility
+                tabPanes.forEach(pane => {
+                    if (pane.id === `prompt-viewer-${targetTab}-tab`) {
+                        pane.classList.add('active');
+                    } else {
+                        pane.classList.remove('active');
+                    }
+                });
+            });
+        });
+
+        // Set up action buttons
+        const copyBtn = modal.querySelector('#prompt-viewer-copy-btn');
+        const populateBtn = modal.querySelector('#prompt-viewer-populate-btn');
+
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(prompt.content).then(() => {
+                        // Show success feedback
+                        const originalHTML = copyBtn.innerHTML;
+                        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalHTML;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                    });
+                }
+            });
+        }
+
+        if (populateBtn) {
+            populateBtn.addEventListener('click', () => {
+                const messageInput = document.getElementById('message-input');
+                if (messageInput) {
+                    messageInput.value = prompt.content;
+                    messageInput.focus();
+
+                    // Close the modal
+                    modal.classList.remove('active');
+                    setTimeout(() => modal.remove(), 300);
+                }
+            });
+        }
+
+        // Show modal with animation
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
+
+        // Close on click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            }
+        });
+
+        // Close on ESC key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
     
+    /**
+     * Show the simple prompt viewer modal
+     * @param {Object} prompt - Prompt object to display
+     */
+    function showSimplePromptViewerModal(prompt) {
+        // Remove any existing viewer modal
+        const existingModal = document.getElementById('simple-prompt-viewer-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Create and add the modal
+        const modal = window.PromptsModalRenderer.renderSimplePromptViewerModal(prompt);
+        document.body.appendChild(modal);
+
+        // Populate content (plain text only, no markdown)
+        const content = modal.querySelector('#simple-prompt-viewer-content');
+        if (content) {
+            content.textContent = prompt.content;
+        }
+
+        // Set up close button
+        const closeBtn = modal.querySelector('#close-simple-prompt-viewer');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            });
+        }
+
+        // Show modal with animation
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
+
+        // Close on click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+            }
+        });
+
+        // Close on ESC key
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                modal.classList.remove('active');
+                setTimeout(() => modal.remove(), 300);
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
     /**
      * Create info button handler for default prompts
      * @param {Object} prompt - Default prompt object
@@ -136,24 +308,12 @@ window.PromptsEventHandlers = (function() {
     function createInfoHandler(prompt, infoIcon) {
         return function(e) {
             e.stopPropagation(); // Prevent triggering parent click events
-            
-            // Create and show info popup
-            const popup = PromptsModalRenderer.renderInfoPopup(prompt);
-            
-            // Position the popup near the info icon
-            const rect = infoIcon.getBoundingClientRect();
-            popup.style.position = 'absolute';
-            popup.style.top = `${rect.bottom + window.scrollY + 10}px`;
-            popup.style.left = `${rect.left + window.scrollX - 200}px`; // Offset to center
-            
-            // Add to body
-            document.body.appendChild(popup);
-            
-            // Set up close handlers
-            setupInfoPopupHandlers(popup, infoIcon);
+
+            // Show simple prompt viewer modal
+            showSimplePromptViewerModal(prompt);
         };
     }
-    
+
     /**
      * Setup handlers for info popup
      * @param {HTMLElement} popup - Popup element
@@ -324,6 +484,8 @@ window.PromptsEventHandlers = (function() {
         createSectionToggleHandler,
         createClearHandler,
         createSaveHandler,
-        setupInfoPopupHandlers
+        setupInfoPopupHandlers,
+        showPromptViewerModal,
+        showSimplePromptViewerModal
     };
 })();

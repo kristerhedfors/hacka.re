@@ -12,30 +12,30 @@ window.DefaultPromptsService = (function() {
     
 /**
  * Initialize the default prompts
- * This function loads only the three required default prompts for RAG functionality
+ * This function loads the default prompts including RAG prompts and OpenAI Prompt Packs
  */
 function initializeDefaultPrompts() {
     // Clear the array first
     DEFAULT_PROMPTS = [];
-    
-    // Only load the three specified default prompts at the bottom:
-    
+
+    // Load core default prompts for RAG functionality:
+
     // 1. About hacka.re Project
     if (window.HackaReProjectPrompt) {
         DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
     }
-    
+
     // 2. OWASP Top 10 for LLM Applications
     if (window.OwaspLlmTop10Prompt) {
         DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
     }
-    
+
     // 3. LLM Security Literacy
     if (window.LlmSecurityLiteracyPrompt) {
         DEFAULT_PROMPTS.push(window.LlmSecurityLiteracyPrompt);
     }
-    
-    console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts for RAG functionality`);
+
+    console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts/sections`);
     console.log("Default prompts loaded:", DEFAULT_PROMPTS.map(p => p.name));
 }
     
@@ -198,42 +198,40 @@ function initializeDefaultPrompts() {
     }
     
     /**
-     * Get all selected default prompts
+     * Get all selected default prompts (supports recursive nesting)
      * @returns {Array} Array of selected default prompt objects
      */
     function getSelectedDefaultPrompts() {
         const selectedIds = getSelectedDefaultPromptIds();
         const selectedPrompts = [];
-        
-        // Iterate through all prompts, including nested ones
-        DEFAULT_PROMPTS.forEach(prompt => {
+
+        // Recursive helper function to traverse nested prompts
+        function collectSelectedPrompts(prompt) {
             // Check if this prompt is selected
             if (selectedIds.includes(prompt.id)) {
-                selectedPrompts.push(prompt);
+                // If the content is a function, we need to evaluate it
+                if (prompt.id === 'function-library' &&
+                    window.FunctionLibraryPrompt &&
+                    typeof window.FunctionLibraryPrompt.content === 'function') {
+                    // Create a copy with the re-evaluated content
+                    selectedPrompts.push({
+                        ...prompt,
+                        content: window.FunctionLibraryPrompt.content()
+                    });
+                } else {
+                    selectedPrompts.push(prompt);
+                }
             }
-            
-            // Check if this is a section with nested items
+
+            // If this is a section, recursively check its items
             if (prompt.isSection && prompt.items && prompt.items.length > 0) {
-                // Check each nested item
-                prompt.items.forEach(nestedPrompt => {
-                    if (selectedIds.includes(nestedPrompt.id)) {
-                        // If the content is a function, we need to evaluate it
-                        if (nestedPrompt.id === 'function-library' && 
-                            window.FunctionLibraryPrompt && 
-                            typeof window.FunctionLibraryPrompt.content === 'function') {
-                            // Create a copy with the re-evaluated content
-                            selectedPrompts.push({
-                                ...nestedPrompt,
-                                content: window.FunctionLibraryPrompt.content()
-                            });
-                        } else {
-                            selectedPrompts.push(nestedPrompt);
-                        }
-                    }
-                });
+                prompt.items.forEach(collectSelectedPrompts);
             }
-        });
-        
+        }
+
+        // Iterate through all top-level prompts recursively
+        DEFAULT_PROMPTS.forEach(collectSelectedPrompts);
+
         return selectedPrompts;
     }
     
