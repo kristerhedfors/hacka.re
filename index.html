@@ -1192,7 +1192,7 @@ async function getCurrentTimeInBerlin() {
         <main>
             <div id="chat-container">
                 <div id="chat-header">
-                    <button id="copy-chat-btn" class="icon-btn chat-action-btn" title="Copy Chat Content">
+                    <button id="copy-chat-btn" class="icon-btn chat-action-btn">
                         <i class="fas fa-copy"></i>
                     </button>
                 </div>
@@ -1205,17 +1205,17 @@ async function getCurrentTimeInBerlin() {
                 </div>
                 <div id="chat-input-container">
                     <div class="input-with-actions">
-                        <button id="clear-chat-btn" class="icon-btn" title="Reset Conversation">
+                        <button id="clear-chat-btn" class="icon-btn">
                             <i class="fas fa-trash"></i>
                         </button>
-                        <button id="prompt-library-btn" class="icon-btn" title="Prompt Library" style="display: none;">
+                        <button id="prompt-library-btn" class="icon-btn" style="display: none;">
                             <i class="fas fa-book"></i>
                         </button>
                         <form id="chat-form">
                             <div id="message-input-wrapper" class="message-input-wrapper">
                                 <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
                             </div>
-                            <button type="submit" id="send-btn" class="icon-btn" title="Send to LLM and Copy to Clipboard" name="send-message-button" aria-label="Send Message Button">
+                            <button type="submit" id="send-btn" class="icon-btn" name="send-message-button" aria-label="Send Message Button">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </form>

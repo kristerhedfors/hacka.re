@@ -1175,24 +1175,27 @@ main {
     border-radius: 50%;
     padding: 0.5rem;
     font-size: 1.2rem;
-    font-weight: 900;
     cursor: pointer;
     transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 44px;
+    height: 44px;
 }
 
 .chat-action-btn i {
     color: inherit;
+    opacity: 0.9; /* Match other icon weights */
 }
 
 .chat-action-btn:hover {
-    transform: scale(1.1);
+    background-color: rgba(99, 102, 241, 0.1);
 }
 
 .chat-action-btn:hover i {
     color: var(--primary-color);
+    opacity: 1;
 }
 
 /* Normal solid color for icon on all themes */
@@ -3456,6 +3459,43 @@ body:has(.modal.active) #chat-input-container {
 #prompts-btn .mini-tooltip {
     left: 50%;
     transform: translateX(-50%);
+}
+
+/* Chat input button tooltips - position above buttons since they're at bottom of screen */
+#clear-chat-btn .mini-tooltip {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 5px;
+    left: 0;
+    transform: none;
+}
+
+#prompt-library-btn .mini-tooltip {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+
+#send-btn .mini-tooltip {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 5px;
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+#copy-chat-btn .mini-tooltip {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 5px;
+    left: auto;
+    right: 0;
+    transform: none;
 }
 
 /* Ensure heart button allows its menu to show */
