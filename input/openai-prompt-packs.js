@@ -4,10 +4,10 @@
 
 const openAIPromptPacks = {
   metadata: {
-    version: "1.0.0",
+    version: "1.5.0",
     source: "OpenAI Academy",
-    lastUpdated: "2025-01-30",
-    totalPrompts: 300
+    lastUpdated: "2025-09-30",
+    totalPrompts: 306
   },
 
   categories: {
@@ -399,11 +399,274 @@ const openAIPromptPacks = {
       ]
     },
 
+    // Engineering Teams
+    engineering: {
+      name: "Engineering Teams",
+      description: "Engineering prompts for code development, debugging, optimization, documentation, research, and system architecture",
+      prompts: [
+        // Research & Benchmarking
+        {
+          name: "Evaluate Cloud Providers for Migration",
+          shortDesc: "Compare cloud platform options",
+          content: "I'm an infrastructure engineer evaluating cloud migration options. Context: We're moving from on-prem to the cloud for a fintech backend. Output: Compare AWS, GCP, and Azure for scalability, pricing, compliance, and developer tooling. Include citations."
+        },
+        {
+          name: "Research Frameworks for Real-Time Apps",
+          shortDesc: "Compare real-time development frameworks",
+          content: "I'm building a real-time collaboration tool. Context: We need low-latency and scalability. Output: Compare top frameworks (e.g., SignalR, Socket.io, WebRTC) with use cases, pros/cons, and current usage by other SaaS companies. Include sources."
+        },
+        {
+          name: "Benchmark Observability Tools",
+          shortDesc: "Compare monitoring and observability platforms",
+          content: "Benchmark the top observability tools. Context: We want to move from basic logging to full-stack monitoring. Output: Create a comparison table of features, pricing, integrations for Datadog, New Relic, Prometheus, and OpenTelemetry. Include sources."
+        },
+        {
+          name: "Analyze AI/ML Trends in Logistics",
+          shortDesc: "Research industry AI/ML adoption",
+          content: "I'm researching AI/ML adoption in logistics systems. Context: Our company is considering integrating predictive routing. Output: A 5-paragraph summary on current trends, vendors, and implementation patterns. Include citations and links."
+        },
+        {
+          name: "Investigate Compliance Best Practices",
+          shortDesc: "Research regulatory compliance requirements",
+          content: "Research best practices for GDPR/CCPA compliance so we can help kick off discussions with our legal team. Context: Our app stores sensitive user data in the EU and US. Output: A compliance checklist with citations, sorted by regulation. Include links to documentation and regulations."
+        },
+        // Technical Reviews & Documentation
+        {
+          name: "Review System Design Doc",
+          shortDesc: "Evaluate technical design documents",
+          content: "I've drafted a technical design document for [insert project or feature]. Review it for clarity, architectural soundness, and completeness. Highlight any missing considerations or questions reviewers may raise."
+        },
+        {
+          name: "Document Internal API Behavior",
+          shortDesc: "Create API documentation",
+          content: "I need to document how this internal API works for other developers. Here's the relevant code, schema, and usage examples: [insert materials]. Create clear documentation including endpoints, input/output formats, and expected behavior."
+        },
+        {
+          name: "Draft Runbook for On-Call Engineers",
+          shortDesc: "Create operational runbooks",
+          content: "I need to create a runbook for on-call engineers supporting [insert system]. Draft one that includes sections for system overview, common alerts, diagnostic steps, and escalation procedures."
+        },
+        {
+          name: "Draft Onboarding Guide for New Hires",
+          shortDesc: "Engineer onboarding documentation",
+          content: "I need to write an onboarding guide for new engineers joining [insert team]. Create a draft with sections for required tools, access setup, codebase overview, and first tasks. Make it suitable for self-service onboarding."
+        },
+        {
+          name: "Write JIRA Ticket from Spec",
+          shortDesc: "Convert specs to task tickets",
+          content: "Based on this engineering spec for [insert task or feature], write a JIRA ticket that includes the problem statement, context, goals, acceptance criteria, and technical notes for implementation."
+        },
+        // Debugging & Optimization
+        {
+          name: "Debug Failing System in Production",
+          shortDesc: "Diagnose production issues",
+          content: "A system in production is intermittently failing, and we're struggling to isolate the root cause. Based on the following logs, metrics, and recent changes: [insert context], help identify the most likely causes and suggest next steps for mitigation."
+        },
+        {
+          name: "Analyze Performance Bottlenecks",
+          shortDesc: "Identify performance issues",
+          content: "Our service is experiencing latency and degraded performance during peak usage. Here are metrics, logs, and relevant traces: [insert context]. Help identify the bottlenecks and recommend specific optimizations."
+        },
+        {
+          name: "Analyze a Data Pipeline Failure",
+          shortDesc: "Troubleshoot pipeline issues",
+          content: "A critical data pipeline failed in yesterday's run. Here are the logs, data volume trends, and error outputs: [insert context]. Analyze what likely went wrong and provide recommendations to prevent recurrence."
+        },
+        {
+          name: "Suggest Observability Improvements",
+          shortDesc: "Enhance monitoring and alerting",
+          content: "We currently use [insert tools] for monitoring [insert service]. Review our observability setup and suggest improvements across metrics, logging, alerting, and dashboards to improve issue detection and debugging."
+        },
+        {
+          name: "Brainstorm Edge Cases for Testing",
+          shortDesc: "Generate test scenarios",
+          content: "We're preparing test cases for [insert feature/system]. Brainstorm potential edge cases and failure scenarios that may not be covered by standard testing, including unusual user inputs, system state changes, and concurrency issues."
+        },
+        // Data Analysis & Reporting
+        {
+          name: "Identify Trends in Product Usage Logs",
+          shortDesc: "Analyze usage patterns",
+          content: "Analyze this CSV of product usage logs. Context: We want to identify usage trends over time and across user segments. Output: Summary stats + line or bar charts highlighting key trends."
+        },
+        {
+          name: "Visualize System Error Rates Over Time",
+          shortDesc: "Chart error trends",
+          content: "Plot error rates over time from this dataset. Context: It contains application logs from the last month. Output: A time-series chart with callouts for error spikes and a short interpretation."
+        },
+        {
+          name: "Analyze Performance Test Results",
+          shortDesc: "Compare performance benchmarks",
+          content: "Analyze this set of performance test results. Context: It compares two versions of our backend service. Output: Side-by-side comparison charts + text summary of improvements or regressions."
+        },
+        {
+          name: "Prioritize Bugs Based on Impact",
+          shortDesc: "Rank bug severity",
+          content: "Analyze this bug report dataset. Context: Each row includes severity, frequency, and affected users. Output: A prioritized list of top bugs with charts showing frequency vs. severity."
+        },
+        {
+          name: "Summarize Feedback from User Surveys",
+          shortDesc: "Extract user feedback insights",
+          content: "Summarize this user feedback CSV. Context: It includes ratings and open text responses from a recent survey. Output: Key themes, sentiment scores, and charts showing distribution of ratings."
+        },
+        // System Architecture & Visualization
+        {
+          name: "Create a Component Diagram",
+          shortDesc: "Diagram system components",
+          content: "I need to visualize the architecture of [insert system or service]. Generate a component diagram showing key services, data flows, and third-party integrations. Use clear labels and group components logically."
+        },
+        {
+          name: "Visualize System Architecture",
+          shortDesc: "Create architecture diagrams",
+          content: "Create an image of the system architecture. Context: It's a microservices-based e-commerce platform with services for payments, catalog, and user profiles. Output: Diagram with labeled services and data flow arrows."
+        },
+        {
+          name: "Explain CI/CD Pipeline to Stakeholders",
+          shortDesc: "Visualize deployment pipeline",
+          content: "Create an image that explains our CI/CD process. Context: This is for a presentation to business stakeholders. Output: Diagram showing dev → build → test → deploy steps with basic icons and short descriptions."
+        },
+        {
+          name: "Model Data Flow in ML Pipeline",
+          shortDesc: "Diagram ML data flow",
+          content: "Create an image showing data flow in a machine learning pipeline. Context: We collect raw user data, clean it, train models, and serve predictions. Output: A labeled flowchart from raw data to inference."
+        },
+        {
+          name: "Diagram Customer Journey Through App",
+          shortDesc: "Map user flows",
+          content: "Create a customer journey map through our mobile banking app. Context: Steps include onboarding, account linking, transactions, and support. Output: A visual flowchart with steps, screens, and decision points."
+        }
+      ]
+    },
+
     // IT & Engineering
     it_engineering: {
       name: "IT & Engineering",
-      description: "Technical prompts for system architecture, documentation, debugging, and infrastructure management",
+      description: "Technical prompts for system architecture, documentation, debugging, infrastructure management, compliance, and IT operations",
       prompts: [
+        // Cloud & Vendor Evaluations
+        {
+          name: "Compare Cloud Providers",
+          shortDesc: "Evaluate cloud platform options",
+          content: "Compare AWS, Azure, and GCP for our use case: [insert workload or environment]. Consider cost, uptime, global availability, and ease of integration. Research using 2025 data, and present a table comparing each provider with a recommendation at the end."
+        },
+        {
+          name: "Generate Vendor Comparison Chart",
+          shortDesc: "Compare IT vendor solutions",
+          content: "Research and compare remote access vendors for enterprise use. Focus on features, pricing, integrations, and support quality. Use 2025 data, and summarize the findings in a comparison table with notes."
+        },
+        {
+          name: "Compare AI Observability Tools",
+          shortDesc: "Evaluate observability platforms",
+          content: "I'm an IT Manager at [insert company]. I'm evaluating observability platforms. Research current offerings, pricing, supported environments, and key differentiators in 2025. Include citations and summarize insights in a comparison table with a recommendation for a mid-size engineering org."
+        },
+        {
+          name: "Investigate Zero Trust Frameworks",
+          shortDesc: "Research zero trust security models",
+          content: "I'm a Security Architect working on adopting a zero trust model. Research leading frameworks (e.g., NIST 800-207) and recent updates to best practices in 2024–2025. Include real-world implementation case studies where possible. Provide a summarized comparison and an executive-ready briefing."
+        },
+        // IT Compliance & Security
+        {
+          name: "Assess Global Data Residency Laws",
+          shortDesc: "Research data sovereignty requirements",
+          content: "I'm an IT Compliance Lead planning a global data storage architecture. Research 2025 data residency requirements across the EU, US, APAC, and LATAM. Include regulatory restrictions and preferred cloud regions. Cite official documentation and summarize findings in a table grouped by region."
+        },
+        {
+          name: "Analyze Remote Access Tools",
+          shortDesc: "Compare secure remote access solutions",
+          content: "As an IT Service Delivery Lead, I need a secure, scalable remote access tool for our hybrid team. Compare current vendors (e.g., BeyondTrust, TeamViewer Tensor, Chrome Remote Desktop) for enterprise use in 2025. Focus on SSO support, encryption, session logging, and pricing. Provide a security-focused executive summary with links to primary sources."
+        },
+        {
+          name: "Generate Compliance Checklist",
+          shortDesc: "Create audit control checklists",
+          content: "Based on SOC 2 guidelines, create a checklist of IT-specific controls to review for an upcoming internal audit. Use this existing audit prep document as background. Organize the checklist by domain (e.g., access, change management, incident response)."
+        },
+        {
+          name: "Validate Access Controls",
+          shortDesc: "Review user permission matrices",
+          content: "Review this access matrix of users, roles, and systems. Check whether each user's access level follows our least-privilege policy. Identify any potential overprovisioning, and provide a table listing users with permissions that may need to be scaled back."
+        },
+        {
+          name: "Review API Security Posture",
+          shortDesc: "Audit API security practices",
+          content: "Review this API schema and a sample set of traffic logs. Identify common API security issues such as poor input validation or lack of authentication. Provide a bullet-point list of findings with suggested fixes."
+        },
+        // IT Operations & Asset Management
+        {
+          name: "Draft IT Onboarding Checklist",
+          shortDesc: "Create new hire IT setup process",
+          content: "Create a checklist for onboarding new hires from an IT perspective. Include key steps for account provisioning, security training, and hardware setup. Use this outline of our current process, and present the checklist organized by day or week."
+        },
+        {
+          name: "Generate Hardware Lifecycle Policy",
+          shortDesc: "Define device replacement policies",
+          content: "Create a draft policy for managing the lifecycle of company laptops and desktops. Reference this spreadsheet of device ages and current replacement costs. Write a formal document with guidance on replacement timelines, support windows, and environmental considerations."
+        },
+        {
+          name: "Draft Asset Inventory Policy",
+          shortDesc: "Document asset tracking procedures",
+          content: "Write a formal policy for maintaining and auditing IT asset inventory. Use this list of tools, departments, and stakeholders as a starting point. Include purpose, responsibilities, and process for inventory reconciliation."
+        },
+        {
+          name: "Help Prioritize IT Tickets",
+          shortDesc: "Rank support queue by urgency",
+          content: "Review this queue of open IT support tickets. Use this prioritization rubric based on impact, urgency, and SLA. Reorder the tickets accordingly and present the list as a prioritized backlog with a short reason for each ranking."
+        },
+        {
+          name: "Track Hardware Lifecycle Risk",
+          shortDesc: "Identify EOL devices",
+          content: "Use this device inventory file containing purchase dates, models, and OS versions. Highlight which assets are past end-of-life or nearing refresh thresholds. Create a table of at-risk devices and include a narrative summary for IT leadership."
+        },
+        // IT Communication & Incident Management
+        {
+          name: "Draft an Incident Postmortem",
+          shortDesc: "Document outage analysis",
+          content: "Summarize the recent [insert system or service] outage. Include the root cause, timeline of events, user impact, and actions taken. Use information from the incident ticket or war room notes, and format the summary as a shareable internal postmortem report."
+        },
+        {
+          name: "Create a DR Playbook Draft",
+          shortDesc: "Design disaster recovery procedures",
+          content: "Create a draft disaster recovery playbook for a critical production service. Use this system diagram and our recovery objectives (RTO, RPO). Organize the playbook into steps to take before, during, and after a service outage."
+        },
+        {
+          name: "Write Internal Comms for Downtime",
+          shortDesc: "Announce maintenance windows",
+          content: "Write a professional internal communication announcing planned downtime for [insert system or tool]. Include timing, affected users, impact on work, and who to contact for questions. Write the message in the tone of an IT team update."
+        },
+        {
+          name: "Translate Error Logs to Plain Language",
+          shortDesc: "Explain technical issues to stakeholders",
+          content: "Help translate these system error logs into language that can be understood by a non-technical executive. Use definitions where needed, and summarize what each log entry means in a few clear sentences. Present the explanation as an email draft."
+        },
+        {
+          name: "Evaluate SaaS Tool Redundancy",
+          shortDesc: "Identify overlapping tools",
+          content: "Review our current list of SaaS tools used by IT, engineering, and ops. Use the attached spreadsheet with cost, team usage, and tool functions. Identify overlapping tools and recommend 3–5 candidates for consolidation, explaining why each was chosen in a short summary report."
+        },
+        // IT Monitoring & Optimization
+        {
+          name: "Summarize System Health Trends",
+          shortDesc: "Analyze system performance logs",
+          content: "Analyze the system health logs from the last 30 days. Focus on spikes in CPU/memory, service outages, and recurring error codes. Provide a concise summary of the key issues and add brief commentary on possible causes or needed follow-ups."
+        },
+        {
+          name: "Suggest System Monitoring Improvements",
+          shortDesc: "Optimize alerting and metrics",
+          content: "Review our monitoring setup for [insert system] based on the current configuration and recent alert history. Identify 2–3 areas for improvement, such as gaps in alert coverage, noise reduction, or metrics tuning. Present the suggestions in a short internal memo."
+        },
+        {
+          name: "Analyze Service Uptime and Incident Frequency",
+          shortDesc: "Track reliability metrics",
+          content: "Review this CSV with daily uptime % and incident logs for [insert service] over the past quarter. Identify patterns in outages, frequency of issues by severity, and calculate overall uptime. Summarize findings and suggest actions for improvement in a brief report."
+        },
+        {
+          name: "Audit User Access Logs for Anomalies",
+          shortDesc: "Detect suspicious access patterns",
+          content: "Analyze this user access log export. Identify users or IP addresses with unusual access frequency, after-hours logins, or failed attempts. Flag suspicious patterns and summarize results in a security review format."
+        },
+        {
+          name: "Forecast IT Support Ticket Volume",
+          shortDesc: "Predict support demand",
+          content: "Analyze this export of support ticket volume by week for the past 12 months. Identify seasonality trends and forecast volume for the next quarter. Visualize the trend and provide commentary for capacity planning."
+        },
         // System Architecture & Visualization
         {
           name: "System Architecture Diagram",
@@ -514,7 +777,7 @@ const openAIPromptPacks = {
     // Management & Leadership
     management: {
       name: "Management & Leadership",
-      description: "Prompts for team leadership, strategic planning, performance management, and organizational development",
+      description: "Prompts for team leadership, strategic planning, performance management, organizational development, and day-to-day team management",
       prompts: [
         // Strategic Planning & Alignment
         {
@@ -642,9 +905,60 @@ const openAIPromptPacks = {
     // Product Management
     product: {
       name: "Product Management",
-      description: "Product-focused prompts for strategy, user research, roadmapping, and feature development",
+      description: "Product-focused prompts for strategy, competitive research, user research, roadmapping, feature development, content, UX design, and data analysis",
       prompts: [
-        // Product Strategy & Vision
+        // Competitive & Market Research
+        {
+          name: "Compare Competitors' Onboarding UX",
+          shortDesc: "Analyze competitor onboarding flows",
+          content: "Research how 3 key competitors structure their onboarding flow for new users. Include screenshots, key steps, and points of friction or delight. Synthesize a comparison table and recommendations for improvement. Target product: [Insert product]"
+        },
+        {
+          name: "Benchmark Competitor Pricing Strategies",
+          shortDesc: "Compare pricing models across competitors",
+          content: "I'm a product manager launching a new SaaS product. Research how top 5 competitors in this space structure their pricing tiers, freemium vs. paid, feature gating, and upsell triggers. Use public sources and include URLs. Output: A comparison table with insights and risks."
+        },
+        {
+          name: "Compare Tech Stack Options",
+          shortDesc: "Evaluate technology alternatives",
+          content: "Compare the pros and cons of integrating [technology/tool A] vs. [technology/tool B] into our product. Focus on scalability, cost, support, and developer experience. Include citations."
+        },
+        {
+          name: "Identify Regulatory Risks for New Features",
+          shortDesc: "Research compliance requirements",
+          content: "I'm a PM scoping a [feature] for financial services. Research recent regulatory guidance in the US, UK, and EU around the use of [feature] in customer-facing products. Summarize by region with citations. Output: A table of legal considerations to flag for our legal team and product design implications."
+        },
+        {
+          name: "Research Top Product-Led Growth Tactics",
+          shortDesc: "Discover PLG strategies",
+          content: "Research the top 7 product-led growth strategies used by fast-scaling SaaS companies in the last 2 years. Prioritize those with measurable impact. Include 1–2 examples per tactic and source links. Output: Ranked list with strategy, example, and success metric."
+        },
+        // Product Strategy & Roadmapping
+        {
+          name: "Prioritize Product Roadmap Items Based on Impact",
+          shortDesc: "Data-driven roadmap prioritization",
+          content: "Review this list of upcoming product initiatives. Use the data provided (impact scores, effort estimates, and strategic alignment notes) to suggest priority order. Present the reordered list with justification for each recommendation. [Insert initiative list]"
+        },
+        {
+          name: "Explore Monetization Models",
+          shortDesc: "Evaluate pricing strategies",
+          content: "We're considering pricing changes. Based on this product value and audience, suggest 3 monetization strategies. Include pros, cons, and examples of companies using each. [Insert product and audience details]"
+        },
+        {
+          name: "Draft a Vision Statement for the Product",
+          shortDesc: "Create inspiring product vision",
+          content: "Based on this long-term goal and user need, write a concise product vision statement. Keep it inspiring and grounded in real outcomes. [Insert product goal]"
+        },
+        {
+          name: "Brainstorm Feature Ideas from Customer Feedback",
+          shortDesc: "Extract feature ideas from feedback",
+          content: "Review this batch of customer feedback from the past quarter. Identify pain points and generate a list of 5 feature ideas to address recurring themes. [Insert feedback or summary]"
+        },
+        {
+          name: "Plan A/B Testing Experiments",
+          shortDesc: "Design product experiments",
+          content: "Review this list of product UI changes and propose 2 A/B test setups. Include hypothesis, success metrics, and potential outcomes. [Insert UI changes or user goals]"
+        },
         {
           name: "Product Vision Statement",
           shortDesc: "Craft compelling product visions",
@@ -670,7 +984,53 @@ const openAIPromptPacks = {
           shortDesc: "Document strategic direction",
           content: "Create a one-page product strategy brief for [product]. Include vision, target segments, key differentiators, success metrics, and high-level roadmap. Make it board-ready."
         },
-        // User Research & Insights
+        // Product Content & Communication
+        {
+          name: "Draft PRD for a New Feature",
+          shortDesc: "Create first-draft PRDs",
+          content: "Based on this feature idea and customer need, write a first-draft PRD. Include user story, problem statement, solution overview, acceptance criteria, and success metrics. [Insert context or problem]"
+        },
+        {
+          name: "Draft Changelog and Release Notes",
+          shortDesc: "User-friendly release notes",
+          content: "Using this release summary, draft user-facing changelog notes for our next version release. Use a friendly, clear tone and group by category (e.g., new, improved, fixed). [Insert release notes or ticket list]"
+        },
+        {
+          name: "Create a Go-to-Market FAQ",
+          shortDesc: "Internal launch FAQ",
+          content: "Draft an internal FAQ for our sales and support teams about our upcoming feature launch. Use this background and anticipated questions. Write in a confident, informative tone. [Insert feature and launch details]"
+        },
+        {
+          name: "Generate a One-Sentence Value Proposition",
+          shortDesc: "Concise value messaging",
+          content: "Based on this feature description, write 3 versions of a clear, compelling one-sentence value proposition. Tailor each one to a different target audience. [Insert feature description]"
+        },
+        {
+          name: "Draft Pitch Deck for New Product",
+          shortDesc: "Stakeholder presentation outline",
+          content: "Create a 5-slide outline for a pitch deck introducing our new product to internal stakeholders. Include problem, solution, market, product overview, and timeline. [Insert product idea]"
+        },
+        // UX & Visual Design
+        {
+          name: "Visualize a User Journey Map",
+          shortDesc: "Create journey visuals",
+          content: "Create a user journey map for our [insert user persona] going through [insert experience]. Include emotional highs/lows, touchpoints, and moments of friction. Output as a visual flow."
+        },
+        {
+          name: "Design Onboarding Flow Wireframe",
+          shortDesc: "Wireframe onboarding steps",
+          content: "Generate a wireframe-style image of a 3-step onboarding flow for a finance app. Steps include: linking an account, setting financial goals, and reviewing suggestions. Style: greyscale wireframe with labels."
+        },
+        {
+          name: "Illustrate Product Comparison Visuals",
+          shortDesc: "Before/after UI comparisons",
+          content: "Create a side-by-side visual comparison of two app dashboards: one cluttered with too many metrics, and one simplified with actionable insights. Style: dashboard UI, minimalistic, neutral branding."
+        },
+        {
+          name: "Design User Journey Infographics",
+          shortDesc: "Journey visualization",
+          content: "Generate a user journey infographic showing the onboarding experience for a mobile health-tracking app. Include key milestones, emotions, and friction points. Style: infographic, vertical layout, soft colors."
+        },
         {
           name: "User Interview Guide",
           shortDesc: "Structure customer interviews",
@@ -696,7 +1056,32 @@ const openAIPromptPacks = {
           shortDesc: "Structure usability testing",
           content: "Create a usability test plan for [feature/product]. Include test objectives, scenarios, tasks, success criteria, and observation guide. Format as test protocol."
         },
-        // Feature Development
+        // Data Analysis & Insights
+        {
+          name: "Analyze Product Feedback Themes",
+          shortDesc: "Extract feedback patterns",
+          content: "Analyze this set of user feedback and identify the 4 most frequent themes. Summarize each with example quotes and suggested product implications. [Insert feedback or data dump]"
+        },
+        {
+          name: "Synthesize Insights from Usage Data",
+          shortDesc: "Identify behavioral trends",
+          content: "Based on the following product usage data, summarize 3 key behavioral trends and what they suggest about user needs. Recommend 2 follow-up investigations. [Insert data or summary]"
+        },
+        {
+          name: "Identify Product Adoption Risks",
+          shortDesc: "Risk analysis for rollouts",
+          content: "Review our product rollout plan and highlight 5 risks to successful adoption. Include likelihood, impact, and mitigation recommendations. [Insert rollout plan or summary]"
+        },
+        {
+          name: "Analyze A/B Test Results",
+          shortDesc: "Interpret experiment data",
+          content: "Review the results of our recent A/B test (test vs. control). Identify statistical significance, key metrics that changed, and recommend next steps. Present insights clearly with graphs if needed. [Upload test data]"
+        },
+        {
+          name: "Compare Feature Adoption Across Customer Segments",
+          shortDesc: "Segment-level adoption analysis",
+          content: "Use this data to compare how small business vs. enterprise customers adopt our key features. Highlight major differences, usage frequencies, and retention impact. Format output as a table with insights. [Upload CSV or describe dataset]"
+        },
         {
           name: "Product Requirements Doc",
           shortDesc: "Write comprehensive PRDs",
@@ -754,8 +1139,133 @@ const openAIPromptPacks = {
     // Finance
     finance: {
       name: "Finance",
-      description: "Finance prompts for analysis, reporting, forecasting, and strategic financial planning",
+      description: "Finance prompts for analysis, reporting, forecasting, strategic financial planning, benchmarking, and operational finance",
       prompts: [
+        // Financial Benchmarking & Market Analysis
+        {
+          name: "Benchmark Financial Performance",
+          shortDesc: "Compare against industry peers",
+          content: "Benchmark our financial performance against companies in the [insert industry] sector. Use public data to compare gross margin, net profit, and CAC. Present results in a table with source links."
+        },
+        {
+          name: "Benchmark Expense Ratios vs. Peers",
+          shortDesc: "Compare operational efficiency",
+          content: "I'm a finance lead at [insert company or industry]. Research current SG&A and R&D expense ratios for 5 comparable companies in the [insert sector, e.g., SaaS, manufacturing, healthcare]. Provide a table with metrics, source links, and a short analysis of how we compare."
+        },
+        {
+          name: "Competitive Fundraising Analysis",
+          shortDesc: "Research funding market trends",
+          content: "I'm a CFO preparing for our next fundraising round. Research recent funding rounds (past 12 months) in [insert industry]. Summarize deal sizes, valuations, lead investors, and positioning. Format as a briefing memo with source citations and clear bullet-point insights."
+        },
+        {
+          name: "Compare Global Tax Regulations",
+          shortDesc: "Analyze international tax compliance",
+          content: "I manage global finance compliance. Research and compare corporate tax rates and reporting requirements in [insert countries]. Focus on tax incentives, reporting thresholds, and penalties. Deliver a comparison chart with links to official sources."
+        },
+        {
+          name: "ESG Finance Strategy Benchmark",
+          shortDesc: "Research ESG financial integration",
+          content: "I'm updating our ESG financial strategy. Research how leading companies in [insert industry] integrate ESG into financial planning and disclosures. Summarize 3–5 examples with their KPIs, reporting cadence, and financial impact. Include references."
+        },
+        // Financial Planning & Forecasting
+        {
+          name: "Forecast Revenue Trends",
+          shortDesc: "Project future revenue",
+          content: "Forecast next quarter's revenue based on the past 6 quarters of data. Use the trends from our [insert dataset or industry] to explain your reasoning. Present the forecast in a table and write a short executive summary."
+        },
+        {
+          name: "Draft Budget Assumptions for Planning",
+          shortDesc: "Document planning assumptions",
+          content: "Help me draft budget assumptions for our next annual plan. Context: [insert department/region/product info]. Output should include key assumptions, rationale, and any dependencies."
+        },
+        {
+          name: "Model Cash Flow Scenarios",
+          shortDesc: "Scenario-based cash planning",
+          content: "Model 3 cash flow scenarios based on these variables: [insert inputs such as revenue range, delays, or costs]. Output as a table with assumptions, key drivers, and estimated cash impact."
+        },
+        {
+          name: "Conduct ROI Analysis for Tooling",
+          shortDesc: "Evaluate software investments",
+          content: "Conduct an ROI analysis for a new [insert software or tool] we're considering. Context: [insert usage or pricing data]. Output should include payback period, assumptions, and a short risk assessment."
+        },
+        {
+          name: "Compare Pricing Strategies",
+          shortDesc: "Evaluate pricing models",
+          content: "Compare 3 potential pricing strategies for our [insert product or service]. Use prior pricing data from [insert past year] for context. Output should be a side-by-side comparison table with pros, cons, and estimated impact."
+        },
+        // Financial Communication & Reporting
+        {
+          name: "Prepare Board Meeting Talking Points",
+          shortDesc: "Executive financial briefings",
+          content: "Draft financial talking points for an upcoming board meeting. Use our [insert Q2 results or P&L summary] as input. Write the talking points in bullet format, focusing on topline metrics and risk/upsides."
+        },
+        {
+          name: "Write Investor Update Summary",
+          shortDesc: "Stakeholder communications",
+          content: "Write a summary for our next investor update. Use highlights from [insert performance report or fundraising update]. Format the output as a concise executive email suitable for external stakeholders."
+        },
+        {
+          name: "Draft QBR Financial Slide Content",
+          shortDesc: "Quarterly review presentations",
+          content: "Draft the financial performance section for our next QBR deck. Use these inputs: [insert Q2 revenue, margin trends, notable cost changes]. Output as slide bullets with 1–2 takeaway lines."
+        },
+        {
+          name: "Translate Variance Analysis",
+          shortDesc: "Simplify financial explanations",
+          content: "Translate this variance analysis into a manager-friendly summary. Source: [insert analysis]. Write in plain language with a brief explanation of why each variance occurred."
+        },
+        {
+          name: "Summarize Audit Findings",
+          shortDesc: "Executive audit summaries",
+          content: "Summarize key findings from our internal audit. Use this document: [insert findings]. Output should be a summary for executives, with 3 themes and recommended next steps."
+        },
+        // Operational Finance & Process Improvement
+        {
+          name: "Analyze Cost Reduction Opportunities",
+          shortDesc: "Identify savings potential",
+          content: "Identify cost reduction opportunities from our recent budget report. Use the breakdown from [insert cost center or department] to evaluate. Provide a table with opportunities, projected savings, and any potential risks."
+        },
+        {
+          name: "Evaluate M&A Target Fit",
+          shortDesc: "Assess acquisition candidates",
+          content: "Evaluate the financial and strategic fit of an M&A target. Use this context: [insert company profile or key metrics]. Output should be a table of pros/cons and a 3-paragraph summary of risk/reward."
+        },
+        {
+          name: "Identify Accounting Process Gaps",
+          shortDesc: "Improve close procedures",
+          content: "Review our current accounting close checklist and suggest improvements. Use this documentation: [insert SOP or task list]. Output should highlight bottlenecks and recommend process updates."
+        },
+        {
+          name: "Review Vendor Payments for Consolidation",
+          shortDesc: "Optimize vendor spend",
+          content: "Analyze vendor payments in this data [upload file]. Identify top 10 vendors by spend, spot any duplication (e.g., similar vendor names), and recommend vendors to consolidate. Output a table and short cost-reduction summary."
+        },
+        {
+          name: "Procurement Strategy Cost Levers",
+          shortDesc: "Research procurement optimization",
+          content: "I'm leading a finance initiative to cut procurement costs. Research strategies used by Fortune 500 companies to reduce procurement spend without harming supplier relationships. Present 3–5 tactics with cost impact examples and cited sources."
+        },
+        // Financial Dashboards & Visual Storytelling
+        {
+          name: "Visualize Revenue Growth Funnel",
+          shortDesc: "Illustrate revenue stages",
+          content: "Create an image of a revenue growth funnel with labeled stages: Acquisition → Activation → Revenue → Retention → Expansion. Use a clean, modern style suitable for an executive finance presentation. Include icons for each stage."
+        },
+        {
+          name: "Illustrate Budget Planning Workflow",
+          shortDesc: "Diagram planning process",
+          content: "Create a horizontal process flow diagram showing a budget planning cycle: Forecasting → Review → Stakeholder Input → Approval → Tracking → Adjustment. Use corporate-style visuals with subtle color and labels."
+        },
+        {
+          name: "ESG Finance Impact Visual",
+          shortDesc: "Show sustainability ROI",
+          content: "Create a visual showing how ESG initiatives can impact finance metrics. Show links between sustainability investments and cost savings, risk mitigation, and investor interest. Use a modern, green-themed design with arrows."
+        },
+        {
+          name: "Executive Dashboard Concept",
+          shortDesc: "Design KPI dashboard mockup",
+          content: "Generate a conceptual image of a finance executive dashboard showing high-level KPIs: Revenue, Gross Margin, Burn Rate, Runway, and Budget vs. Actual. Use a clean layout with panels and placeholder numbers."
+        },
         // Financial Analysis & Reporting
         {
           name: "Financial Statement Analysis",
@@ -859,6 +1369,144 @@ const openAIPromptPacks = {
           name: "Financial Reporting Calendar",
           shortDesc: "Schedule reporting activities",
           content: "Create a financial reporting calendar for [year]. Include close dates, reporting deadlines, review meetings, and filing requirements. Specify responsible parties."
+        }
+      ]
+    },
+
+    // Executives
+    executives: {
+      name: "Executives",
+      description: "Executive prompts for strategic planning, decision support, investor relations, organizational communications, and performance analysis",
+      prompts: [
+        // Investor & Market Intelligence
+        {
+          name: "Summarize Investor Trends",
+          shortDesc: "Research funding and market dynamics",
+          content: "I'm preparing for our investor update. Research the latest funding and market trends in [industry]. Focus on valuation benchmarks, risk sentiment, and notable exits. Present in a concise brief with sources."
+        },
+        {
+          name: "Survey Investor Sentiment",
+          shortDesc: "Analyze market appetite and risks",
+          content: "Research current investor sentiment for companies in the [industry] space. Pull insights from earnings calls, investor letters, and analyst notes. Focus on risk appetite, funding trends, and growth expectations. Provide a 1-page briefing with source links."
+        },
+        {
+          name: "Benchmark Executive Compensation",
+          shortDesc: "Compare leadership pay structures",
+          content: "Conduct research on executive compensation benchmarks for [title, e.g. CFO] at [company size and industry]. Include total compensation breakdowns, geographic variations, and trends across public/private companies. Summarize in a 1-page brief with data tables and citations."
+        },
+        {
+          name: "Evaluate M&A Opportunities in a Sector",
+          shortDesc: "Research acquisition landscape",
+          content: "I'm evaluating M&A options in the [sector/vertical]. Research recent acquisitions (past 24 months), typical deal sizes, common targets, and integration outcomes. Provide company examples, risks, and strategic rationale. Format as an investor-style briefing."
+        },
+        {
+          name: "Assess Future Trends in Your Industry",
+          shortDesc: "Forecast strategic shifts",
+          content: "I'm an executive at [company/industry]. Conduct deep research on 3–5 emerging trends in [industry/topic] over the next 3 years. Include industry-specific examples, expert citations, and potential implications for strategy and talent planning. Present as an executive summary with bullet points and links to sources."
+        },
+        // Executive & Organizational Communications
+        {
+          name: "Draft a Vision Statement",
+          shortDesc: "Craft inspiring direction",
+          content: "Help me draft a compelling vision statement for our [company/team/initiative]. Our focus areas are: [insert key goals, values, or direction]. Make it inspiring, concise, and easy to communicate across departments."
+        },
+        {
+          name: "Generate Town Hall Talking Points",
+          shortDesc: "Prepare all-hands presentations",
+          content: "I need talking points for an upcoming company-wide town hall. The theme is [insert theme or announcement]. Make it engaging, clear, and forward-looking. Limit to 5 minutes of content."
+        },
+        {
+          name: "Refresh Internal Comms Strategy",
+          shortDesc: "Design communication plans",
+          content: "Help me design a new internal communications plan for [company or team]. We're trying to improve alignment, morale, and transparency. Suggest 3 guiding principles and a simple comms calendar."
+        },
+        {
+          name: "Plan a Reorg Comms Sequence",
+          shortDesc: "Navigate organizational changes",
+          content: "I'm planning communications for a reorg. Provide a step-by-step message plan by audience type (execs, managers, all staff). Include tone guidelines and delivery format per message."
+        },
+        {
+          name: "Draft a Succession Planning Memo",
+          shortDesc: "Document leadership transitions",
+          content: "Help me draft a succession planning memo for our [leadership team/board]. Include reasoning, timing, and a transparent outline of next steps for internal comms."
+        },
+        // Strategic Planning & Decision Support
+        {
+          name: "Create a Pricing Strategy Brief",
+          shortDesc: "Evaluate pricing models",
+          content: "We're revisiting our pricing strategy for [product/service]. Based on [insert context: goals, customer segments, competitive positioning], suggest 2–3 pricing models and pros/cons of each."
+        },
+        {
+          name: "Prioritize Growth Levers",
+          shortDesc: "Identify high-impact opportunities",
+          content: "Given our goals [insert business goals], identify 3 high-potential growth levers and estimate effort vs. impact. Include a table with short descriptions and trade-offs."
+        },
+        {
+          name: "Analyze Market Entry Risks",
+          shortDesc: "Assess expansion opportunities",
+          content: "We are considering entering [new market/region]. Based on current economic, legal, and competitive factors, summarize key risks and mitigation strategies in bullet format."
+        },
+        {
+          name: "Reframe Strategic Trade-offs",
+          shortDesc: "Compare investment options",
+          content: "We're choosing between [Option A] and [Option B] for our next big investment. Compare trade-offs across cost, time, team capacity, and customer impact. Recommend based on goal fit."
+        },
+        {
+          name: "Design a 3-Year Strategy Outline",
+          shortDesc: "Build long-term roadmaps",
+          content: "Based on these business priorities [insert high-level goals], help me develop a high-level 3-year strategy. Include major focus areas, risks, and milestones per year."
+        },
+        // Analytical Performance & Data Insights
+        {
+          name: "Identify Top and Bottom Performing Segments",
+          shortDesc: "Analyze performance variance",
+          content: "This is a dataset of performance across [regions/products/customers]. Identify which segments are over- and under-performing relative to the average. Show the metrics driving this and recommend 2 actions based on the findings."
+        },
+        {
+          name: "Analyze Quarterly Business Metrics",
+          shortDesc: "Extract board-ready insights",
+          content: "I'm reviewing performance data for Q[insert quarter]. Analyze this dataset [upload CSV] for key trends in revenue, churn, and customer acquisition. Highlight 3 insights I should share with the board and suggest follow-up questions I should ask."
+        },
+        {
+          name: "Analyze Customer Journey Drop-off",
+          shortDesc: "Diagnose conversion issues",
+          content: "I uploaded a funnel dataset showing customer journey stages. Analyze conversion rates between each stage and identify the largest drop-offs. Suggest 2–3 hypotheses and next steps to test or investigate."
+        },
+        {
+          name: "Forecast Next Quarter Based on Historical Trends",
+          shortDesc: "Project business metrics",
+          content: "Based on this historical data [upload], build a simple forecast for [KPI, e.g. revenue] over the next quarter. Use a basic time-series model and explain any assumptions made. Present as a short briefing I can share with my leadership team."
+        },
+        {
+          name: "Prioritize Strategic Investments",
+          shortDesc: "Score and rank initiatives",
+          content: "I uploaded a dataset of ongoing or proposed initiatives with cost, impact score, and estimated time to ROI. Help me prioritize these initiatives by building a simple scoring model and plotting effort vs. impact. Summarize the top 3 recommendations."
+        },
+        // Executive Visualization & Framework Design
+        {
+          name: "Build a Competitive Landscape Grid",
+          shortDesc: "Map market positioning",
+          content: "Based on the following list of competitors and their differentiators [paste], create a 2x2 matrix plotting them by [x axis] and [y axis]. Label each quadrant and include our position."
+        },
+        {
+          name: "Design a 2x2 Market Positioning Matrix",
+          shortDesc: "Create strategy frameworks",
+          content: "Create a 2x2 matrix plotting companies in [industry] by [X-axis: e.g. pricing] and [Y-axis: e.g. innovation]. Label each quadrant, add 6–8 companies, and highlight where we fit. Keep it suitable for a board presentation."
+        },
+        {
+          name: "Show Transformation Timeline",
+          shortDesc: "Visualize strategic journey",
+          content: "Create a visual timeline showing a company transformation journey from [year 1] to [year 3]. Include key milestones: strategy shifts, team growth, market expansion. Style: simple, bold, professional."
+        },
+        {
+          name: "Visualize Strategic Vision or Flywheel",
+          shortDesc: "Illustrate growth engines",
+          content: "Create a high-level strategic flywheel or vision diagram for a company focused on [industry or goal]. Show how inputs (e.g. customers, data, feedback) loop into outputs (e.g. growth, innovation). Keep it clean, modern, and executive-ready."
+        },
+        {
+          name: "Illustrate a Future Product Vision",
+          shortDesc: "Conceptualize innovation",
+          content: "Create a conceptual image of a future product vision for [industry/product]. Highlight features that reflect innovation and customer benefit. Style should be forward-looking, abstract but clear."
         }
       ]
     },
