@@ -437,6 +437,25 @@
     color: var(--primary-color);
 }
 
+/* Prompt Viewer Modal - specific adjustments */
+#default-prompt-viewer-modal .prompt-viewer-description {
+    padding: 12px 20px;
+    background-color: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    color: var(--text-color-secondary);
+    line-height: 1.5;
+}
+
+#default-prompt-viewer-modal .prompt-viewer-description a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+#default-prompt-viewer-modal .prompt-viewer-description a:hover {
+    text-decoration: underline;
+}
+
 /* Token usage display styles */
 .prompts-token-usage-container {
     margin-bottom: 15px;

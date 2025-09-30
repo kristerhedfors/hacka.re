@@ -357,29 +357,10 @@ function createPromptsListManager() {
                         checkbox.addEventListener('change', checkboxHandler);
                     }
                     
-                    // Bind prompt name click handler for viewing content
+                    // Bind prompt name click handler for viewing content in modal
                     const promptName = promptElement.querySelector('.prompt-item-name');
                     if (promptName) {
-                        const viewHandler = PromptsEventHandlers.createDefaultPromptViewHandler(
-                            prompt,
-                            (viewedPrompt) => {
-                                // Load prompt content into the new prompt form editor
-                                const labelField = document.getElementById('new-prompt-label');
-                                const contentField = document.getElementById('new-prompt-content');
-                                
-                                if (labelField && contentField) {
-                                    labelField.value = viewedPrompt.name || '';
-                                    contentField.value = viewedPrompt.content || '';
-                                    
-                                    // Make fields read-only when viewing default prompts
-                                    labelField.setAttribute('readonly', 'readonly');
-                                    contentField.setAttribute('readonly', 'readonly');
-                                    
-                                    // Scroll to the form fields so they're visible
-                                    contentField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                }
-                            }
-                        );
+                        const viewHandler = PromptsEventHandlers.createDefaultPromptViewHandler(prompt);
                         promptName.addEventListener('click', viewHandler);
                     }
                     

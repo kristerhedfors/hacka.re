@@ -399,7 +399,13 @@ window.PromptsModalRenderer = (function() {
             </div>
             <div class="prompt-info-content">
                 <p>${description}</p>
-                <p class="prompt-info-hint">Click on the prompt name to view its content in the editor.</p>
+                <div class="prompt-info-usage">
+                    <p class="prompt-info-hint"><strong>How to use this prompt:</strong></p>
+                    <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.9em; color: var(--text-color-secondary);">
+                        <li><strong>Check the box</strong> to include it in your system prompt</li>
+                        <li><strong>Click the prompt name</strong> to view, copy, or send to chat</li>
+                    </ul>
+                </div>
             </div>
         `;
 
@@ -420,8 +426,77 @@ window.PromptsModalRenderer = (function() {
             'owasp-llm-top10': 'The entire OWASP Top 10 for LLM applications as of May 2025. Markdown format, about 60 pages printed.',
             'mcp-sdk-readme': 'Documentation for the Model Context Protocol SDK, which enables communication between AI models and external tools.'
         };
-        
+
         return descriptions[promptId] || 'A default system prompt component for the hacka.re chat interface.';
+    }
+
+    /**
+     * Render prompt viewer modal (matches system prompt viewer style)
+     * @param {Object} prompt - Prompt object
+     * @returns {HTMLElement} Prompt viewer modal element
+     */
+    function renderPromptViewerModal(prompt) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'default-prompt-viewer-modal';
+
+        // Get description - prefer prompt's own description/shortDesc, then fall back to ID-based lookup
+        let description = prompt.description || prompt.shortDesc || getPromptDescription(prompt.id);
+
+        // Create modal content (matching system prompt viewer structure)
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px; max-height: 80vh;">
+                <div class="settings-header">
+                    <h2>${escapeHtml(prompt.name)}</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn icon-btn" id="prompt-viewer-copy-btn" title="Copy to clipboard">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button type="button" class="btn icon-btn" id="prompt-viewer-populate-btn" title="Populate chat input">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="prompt-viewer-description" style="padding: 12px 20px; background-color: var(--bg-color-secondary); border-bottom: 1px solid var(--border-color); font-size: 14px; color: var(--text-color-secondary);">
+                    ${description}
+                </div>
+
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button type="button" class="tab-btn active" data-tab="raw">Raw Markdown</button>
+                        <button type="button" class="tab-btn" data-tab="rendered">Rendered</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="prompt-viewer-raw-tab">
+                            <div class="scrollable-content">
+                                <pre id="prompt-viewer-raw-content" class="code-block"></pre>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane" id="prompt-viewer-rendered-tab">
+                            <div class="scrollable-content">
+                                <div id="prompt-viewer-rendered-content" class="markdown-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return modal;
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     // Public API
@@ -436,7 +511,9 @@ window.PromptsModalRenderer = (function() {
         renderNewPromptForm,
         renderNoPromptsMessage,
         renderInfoPopup,
+        renderPromptViewerModal,
         getPromptDescription,
-        getFileIcon
+        getFileIcon,
+        escapeHtml
     };
 })();
