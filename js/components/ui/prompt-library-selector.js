@@ -338,6 +338,7 @@ window.PromptLibrarySelector = (function() {
 
     /**
      * Filter prompts based on search term
+     * Only searches visible fields: name, collection (category), and short description
      */
     function filterPrompts() {
         if (!elements.promptLibraryListContainer) return;
@@ -350,11 +351,12 @@ window.PromptLibrarySelector = (function() {
             if (!prompt) return;
 
             const searchText = currentSearchTerm.toLowerCase();
+            // Only match against visible fields (name, collection, shortDesc)
+            // NOT the actual prompt content which is not displayed
             const matches = !searchText ||
                            prompt.name.toLowerCase().includes(searchText) ||
                            prompt.collection.toLowerCase().includes(searchText) ||
-                           (prompt.shortDesc && prompt.shortDesc.toLowerCase().includes(searchText)) ||
-                           prompt.content.toLowerCase().includes(searchText);
+                           (prompt.shortDesc && prompt.shortDesc.toLowerCase().includes(searchText));
 
             if (matches) {
                 item.classList.remove('filtered-out');
@@ -385,18 +387,37 @@ window.PromptLibrarySelector = (function() {
 
     /**
      * Highlight matching text in prompt items
+     * Highlights matches in name, collection (category), and short description
      * @param {HTMLElement} item - Prompt item element
      * @param {string} searchText - Search term
      */
     function highlightMatchingText(item, searchText) {
         if (!searchText) return;
 
+        const regex = new RegExp(`(${escapeRegExp(searchText)})`, 'gi');
+
+        // Highlight in prompt name
         const modelNameEl = item.querySelector('.model-name');
         if (modelNameEl) {
             const originalText = modelNameEl.textContent;
-            const regex = new RegExp(`(${escapeRegExp(searchText)})`, 'gi');
             const highlightedText = originalText.replace(regex, '<span class="highlight">$1</span>');
             modelNameEl.innerHTML = highlightedText;
+        }
+
+        // Highlight in collection (category)
+        const collectionEl = item.querySelector('.model-provider');
+        if (collectionEl) {
+            const originalText = collectionEl.textContent;
+            const highlightedText = originalText.replace(regex, '<span class="highlight">$1</span>');
+            collectionEl.innerHTML = highlightedText;
+        }
+
+        // Highlight in short description
+        const shortDescEl = item.querySelector('.prompt-short-desc');
+        if (shortDescEl) {
+            const originalText = shortDescEl.textContent;
+            const highlightedText = originalText.replace(regex, '<span class="highlight">$1</span>');
+            shortDescEl.innerHTML = highlightedText;
         }
     }
 
