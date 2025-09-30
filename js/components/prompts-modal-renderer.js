@@ -189,39 +189,60 @@ window.PromptsModalRenderer = (function() {
     function renderSectionHeader(title, iconClass = 'fas fa-chevron-right') {
         const sectionHeader = document.createElement('div');
         sectionHeader.className = 'default-prompts-header';
-        
+
         // Add expand/collapse icon
         const expandIcon = document.createElement('i');
         expandIcon.className = iconClass;
         sectionHeader.appendChild(expandIcon);
-        
+
         // Add section title
         const sectionTitle = document.createElement('h4');
         sectionTitle.textContent = title;
         sectionHeader.appendChild(sectionTitle);
-        
+
+        // Add count span for showing enabled/total
+        const sectionCount = document.createElement('span');
+        sectionCount.className = 'prompt-section-count';
+        sectionCount.id = 'default-prompts-section-count';
+        sectionCount.style.marginLeft = '10px';
+        sectionCount.style.color = 'var(--text-color-secondary)';
+        sectionCount.style.fontSize = '14px';
+        sectionCount.style.display = 'none'; // Initially hidden
+        sectionHeader.appendChild(sectionCount);
+
         return sectionHeader;
     }
     
     /**
      * Render a nested section header
-     * @param {string} title - Section title  
+     * @param {string} title - Section title
+     * @param {string} sectionId - Section ID for count tracking
      * @returns {HTMLElement} Nested section header element
      */
-    function renderNestedSectionHeader(title) {
+    function renderNestedSectionHeader(title, sectionId) {
         const nestedHeader = document.createElement('div');
         nestedHeader.className = 'nested-section-header';
-        
+
         // Add expand/collapse icon
         const nestedExpandIcon = document.createElement('i');
         nestedExpandIcon.className = 'fas fa-chevron-right';
         nestedHeader.appendChild(nestedExpandIcon);
-        
+
         // Add title
         const nestedTitle = document.createElement('h4');
         nestedTitle.textContent = title || 'Unnamed Section';
         nestedHeader.appendChild(nestedTitle);
-        
+
+        // Add count span for showing enabled/total
+        const nestedCount = document.createElement('span');
+        nestedCount.className = 'prompt-section-count';
+        nestedCount.id = `prompt-section-count-${sectionId}`;
+        nestedCount.style.marginLeft = '10px';
+        nestedCount.style.color = 'var(--text-color-secondary)';
+        nestedCount.style.fontSize = '14px';
+        nestedCount.style.display = 'none'; // Initially hidden
+        nestedHeader.appendChild(nestedCount);
+
         return nestedHeader;
     }
     
@@ -271,9 +292,10 @@ window.PromptsModalRenderer = (function() {
     function renderNestedSection(sectionPrompt, selectedIds) {
         const nestedSection = document.createElement('div');
         nestedSection.className = 'nested-section';
+        nestedSection.dataset.sectionId = sectionPrompt.id; // Store section ID for counting
 
         // Create nested section header
-        const nestedHeader = renderNestedSectionHeader(sectionPrompt.name);
+        const nestedHeader = renderNestedSectionHeader(sectionPrompt.name, sectionPrompt.id);
         nestedSection.appendChild(nestedHeader);
 
         // Create container for nested items
