@@ -1,7 +1,21 @@
 {
-    "python.testing.pytestArgs": [
-        "_tests"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+  // Python testing is in _tests/playwright subdirectory
+  // Tests should be run from that directory, not project root
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": false,
+
+  // Exclude test directories from root workspace
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.DS_Store": true
+  },
+
+  "search.exclude": {
+    "**/.venv": true,
+    "**/node_modules": true,
+    "**/__pycache__": true,
+    "_tests/**/screenshots": true,
+    "_tests/**/console_logs": true
+  }
 }

@@ -54,6 +54,7 @@ BROWSER="chromium"
 HEADLESS="--headed"
 TIMEOUT="5000"
 SKIP_SERVER_MANAGEMENT="false"
+NUM_WORKERS="6"  # Default to 6 workers for feature tests (more tests)
 
 # Process command line arguments
 while [[ $# -gt 0 ]]; do
@@ -82,6 +83,14 @@ while [[ $# -gt 0 ]]; do
             SKIP_SERVER_MANAGEMENT="true"
             shift
             ;;
+        --workers|-n)
+            NUM_WORKERS="$2"
+            shift 2
+            ;;
+        --no-parallel)
+            NUM_WORKERS="0"
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [options]"
             echo ""
@@ -104,13 +113,20 @@ while [[ $# -gt 0 ]]; do
             echo "Note: Excludes core functionality tests (use run_core_tests.sh for those)"
             echo ""
             echo "Options:"
-            echo "  --headless      Run tests in headless mode (no browser UI)"
-            echo "  --firefox       Run tests in Firefox"
-            echo "  --webkit        Run tests in WebKit"
-            echo "  --verbose, -v   Run tests with verbose output"
-            echo "  --timeout       Set timeout in milliseconds (default: 5000)"
-            echo "  --skip-server   Skip starting/stopping the HTTP server"
-            echo "  --help, -h      Show this help message"
+            echo "  --headless        Run tests in headless mode (no browser UI)"
+            echo "  --firefox         Run tests in Firefox"
+            echo "  --webkit          Run tests in WebKit"
+            echo "  --verbose, -v     Run tests with verbose output"
+            echo "  --timeout         Set timeout in milliseconds (default: 5000)"
+            echo "  --skip-server     Skip starting/stopping the HTTP server"
+            echo "  --workers, -n N   Number of parallel workers (default: auto)"
+            echo "  --no-parallel     Disable parallel execution (use 1 worker)"
+            echo "  --help, -h        Show this help message"
+            echo ""
+            echo "Parallel Execution:"
+            echo "  By default, tests run in parallel using pytest-xdist with auto-detected cores."
+            echo "  Use --workers N to specify exact number of workers (e.g., --workers 6)"
+            echo "  Use --no-parallel for sequential execution (debugging)"
             exit 0
             ;;
         *)
@@ -130,43 +146,24 @@ if [ "$SKIP_SERVER_MANAGEMENT" = "false" ]; then
     trap 'echo "Stopping HTTP server..."; ./stop_server.sh; echo "Server stopped."' EXIT
 fi
 
-# Run feature tests in smaller batches to avoid timeouts
-echo "Running Advanced Feature tests with $BROWSER browser in batches..."
+# Prepare parallel execution flags
+if [ "$NUM_WORKERS" = "0" ]; then
+    PARALLEL_ARGS=""
+    echo "Running Advanced Feature tests with $BROWSER browser (SEQUENTIAL mode)..."
+else
+    PARALLEL_ARGS="-n $NUM_WORKERS --dist=loadfile"
+    echo "Running Advanced Feature tests with $BROWSER browser (PARALLEL mode: $NUM_WORKERS workers)..."
+fi
+
 echo ""
 
-# Batch 1: Function-related tests (16 files max)
-echo "\n=== Batch 1: Function Tests (1/5) ==="
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_function_modal.py test_function_icons.py test_function_copy.py test_function_deletion.py " | tee test_output.log
-
-echo "\n=== Batch 2: Function Tests (2/5) ==="
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_function_editing.py test_function_group.py test_function_parsing.py test_function_tooltip.py " | tee -a test_output.log
-
-echo "\n=== Batch 3: Function Tests (3/5) ==="
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_function_library*.py test_function_calling*.py " 2>/dev/null | tee -a test_output.log || echo "Some function tests not found"
-
-# Batch 2: Share and UI tests
-echo "\n=== Batch 4: Share & UI Tests ==="
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_sharing.py test_themes.py test_clear_chat.py test_copy_chat.py " | tee -a test_output.log
-
-# Batch 3: Settings and prompts
-echo "\n=== Batch 5: Settings & Prompts ==="
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_default_prompts.py test_system_prompt.py test_clear_namespace.py test_prompt_order*.py " 2>/dev/null | tee -a test_output.log || echo "Some prompt tests not found"
-
-# Batch 4: Model and input tests
-echo "\n=== Batch 6: Model & Input Tests ==="
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_model_selection*.py test_model_context*.py test_input_field.py test_token_counter.py " 2>/dev/null | tee -a test_output.log || echo "Some model tests not found"
-
-# Batch 5: RAG tests
-echo "\n=== Batch 7: RAG Tests ==="
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_rag_modal.py test_rag_indexing.py test_rag_search.py test_rag_bundles.py test_rag_integration.py " 2>/dev/null | tee -a test_output.log || echo "Some RAG tests not found"
-
-# Batch 6: Misc tests
-echo "\n=== Batch 8: Miscellaneous Tests ==="
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_button_tooltips.py test_logo_tooltip.py test_modals.py test_debug_mode.py test_deterministic_crypto.py test_owasp*.py " 2>/dev/null | tee -a test_output.log || echo "Some misc tests not found"
-
-# Batch 7: Context window tests
-echo "\n=== Batch 9: Context Window Tests ==="
-eval ".venv/bin/python -m pytest $PYTEST_ARGS --browser $BROWSER $HEADLESS test_context_window*.py " 2>/dev/null | tee -a test_output.log || echo "Context window tests not found"
+# Run all feature tests with parallel execution (excluding core tests)
+echo "=== Running All Feature Tests in Parallel ==="
+eval ".venv/bin/python -m pytest $PYTEST_ARGS $PARALLEL_ARGS --browser $BROWSER $HEADLESS \
+    --ignore=test_page.py \
+    --ignore=test_api.py \
+    --ignore=test_chat.py \
+    --ignore=test_welcome_modal.py" | tee test_output.log
 
 # Generate test results markdown files
 echo "Generating test results markdown files..."

@@ -1,19 +1,19 @@
 {
-  "timestamp": "2025-09-30 09:41:32",
+  "timestamp": "2025-09-30 11:16:53",
   "results": [
     {
       "scenario": "Small text (10 chars)",
       "textLength": 10,
-      "typingTime": 112.66129091382027,
+      "typingTime": 40.34270904958248,
       "expectedMaxTime": 50,
-      "passed": false,
+      "passed": true,
       "totalEvents": 0,
       "eventHandlers": [],
       "bottlenecks": [],
       "textareaStyle": {
         "height": "48px",
         "scrollHeight": 48,
-        "clientHeight": 46,
+        "clientHeight": 48,
         "overflow": "auto hidden",
         "resize": "none"
       }
@@ -21,7 +21,7 @@
     {
       "scenario": "Medium text (50 chars)",
       "textLength": 50,
-      "typingTime": 144.26487497985363,
+      "typingTime": 50.868958001956344,
       "expectedMaxTime": 100,
       "passed": true,
       "totalEvents": 0,
@@ -30,7 +30,7 @@
       "textareaStyle": {
         "height": "48px",
         "scrollHeight": 48,
-        "clientHeight": 46,
+        "clientHeight": 48,
         "overflow": "auto hidden",
         "resize": "none"
       }
@@ -38,7 +38,7 @@
     {
       "scenario": "Large text (100 chars)",
       "textLength": 100,
-      "typingTime": 127.44691711850464,
+      "typingTime": 68.91470891423523,
       "expectedMaxTime": 200,
       "passed": true,
       "totalEvents": 0,
@@ -47,7 +47,7 @@
       "textareaStyle": {
         "height": "48px",
         "scrollHeight": 48,
-        "clientHeight": 46,
+        "clientHeight": 48,
         "overflow": "auto hidden",
         "resize": "none"
       }

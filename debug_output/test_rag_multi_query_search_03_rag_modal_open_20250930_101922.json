@@ -1,0 +1,1419 @@
+{
+  "test": "test_rag_multi_query_search",
+  "step": "03_rag_modal_open",
+  "timestamp": "20250930_101922",
+  "console_messages": [
+    {
+      "timestamp": "10:19:15.982",
+      "type": "log",
+      "text": "Models.dev data loaded successfully (embedded)",
+      "location": "{'url': 'http://localhost:8000/js/services/models-dev-data.js', 'lineNumber': 278, 'columnNumber': 12}",
+      "args": [
+        "Models.dev data loaded successfully (embedded)"
+      ]
+    },
+    {
+      "timestamp": "10:19:15.985",
+      "type": "log",
+      "text": "[StorageTypeService] Detected direct entry - using sessionStorage (LOCKED)",
+      "location": "{'url': 'http://localhost:8000/js/services/storage-type-service.js', 'lineNumber': 89, 'columnNumber': 20}",
+      "args": [
+        "[StorageTypeService] Detected direct entry - using sessionStorage (LOCKED)"
+      ]
+    },
+    {
+      "timestamp": "10:19:15.977",
+      "type": "log",
+      "text": "Default Models Configuration initialized {defaultOpenAIModel: gpt-5-nano, ragExpansionModel: gpt-4.1-mini}",
+      "location": "{'url': 'http://localhost:8000/js/config/default-models.js', 'lineNumber': 114, 'columnNumber': 12}",
+      "args": [
+        "Default Models Configuration initialized",
+        {
+          "defaultOpenAIModel": "gpt-5-nano",
+          "ragExpansionModel": "gpt-4.1-mini"
+        }
+      ]
+    },
+    {
+      "timestamp": "10:19:16.121",
+      "type": "log",
+      "text": "[MCPProviderFactory] Initialized (built-in providers will be registered by modules)",
+      "location": "{'url': 'http://localhost:8000/js/services/mcp-provider-factory.js', 'lineNumber': 269, 'columnNumber': 16}",
+      "args": [
+        "[MCPProviderFactory] Initialized (built-in providers will be registered by modules)"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.123",
+      "type": "log",
+      "text": "[MCPToolRegistry] Initialized enhanced tool registry",
+      "location": "{'url': 'http://localhost:8000/js/services/mcp-tool-registry.js', 'lineNumber': 76, 'columnNumber': 16}",
+      "args": [
+        "[MCPToolRegistry] Initialized enhanced tool registry"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.188",
+      "type": "log",
+      "text": "GitHub Provider: Starting initialization...",
+      "location": "{'url': 'http://localhost:8000/js/providers/github/github-provider-loader.js', 'lineNumber': 10, 'columnNumber': 12}",
+      "args": [
+        "GitHub Provider: Starting initialization..."
+      ]
+    },
+    {
+      "timestamp": "10:19:16.192",
+      "type": "log",
+      "text": "GitHub Provider: All modules loaded successfully",
+      "location": "{'url': 'http://localhost:8000/js/providers/github/github-provider-loader.js', 'lineNumber': 23, 'columnNumber': 16}",
+      "args": [
+        "GitHub Provider: All modules loaded successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.195",
+      "type": "log",
+      "text": "GitHub Provider (modular) loaded and initialized successfully",
+      "location": "{'url': 'http://localhost:8000/js/providers/github/github-provider-loader.js', 'lineNumber': 37, 'columnNumber': 16}",
+      "args": [
+        "GitHub Provider (modular) loaded and initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.198",
+      "type": "log",
+      "text": "[0ms] MCP: Initializing MCP client service",
+      "location": "{'url': 'http://localhost:8000/js/utils/performance-logger.js', 'lineNumber': 37, 'columnNumber': 24}",
+      "args": [
+        "[0ms] MCP: Initializing MCP client service"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.200",
+      "type": "log",
+      "text": "[0ms] MCP: MCP client service initialized successfully",
+      "location": "{'url': 'http://localhost:8000/js/utils/performance-logger.js', 'lineNumber': 37, 'columnNumber': 24}",
+      "args": [
+        "[0ms] MCP: MCP client service initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.221",
+      "type": "log",
+      "text": "[32ms] MCP: Registered connector: github",
+      "location": "{'url': 'http://localhost:8000/js/utils/performance-logger.js', 'lineNumber': 37, 'columnNumber': 24}",
+      "args": [
+        "[32ms] MCP: Registered connector: github"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.222",
+      "type": "log",
+      "text": "[1ms] MCP: Registered connector: shodan",
+      "location": "{'url': 'http://localhost:8000/js/utils/performance-logger.js', 'lineNumber': 37, 'columnNumber': 24}",
+      "args": [
+        "[1ms] MCP: Registered connector: shodan"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.225",
+      "type": "log",
+      "text": "[0ms] MCP: Registered connector: gmail",
+      "location": "{'url': 'http://localhost:8000/js/utils/performance-logger.js', 'lineNumber': 37, 'columnNumber': 24}",
+      "args": [
+        "[0ms] MCP: Registered connector: gmail"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.227",
+      "type": "log",
+      "text": "[0ms] MCP: Initialized with 3 connectors",
+      "location": "{'url': 'http://localhost:8000/js/utils/performance-logger.js', 'lineNumber': 37, 'columnNumber': 24}",
+      "args": [
+        "[0ms] MCP: Initialized with 3 connectors"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.229",
+      "type": "log",
+      "text": "[MCPServiceManager] Bridge created: MCPServiceConnectors -> mcpServiceManager",
+      "location": "{'url': 'http://localhost:8000/js/services/mcp-service-manager.js', 'lineNumber': 390, 'columnNumber': 12}",
+      "args": [
+        "[MCPServiceManager] Bridge created: MCPServiceConnectors -> mcpServiceManager"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.271",
+      "type": "log",
+      "text": "\ud83c\udfbc AgentOrchestrator: Initializing multi-agent orchestration system",
+      "location": "{'url': 'http://localhost:8000/js/services/agent-orchestrator.js', 'lineNumber': 29, 'columnNumber': 16}",
+      "args": [
+        "\ud83c\udfbc AgentOrchestrator: Initializing multi-agent orchestration system"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.272",
+      "type": "log",
+      "text": "\ud83c\udfbc AgentOrchestrator: AgentCache integration enabled",
+      "location": "{'url': 'http://localhost:8000/js/services/agent-orchestrator.js', 'lineNumber': 38, 'columnNumber': 20}",
+      "args": [
+        "\ud83c\udfbc AgentOrchestrator: AgentCache integration enabled"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.335",
+      "type": "log",
+      "text": "Loading Code Section prompt...",
+      "location": "{'url': 'http://localhost:8000/js/default-prompts/code-section.js', 'lineNumber': 5, 'columnNumber': 8}",
+      "args": [
+        "Loading Code Section prompt..."
+      ]
+    },
+    {
+      "timestamp": "10:19:16.412",
+      "type": "log",
+      "text": "Loaded 3 default prompts for RAG functionality",
+      "location": "{'url': 'http://localhost:8000/js/services/default-prompts-service.js', 'lineNumber': 37, 'columnNumber': 12}",
+      "args": [
+        "Loaded 3 default prompts for RAG functionality"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.416",
+      "type": "log",
+      "text": "Default prompts loaded: [README.md, OWASP Top 10 for LLM Applications, LLM Security Literacy]",
+      "location": "{'url': 'http://localhost:8000/js/services/default-prompts-service.js', 'lineNumber': 38, 'columnNumber': 12}",
+      "args": [
+        "Default prompts loaded:",
+        [
+          "README.md",
+          "OWASP Top 10 for LLM Applications",
+          "LLM Security Literacy"
+        ]
+      ]
+    },
+    {
+      "timestamp": "10:19:16.449",
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_SOCKET_NOT_CONNECTED",
+      "location": "{'url': 'http://localhost:8000/js/services/settings-info-modal-service.js', 'lineNumber': 0, 'columnNumber': 0}",
+      "args": []
+    },
+    {
+      "timestamp": "10:19:16.441",
+      "type": "log",
+      "text": "Loaded 3 default function collections: [RC4 Encryption, Math Utilities, MCP Examples]",
+      "location": "{'url': 'http://localhost:8000/js/services/default-functions-service.js', 'lineNumber': 51, 'columnNumber': 16}",
+      "args": [
+        "Loaded 3 default function collections:",
+        [
+          "RC4 Encryption",
+          "Math Utilities",
+          "MCP Examples"
+        ]
+      ]
+    },
+    {
+      "timestamp": "10:19:16.457",
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_SOCKET_NOT_CONNECTED",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-indexing-service.js', 'lineNumber': 0, 'columnNumber': 0}",
+      "args": []
+    },
+    {
+      "timestamp": "10:19:16.480",
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_SOCKET_NOT_CONNECTED",
+      "location": "{'url': 'http://localhost:8000/js/utils/function-call-renderer.js', 'lineNumber': 0, 'columnNumber': 0}",
+      "args": []
+    },
+    {
+      "timestamp": "10:19:16.739",
+      "type": "log",
+      "text": "MCP Size Estimator: Global functions registered",
+      "location": "{'url': 'http://localhost:8000/js/utils/mcp-size-estimator-global.js', 'lineNumber': 142, 'columnNumber': 12}",
+      "args": [
+        "MCP Size Estimator: Global functions registered"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.873",
+      "type": "log",
+      "text": "[MCPIntrospectionService] Initialized with 177 known files",
+      "location": "{'url': 'http://localhost:8000/js/services/mcp-introspection-service.js', 'lineNumber': 804, 'columnNumber': 16}",
+      "args": [
+        "[MCPIntrospectionService] Initialized with",
+        177,
+        "known files"
+      ]
+    },
+    {
+      "timestamp": "10:19:16.950",
+      "type": "log",
+      "text": "[MCPQuickConnectors] Current window.location.origin: http://localhost:8000",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 9, 'columnNumber': 12}",
+      "args": [
+        "[MCPQuickConnectors] Current window.location.origin:",
+        "http://localhost:8000"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.159",
+      "type": "log",
+      "text": "Initializing Orchestration Agent Service...",
+      "location": "{'url': 'http://localhost:8000/js/services/orchestration-agent-service.js', 'lineNumber': 195, 'columnNumber': 16}",
+      "args": [
+        "Initializing Orchestration Agent Service..."
+      ]
+    },
+    {
+      "timestamp": "10:19:18.160",
+      "type": "log",
+      "text": "Orchestration Agent Service initialized",
+      "location": "{'url': 'http://localhost:8000/js/services/orchestration-agent-service.js', 'lineNumber': 204, 'columnNumber': 16}",
+      "args": [
+        "Orchestration Agent Service initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.162",
+      "type": "log",
+      "text": "Initializing copy buttons",
+      "location": "{'url': 'http://localhost:8000/js/utils/clipboard-utils.js', 'lineNumber': 224, 'columnNumber': 16}",
+      "args": [
+        "Initializing copy buttons"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.169",
+      "type": "log",
+      "text": "Copy button event listener initialized",
+      "location": "{'url': 'http://localhost:8000/js/utils/clipboard-utils.js', 'lineNumber': 252, 'columnNumber': 16}",
+      "args": [
+        "Copy button event listener initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.171",
+      "type": "log",
+      "text": "Legacy Agent Manager utilities initialized (deprecated)",
+      "location": "{'url': 'http://localhost:8000/js/components/agent-manager.js', 'lineNumber': 14, 'columnNumber': 16}",
+      "args": [
+        "Legacy Agent Manager utilities initialized (deprecated)"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.178",
+      "type": "log",
+      "text": "[MCPShareLinkUI] Initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-share-link-ui.js', 'lineNumber': 34, 'columnNumber': 16}",
+      "args": [
+        "[MCPShareLinkUI] Initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.187",
+      "type": "log",
+      "text": "[MCPIntrospectionUI] Initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-introspection-ui.js', 'lineNumber': 34, 'columnNumber': 16}",
+      "args": [
+        "[MCPIntrospectionUI] Initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.191",
+      "type": "log",
+      "text": "Loading pre-cached embeddings...",
+      "location": "{'url': 'http://localhost:8000/js/data/precached-embeddings.js', 'lineNumber': 7, 'columnNumber': 11462203}",
+      "args": [
+        "Loading pre-cached embeddings..."
+      ]
+    },
+    {
+      "timestamp": "10:19:18.195",
+      "type": "log",
+      "text": "VectorStore: Stored 154 vectors for aia in memory",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-coordinator.js', 'lineNumber': 28, 'columnNumber': 20}",
+      "args": [
+        "VectorStore: Stored 154 vectors for aia in memory"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.180",
+      "type": "log",
+      "text": "[MCPIntrospectionService] Initialized with 177 known files",
+      "location": "{'url': 'http://localhost:8000/js/services/mcp-introspection-service.js', 'lineNumber': 804, 'columnNumber': 16}",
+      "args": [
+        "[MCPIntrospectionService] Initialized with",
+        177,
+        "known files"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.207",
+      "type": "log",
+      "text": "  Loaded 154 vectors for EU AI Act",
+      "location": "{'url': 'http://localhost:8000/js/data/precached-embeddings.js', 'lineNumber': 7, 'columnNumber': 11462759}",
+      "args": [
+        "  Loaded 154 vectors for EU AI Act"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.208",
+      "type": "log",
+      "text": "VectorStore: Stored 232 vectors for cra in memory",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-coordinator.js', 'lineNumber': 28, 'columnNumber': 20}",
+      "args": [
+        "VectorStore: Stored 232 vectors for cra in memory"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.256",
+      "type": "log",
+      "text": "  Loaded 232 vectors for EU Cyber Resilience Act",
+      "location": "{'url': 'http://localhost:8000/js/data/precached-embeddings.js', 'lineNumber': 7, 'columnNumber': 11462759}",
+      "args": [
+        "  Loaded 232 vectors for EU Cyber Resilience Act"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.257",
+      "type": "log",
+      "text": "VectorStore: Stored 204 vectors for dora in memory",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-coordinator.js', 'lineNumber': 28, 'columnNumber': 20}",
+      "args": [
+        "VectorStore: Stored 204 vectors for dora in memory"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.303",
+      "type": "log",
+      "text": "  Loaded 204 vectors for EU Digital Operational Resilience Act",
+      "location": "{'url': 'http://localhost:8000/js/data/precached-embeddings.js', 'lineNumber': 7, 'columnNumber': 11462759}",
+      "args": [
+        "  Loaded 204 vectors for EU Digital Operational Resilience Act"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.306",
+      "type": "log",
+      "text": "Successfully loaded 590 pre-cached embeddings for 3 documents",
+      "location": "{'url': 'http://localhost:8000/js/data/precached-embeddings.js', 'lineNumber': 7, 'columnNumber': 11462846}",
+      "args": [
+        "Successfully loaded 590 pre-cached embeddings for 3 documents"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.306",
+      "type": "log",
+      "text": "VectorRAGService: Initializing...",
+      "location": "{'url': 'http://localhost:8000/js/services/vector-rag-service.js', 'lineNumber': 20, 'columnNumber': 16}",
+      "args": [
+        "VectorRAGService: Initializing..."
+      ]
+    },
+    {
+      "timestamp": "10:19:18.307",
+      "type": "log",
+      "text": "VectorRAGService: Initialization completed",
+      "location": "{'url': 'http://localhost:8000/js/services/vector-rag-service.js', 'lineNumber': 28, 'columnNumber': 16}",
+      "args": [
+        "VectorRAGService: Initialization completed"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.329",
+      "type": "log",
+      "text": "[DebugCodeTooltip] Initialized - Click to show tooltip",
+      "location": "{'url': 'http://localhost:8000/js/utils/debug-code-tooltip.js', 'lineNumber': 21, 'columnNumber': 16}",
+      "args": [
+        "[DebugCodeTooltip] Initialized - Click to show tooltip"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.330",
+      "type": "log",
+      "text": "\ud83d\ude80 AIHackare: Initializing model selection manager...",
+      "location": "{'url': 'http://localhost:8000/js/components/ai-hackare.js', 'lineNumber': 940, 'columnNumber': 16}",
+      "args": [
+        "\ud83d\ude80 AIHackare: Initializing model selection manager..."
+      ]
+    },
+    {
+      "timestamp": "10:19:18.331",
+      "type": "log",
+      "text": "\ud83d\ude80 AIHackare: Initializing...",
+      "location": "{'url': 'http://localhost:8000/js/components/ai-hackare.js', 'lineNumber': 60, 'columnNumber': 16}",
+      "args": [
+        "\ud83d\ude80 AIHackare: Initializing..."
+      ]
+    },
+    {
+      "timestamp": "10:19:18.331",
+      "type": "log",
+      "text": "[ShareManager] Initialized without restoring password from storage (security enhancement)",
+      "location": "{'url': 'http://localhost:8000/js/components/share-manager.js', 'lineNumber': 152, 'columnNumber': 20}",
+      "args": [
+        "[ShareManager] Initialized without restoring password from storage (security enhancement)"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.378",
+      "type": "log",
+      "text": "Found context window from models.dev partial match 'gpt-4' (openai): 8192",
+      "location": "{'url': 'http://localhost:8000/js/services/model-info.js', 'lineNumber': 235, 'columnNumber': 40}",
+      "args": [
+        "Found context window from models.dev partial match 'gpt-4' (openai): 8192"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.386",
+      "type": "log",
+      "text": "Empty default system prompt loaded successfully",
+      "location": "{'url': 'http://localhost:8000/js/components/settings/system-prompt-manager.js', 'lineNumber': 147, 'columnNumber': 20}",
+      "args": [
+        "Empty default system prompt loaded successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.389",
+      "type": "log",
+      "text": "\ud83c\udfa4 VoiceControlManager: Starting fresh implementation",
+      "location": "{'url': 'http://localhost:8000/js/components/settings/voice-control-manager.js', 'lineNumber': 15, 'columnNumber': 20}",
+      "args": [
+        "\ud83c\udfa4 VoiceControlManager: Starting fresh implementation"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.389",
+      "type": "log",
+      "text": "Debug mode controls already exist, skipping addition",
+      "location": "{'url': 'http://localhost:8000/js/components/settings/debug-manager.js', 'lineNumber': 57, 'columnNumber': 24}",
+      "args": [
+        "Debug mode controls already exist, skipping addition"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.390",
+      "type": "log",
+      "text": "API Tools Manager initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/api-tools-manager.js', 'lineNumber': 17, 'columnNumber': 20}",
+      "args": [
+        "API Tools Manager initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.391",
+      "type": "log",
+      "text": "Function Modal Manager initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/function-calling/function-modal-manager.js', 'lineNumber': 26, 'columnNumber': 20}",
+      "args": [
+        "Function Modal Manager initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.391",
+      "type": "log",
+      "text": "Function Execute Modal initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/function-calling/function-execute-modal.js', 'lineNumber': 66, 'columnNumber': 20}",
+      "args": [
+        "Function Execute Modal initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.392",
+      "type": "log",
+      "text": "MCP Server Manager initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/function-calling/mcp-server-manager.js', 'lineNumber': 30, 'columnNumber': 20}",
+      "args": [
+        "MCP Server Manager initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.393",
+      "type": "log",
+      "text": "Function Editor Manager initialized with modular components",
+      "location": "{'url': 'http://localhost:8000/js/components/function-calling/function-editor-manager.js', 'lineNumber': 59, 'columnNumber': 20}",
+      "args": [
+        "Function Editor Manager initialized with modular components"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.393",
+      "type": "log",
+      "text": "Function Copy Manager initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/function-calling/function-copy-manager.js', 'lineNumber': 32, 'columnNumber': 20}",
+      "args": [
+        "Function Copy Manager initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.396",
+      "type": "log",
+      "text": "=== Loading selected default functions ===",
+      "location": "{'url': 'http://localhost:8000/js/services/default-functions-service.js', 'lineNumber': 452, 'columnNumber': 16}",
+      "args": [
+        "=== Loading selected default functions ==="
+      ]
+    },
+    {
+      "timestamp": "10:19:18.397",
+      "type": "log",
+      "text": "No default functions selected, skipping load",
+      "location": "{'url': 'http://localhost:8000/js/services/default-functions-service.js', 'lineNumber': 460, 'columnNumber': 20}",
+      "args": [
+        "No default functions selected, skipping load"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.397",
+      "type": "log",
+      "text": "Default functions loaded",
+      "location": "{'url': 'http://localhost:8000/js/components/function-calling-manager.js', 'lineNumber': 70, 'columnNumber': 24}",
+      "args": [
+        "Default functions loaded"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.398",
+      "type": "log",
+      "text": "Function Calling Manager initialized with all components",
+      "location": "{'url': 'http://localhost:8000/js/components/function-calling-manager.js', 'lineNumber': 80, 'columnNumber': 20}",
+      "args": [
+        "Function Calling Manager initialized with all components"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.398",
+      "type": "log",
+      "text": "PromptsService.applySelectedPromptsAsSystem called",
+      "location": "{'url': 'http://localhost:8000/js/services/prompts-service.js', 'lineNumber': 187, 'columnNumber': 12}",
+      "args": [
+        "PromptsService.applySelectedPromptsAsSystem called"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.416",
+      "type": "log",
+      "text": "Prompts manager context usage update needed",
+      "location": "{'url': 'http://localhost:8000/js/services/system-prompt-coordinator.js', 'lineNumber': 150, 'columnNumber': 24}",
+      "args": [
+        "Prompts manager context usage update needed"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.418",
+      "type": "log",
+      "text": "RAGModalManager: Initialized successfully",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-modal-manager.js', 'lineNumber': 22, 'columnNumber': 16}",
+      "args": [
+        "RAGModalManager: Initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.419",
+      "type": "log",
+      "text": "RAGSearchManager: Initialized successfully",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-search-manager.js', 'lineNumber': 19, 'columnNumber': 16}",
+      "args": [
+        "RAGSearchManager: Initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.419",
+      "type": "log",
+      "text": "RAGIndexStatsManager: Initialized successfully",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-index-stats-manager.js', 'lineNumber': 18, 'columnNumber': 16}",
+      "args": [
+        "RAGIndexStatsManager: Initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.419",
+      "type": "log",
+      "text": "RAGFileKnowledgeManager: Initialized successfully",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-file-knowledge-manager.js', 'lineNumber': 19, 'columnNumber': 16}",
+      "args": [
+        "RAGFileKnowledgeManager: Initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.420",
+      "type": "log",
+      "text": "RAGUserBundlesManager: Initialized successfully",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-user-bundles-manager.js', 'lineNumber': 19, 'columnNumber': 16}",
+      "args": [
+        "RAGUserBundlesManager: Initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.420",
+      "type": "log",
+      "text": "RAGCoordinator: All sub-components initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-coordinator.js', 'lineNumber': 125, 'columnNumber': 16}",
+      "args": [
+        "RAGCoordinator: All sub-components initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.421",
+      "type": "log",
+      "text": "RAGCoordinator: Initialized successfully",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-coordinator.js', 'lineNumber': 89, 'columnNumber': 16}",
+      "args": [
+        "RAGCoordinator: Initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.417",
+      "type": "log",
+      "text": "System prompt updated, length: 0",
+      "location": "{'url': 'http://localhost:8000/js/services/system-prompt-coordinator.js', 'lineNumber': 123, 'columnNumber': 16}",
+      "args": [
+        "System prompt updated, length:",
+        0
+      ]
+    },
+    {
+      "timestamp": "10:19:18.417",
+      "type": "log",
+      "text": "System prompt applied via coordinator, has content: false",
+      "location": "{'url': 'http://localhost:8000/js/services/prompts-service.js', 'lineNumber': 194, 'columnNumber': 16}",
+      "args": [
+        "System prompt applied via coordinator, has content:",
+        false
+      ]
+    },
+    {
+      "timestamp": "10:19:18.489",
+      "type": "log",
+      "text": "\u2705 MCP checkbox event listener attached successfully",
+      "location": "{'url': 'http://localhost:8000/js/components/ai-hackare.js', 'lineNumber': 314, 'columnNumber': 24}",
+      "args": [
+        "\u2705 MCP checkbox event listener attached successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.490",
+      "type": "log",
+      "text": "AIHackare: Generate share link button found, adding event listener",
+      "location": "{'url': 'http://localhost:8000/js/components/ai-hackare.js', 'lineNumber': 366, 'columnNumber': 24}",
+      "args": [
+        "AIHackare: Generate share link button found, adding event listener"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.491",
+      "type": "log",
+      "text": "\u2705 AIHackare: Initialization complete",
+      "location": "{'url': 'http://localhost:8000/js/components/ai-hackare.js', 'lineNumber': 100, 'columnNumber': 16}",
+      "args": [
+        "\u2705 AIHackare: Initialization complete"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.517",
+      "type": "log",
+      "text": "SystemPromptCoordinator initialized",
+      "location": "{'url': 'http://localhost:8000/js/services/system-prompt-coordinator.js', 'lineNumber': 246, 'columnNumber': 16}",
+      "args": [
+        "SystemPromptCoordinator initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.517",
+      "type": "log",
+      "text": "[MCPUIManager] Adding quick connectors to modal",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-ui-manager.js', 'lineNumber': 43, 'columnNumber': 24}",
+      "args": [
+        "[MCPUIManager] Adding quick connectors to modal"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.519",
+      "type": "log",
+      "text": "[MCPQuickConnectors] Quick connectors section replaced placeholder",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 203, 'columnNumber': 20}",
+      "args": [
+        "[MCPQuickConnectors] Quick connectors section replaced placeholder"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.520",
+      "type": "log",
+      "text": "[MCPOAuthIntegration] Initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-oauth-integration.js', 'lineNumber': 41, 'columnNumber': 16}",
+      "args": [
+        "[MCPOAuthIntegration] Initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.520",
+      "type": "log",
+      "text": "[MCPManager] OAuth integration initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp-manager.js', 'lineNumber': 102, 'columnNumber': 24}",
+      "args": [
+        "[MCPManager] OAuth integration initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.521",
+      "type": "log",
+      "text": "[MCPManager] Attempting to initialize quick connectors",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp-manager.js', 'lineNumber': 110, 'columnNumber': 20}",
+      "args": [
+        "[MCPManager] Attempting to initialize quick connectors"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.521",
+      "type": "log",
+      "text": "[MCPQuickConnectors] Initializing...",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 132, 'columnNumber': 16}",
+      "args": [
+        "[MCPQuickConnectors] Initializing..."
+      ]
+    },
+    {
+      "timestamp": "10:19:18.528",
+      "type": "log",
+      "text": "[MCPQuickConnectors] Initialized successfully",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 155, 'columnNumber': 16}",
+      "args": [
+        "[MCPQuickConnectors] Initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.529",
+      "type": "log",
+      "text": "[MCPManager] Quick connectors initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp-manager.js', 'lineNumber': 112, 'columnNumber': 24}",
+      "args": [
+        "[MCPManager] Quick connectors initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.529",
+      "type": "log",
+      "text": "[MCPManager] Initialization complete",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp-manager.js', 'lineNumber': 125, 'columnNumber': 16}",
+      "args": [
+        "[MCPManager] Initialization complete"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.530",
+      "type": "log",
+      "text": "Title and subtitle updated to: hacka.re - Free, open, f\u00f6r hackare av hackare",
+      "location": "{'url': 'http://localhost:8000/js/app.js', 'lineNumber': 541, 'columnNumber': 12}",
+      "args": [
+        "Title and subtitle updated to: hacka.re - Free, open, f\u00f6r hackare av hackare"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.530",
+      "type": "log",
+      "text": "[MCPServiceManager] Loaded 0 stored connections",
+      "location": "{'url': 'http://localhost:8000/js/services/mcp-service-manager.js', 'lineNumber': 281, 'columnNumber': 20}",
+      "args": [
+        "[MCPServiceManager] Loaded 0 stored connections"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.531",
+      "type": "log",
+      "text": "[MCPManager] Loaded service manager connections",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp-manager.js', 'lineNumber': 154, 'columnNumber': 24}",
+      "args": [
+        "[MCPManager] Loaded service manager connections"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.533",
+      "type": "log",
+      "text": "[MCPManager] Updated quick connectors status after restore",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp-manager.js', 'lineNumber': 167, 'columnNumber': 20}",
+      "args": [
+        "[MCPManager] Updated quick connectors status after restore"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.516",
+      "type": "log",
+      "text": "System prompt updated, length: 0",
+      "location": "{'url': 'http://localhost:8000/js/services/system-prompt-coordinator.js', 'lineNumber': 123, 'columnNumber': 16}",
+      "args": [
+        "System prompt updated, length:",
+        0
+      ]
+    },
+    {
+      "timestamp": "10:19:18.519",
+      "type": "log",
+      "text": "[MCPQuickConnectors] Quick connectors placeholder found: true",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 198, 'columnNumber': 16}",
+      "args": [
+        "[MCPQuickConnectors] Quick connectors placeholder found:",
+        true
+      ]
+    },
+    {
+      "timestamp": "10:19:18.544",
+      "type": "log",
+      "text": "ASCII Tree Menu: Initializing...",
+      "location": "{'url': 'http://localhost:8000/js/ascii-tree-menu.js', 'lineNumber': 17, 'columnNumber': 16}",
+      "args": [
+        "ASCII Tree Menu: Initializing..."
+      ]
+    },
+    {
+      "timestamp": "10:19:18.547",
+      "type": "log",
+      "text": "ASCII Tree Menu: Events bound",
+      "location": "{'url': 'http://localhost:8000/js/ascii-tree-menu.js', 'lineNumber': 74, 'columnNumber': 16}",
+      "args": [
+        "ASCII Tree Menu: Events bound"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.547",
+      "type": "log",
+      "text": "ModalEffects: Initializing",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 10, 'columnNumber': 16}",
+      "args": [
+        "ModalEffects: Initializing"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.548",
+      "type": "log",
+      "text": "ModalEffects: Found 18 modals",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 14, 'columnNumber': 16}",
+      "args": [
+        "ModalEffects: Found 18 modals"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.548",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 1",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 1"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.548",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 2",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 2"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.549",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 3",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 3"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.549",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 4",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 4"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.549",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 5",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 5"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.550",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 6",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 6"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.550",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 7",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 7"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.551",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 8",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 8"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.551",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 9",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 9"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.552",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 10",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 10"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.556",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 11",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 11"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.556",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 12",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 12"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.556",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 13",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 13"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.557",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 14",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 14"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.557",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 15",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 15"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.558",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 16",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 16"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.559",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 17",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 17"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.559",
+      "type": "log",
+      "text": "ModalEffects: Setting up observer for modal 18",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 18, 'columnNumber': 20}",
+      "args": [
+        "ModalEffects: Setting up observer for modal 18"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.636",
+      "type": "log",
+      "text": "Highlight.js initialized successfully",
+      "location": "{'url': 'http://localhost:8000/', 'lineNumber': 1502, 'columnNumber': 24}",
+      "args": [
+        "Highlight.js initialized successfully"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.649",
+      "type": "verbose",
+      "text": "[DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o",
+      "location": "{'url': 'http://localhost:8000/', 'lineNumber': 0, 'columnNumber': 0}",
+      "args": []
+    },
+    {
+      "timestamp": "10:19:18.650",
+      "type": "verbose",
+      "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o",
+      "location": "{'url': 'http://localhost:8000/', 'lineNumber': 0, 'columnNumber': 0}",
+      "args": []
+    },
+    {
+      "timestamp": "10:19:18.650",
+      "type": "verbose",
+      "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+      "location": "{'url': 'http://localhost:8000/', 'lineNumber': 0, 'columnNumber': 0}",
+      "args": []
+    },
+    {
+      "timestamp": "10:19:18.396",
+      "type": "log",
+      "text": "Selected function IDs from storage: []",
+      "location": "{'url': 'http://localhost:8000/js/services/default-functions-service.js', 'lineNumber': 456, 'columnNumber': 16}",
+      "args": [
+        "Selected function IDs from storage:",
+        []
+      ]
+    },
+    {
+      "timestamp": "10:19:18.518",
+      "type": "log",
+      "text": "[MCPQuickConnectors] Creating quick connectors UI JSHandle@node",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 164, 'columnNumber': 16}",
+      "args": [
+        "[MCPQuickConnectors] Creating quick connectors UI",
+        "ref: <Node>"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.520",
+      "type": "log",
+      "text": "[MCPQuickConnectors] GitHub connection check: {isConnected: false, connector: true, connection: null, hasValidCredentials: false}",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 867, 'columnNumber': 32}",
+      "args": [
+        "[MCPQuickConnectors] GitHub connection check:",
+        {
+          "isConnected": false,
+          "connector": true,
+          "connection": null,
+          "hasValidCredentials": false
+        }
+      ]
+    },
+    {
+      "timestamp": "10:19:18.523",
+      "type": "log",
+      "text": "[MCPQuickConnectors] Service availability check: {storageService: true, oauthConfig: true, oauthFlow: true, mcpClient: true}",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 140, 'columnNumber': 16}",
+      "args": [
+        "[MCPQuickConnectors] Service availability check:",
+        {
+          "storageService": true,
+          "oauthConfig": true,
+          "oauthFlow": true,
+          "mcpClient": true
+        }
+      ]
+    },
+    {
+      "timestamp": "10:19:18.527",
+      "type": "log",
+      "text": "[MCPQuickConnectors] GitHub connection check: {isConnected: false, connector: true, connection: null, hasValidCredentials: false}",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 867, 'columnNumber': 32}",
+      "args": [
+        "[MCPQuickConnectors] GitHub connection check:",
+        {
+          "isConnected": false,
+          "connector": true,
+          "connection": null,
+          "hasValidCredentials": false
+        }
+      ]
+    },
+    {
+      "timestamp": "10:19:18.531",
+      "type": "log",
+      "text": "[MCPQuickConnectors] GitHub connection check: {isConnected: false, connector: true, connection: null, hasValidCredentials: false}",
+      "location": "{'url': 'http://localhost:8000/js/components/mcp/mcp-quick-connectors.js', 'lineNumber': 867, 'columnNumber': 32}",
+      "args": [
+        "[MCPQuickConnectors] GitHub connection check:",
+        {
+          "isConnected": false,
+          "connector": true,
+          "connection": null,
+          "hasValidCredentials": false
+        }
+      ]
+    },
+    {
+      "timestamp": "10:19:18.666",
+      "type": "log",
+      "text": "\u2713 Migrated regulation from global variable: EU AI Act",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 163, 'columnNumber': 28}",
+      "args": [
+        "\u2713 Migrated regulation from global variable: EU AI Act"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.666",
+      "type": "log",
+      "text": "\u2713 Migrated regulation from global variable: DORA - Digital Operational Resilience Act",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 163, 'columnNumber': 28}",
+      "args": [
+        "\u2713 Migrated regulation from global variable: DORA - Digital Operational Resilience Act"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.667",
+      "type": "log",
+      "text": "\u2713 Migrated regulation from global variable: Cyber Resilience Act",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 163, 'columnNumber': 28}",
+      "args": [
+        "\u2713 Migrated regulation from global variable: Cyber Resilience Act"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.835",
+      "type": "log",
+      "text": "\u2713 Saved 3 regulations to encrypted storage",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 114, 'columnNumber': 24}",
+      "args": [
+        "\u2713 Saved 3 regulations to encrypted storage"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.839",
+      "type": "log",
+      "text": "\u2713 RAG Regulations Service initialized with encrypted storage",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 43, 'columnNumber': 20}",
+      "args": [
+        "\u2713 RAG Regulations Service initialized with encrypted storage"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.842",
+      "type": "log",
+      "text": "\ud83d\udd27 UICoordinator: Attempting to initialize model selector manager...",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/ui-coordinator.js', 'lineNumber': 24, 'columnNumber': 20}",
+      "args": [
+        "\ud83d\udd27 UICoordinator: Attempting to initialize model selector manager..."
+      ]
+    },
+    {
+      "timestamp": "10:19:18.856",
+      "type": "log",
+      "text": "\ud83d\udd27 UICoordinator: First attempt failed, retrying in 500ms...",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/ui-coordinator.js', 'lineNumber': 45, 'columnNumber': 24}",
+      "args": [
+        "\ud83d\udd27 UICoordinator: First attempt failed, retrying in 500ms..."
+      ]
+    },
+    {
+      "timestamp": "10:19:18.858",
+      "type": "log",
+      "text": "\ud83d\ude80 ModelSelectionManager initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/model-selection-manager.js', 'lineNumber': 25, 'columnNumber': 16}",
+      "args": [
+        "\ud83d\ude80 ModelSelectionManager initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.860",
+      "type": "log",
+      "text": "\u2705 AIHackare: ModelSelectionManager initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/ai-hackare.js', 'lineNumber': 947, 'columnNumber': 24}",
+      "args": [
+        "\u2705 AIHackare: ModelSelectionManager initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.869",
+      "type": "log",
+      "text": "\u2713 Migrated regulation from global variable: EU AI Act",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 163, 'columnNumber': 28}",
+      "args": [
+        "\u2713 Migrated regulation from global variable: EU AI Act"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.876",
+      "type": "log",
+      "text": "\u2713 Migrated regulation from global variable: DORA - Digital Operational Resilience Act",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 163, 'columnNumber': 28}",
+      "args": [
+        "\u2713 Migrated regulation from global variable: DORA - Digital Operational Resilience Act"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.877",
+      "type": "log",
+      "text": "\u2713 Migrated regulation from global variable: Cyber Resilience Act",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 163, 'columnNumber': 28}",
+      "args": [
+        "\u2713 Migrated regulation from global variable: Cyber Resilience Act"
+      ]
+    },
+    {
+      "timestamp": "10:19:18.850",
+      "type": "log",
+      "text": "\ud83d\udd27 UICoordinator: window.aiHackare available: true",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/ui-coordinator.js', 'lineNumber': 25, 'columnNumber': 20}",
+      "args": [
+        "\ud83d\udd27 UICoordinator: window.aiHackare available:",
+        true
+      ]
+    },
+    {
+      "timestamp": "10:19:18.868",
+      "type": "log",
+      "text": "Extracting functions with regex: (\\/\\*\\*[\\s\\S]*?\\*\\/\\s*)?(\\/\\/.*?(?:\\n\\s*|$))?(?:async\\s+)?function\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(([^)]*)\\)\\s*{",
+      "location": "{'url': 'http://localhost:8000/js/components/function-calling/function-parser.js', 'lineNumber': 20, 'columnNumber': 20}",
+      "args": [
+        "Extracting functions with regex:",
+        "(\\/\\*\\*[\\s\\S]*?\\*\\/\\s*)?(\\/\\/.*?(?:\\n\\s*|$))?(?:async\\s+)?function\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\(([^)]*)\\)\\s*{"
+      ]
+    },
+    {
+      "timestamp": "10:19:19.086",
+      "type": "log",
+      "text": "\u2713 Saved 3 regulations to encrypted storage",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 114, 'columnNumber': 24}",
+      "args": [
+        "\u2713 Saved 3 regulations to encrypted storage"
+      ]
+    },
+    {
+      "timestamp": "10:19:19.091",
+      "type": "log",
+      "text": "\u2713 RAG Regulations Service initialized with encrypted storage",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 43, 'columnNumber': 20}",
+      "args": [
+        "\u2713 RAG Regulations Service initialized with encrypted storage"
+      ]
+    },
+    {
+      "timestamp": "10:19:19.166",
+      "type": "log",
+      "text": "[CrossTabSync] Initializing cross-tab synchronization...",
+      "location": "{'url': 'http://localhost:8000/js/services/cross-tab-sync-service.js', 'lineNumber': 33, 'columnNumber': 16}",
+      "args": [
+        "[CrossTabSync] Initializing cross-tab synchronization..."
+      ]
+    },
+    {
+      "timestamp": "10:19:19.168",
+      "type": "log",
+      "text": "[CrossTabSync] Not using localStorage - cross-tab sync disabled",
+      "location": "{'url': 'http://localhost:8000/js/services/cross-tab-sync-service.js', 'lineNumber': 37, 'columnNumber': 20}",
+      "args": [
+        "[CrossTabSync] Not using localStorage - cross-tab sync disabled"
+      ]
+    },
+    {
+      "timestamp": "10:19:19.337",
+      "type": "log",
+      "text": "\ud83d\udd27 UICoordinator: Attempting to initialize model selector manager...",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/ui-coordinator.js', 'lineNumber': 24, 'columnNumber': 20}",
+      "args": [
+        "\ud83d\udd27 UICoordinator: Attempting to initialize model selector manager..."
+      ]
+    },
+    {
+      "timestamp": "10:19:19.349",
+      "type": "log",
+      "text": "\ud83d\udd27 UICoordinator: Second attempt failed, retrying in 1000ms...",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/ui-coordinator.js', 'lineNumber': 48, 'columnNumber': 32}",
+      "args": [
+        "\ud83d\udd27 UICoordinator: Second attempt failed, retrying in 1000ms..."
+      ]
+    },
+    {
+      "timestamp": "10:19:19.341",
+      "type": "log",
+      "text": "\ud83d\udd27 UICoordinator: window.aiHackare available: true",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/ui-coordinator.js', 'lineNumber': 25, 'columnNumber': 20}",
+      "args": [
+        "\ud83d\udd27 UICoordinator: window.aiHackare available:",
+        true
+      ]
+    },
+    {
+      "timestamp": "10:19:19.529",
+      "type": "log",
+      "text": "\ud83d\ude80 ModelSelectionManager initialized",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/model-selection-manager.js', 'lineNumber': 25, 'columnNumber': 16}",
+      "args": [
+        "\ud83d\ude80 ModelSelectionManager initialized"
+      ]
+    },
+    {
+      "timestamp": "10:19:19.851",
+      "type": "warning",
+      "text": "\u26a0\ufe0f RAG manager not found - will retry later",
+      "location": "{'url': 'http://localhost:8000/js/services/rag-regulations-service.js', 'lineNumber': 345, 'columnNumber': 20}",
+      "args": [
+        "\u26a0\ufe0f RAG manager not found - will retry later"
+      ]
+    },
+    {
+      "timestamp": "10:19:20.334",
+      "type": "log",
+      "text": "\ud83d\udd27 UICoordinator: Attempting to initialize model selector manager...",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/ui-coordinator.js', 'lineNumber': 24, 'columnNumber': 20}",
+      "args": [
+        "\ud83d\udd27 UICoordinator: Attempting to initialize model selector manager..."
+      ]
+    },
+    {
+      "timestamp": "10:19:20.339",
+      "type": "log",
+      "text": "\ud83d\udd27 UICoordinator: window.aiHackare available: true",
+      "location": "{'url': 'http://localhost:8000/js/components/ui/ui-coordinator.js', 'lineNumber': 25, 'columnNumber': 20}",
+      "args": [
+        "\ud83d\udd27 UICoordinator: window.aiHackare available:",
+        true
+      ]
+    },
+    {
+      "timestamp": "10:19:22.620",
+      "type": "log",
+      "text": "RAGModalManager: Populated expansion model selector with 5 models, selected: gpt-4.1-mini",
+      "location": "{'url': 'http://localhost:8000/js/components/rag/rag-modal-manager.js', 'lineNumber': 509, 'columnNumber': 16}",
+      "args": [
+        "RAGModalManager: Populated expansion model selector with 5 models, selected: gpt-4.1-mini"
+      ]
+    },
+    {
+      "timestamp": "10:19:22.668",
+      "type": "log",
+      "text": "ModalEffects: Modal opened, adding modal-open class to body",
+      "location": "{'url': 'http://localhost:8000/js/modal-effects.js', 'lineNumber': 25, 'columnNumber': 36}",
+      "args": [
+        "ModalEffects: Modal opened, adding modal-open class to body"
+      ]
+    }
+  ],
+  "localStorage": [],
+  "page_url": "http://localhost:8000/",
+  "page_title": "hacka.re - Free, open, f\u00f6r hackare av hackare"
+}

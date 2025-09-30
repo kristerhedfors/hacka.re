@@ -1,5 +1,7 @@
 import pytest
 import os
+import atexit
+import signal
 from playwright.sync_api import Page, expect
 from dotenv import load_dotenv
 
@@ -53,52 +55,132 @@ ACTIVE_TEST_CONFIG = PROVIDER_CONFIGS.get(TEST_PROVIDER, PROVIDER_CONFIGS["opena
 
 @pytest.fixture(scope="function")
 def page(browser):
-    """Create a new page for each test."""
-    page = browser.new_page()
+    """
+    Create a new page with isolated context for each test.
+
+    Uses a fresh browser context to ensure complete isolation between tests,
+    preventing localStorage/sessionStorage/cookies from leaking between tests.
+    This is critical for reliable parallel test execution.
+    """
+    # Create a new browser context for complete isolation
+    context = browser.new_context()
+    page = context.new_page()
+
     # Set realistic timeout for modular app (152 JS files + 13 CSS files to load)
     page.set_default_timeout(10000)
-    yield page
-    page.close()
 
-@pytest.fixture(scope="function")
-def serve_hacka_re(page):
+    yield page
+
+    # Cleanup: close page and context
+    page.close()
+    context.close()
+
+@pytest.fixture(scope="session")
+def serve_hacka_re(tmp_path_factory, request):
     """
     Serve the hacka.re application locally for testing.
-    
-    This fixture uses Python's built-in HTTP server to serve the application
-    from the current directory.
+
+    This fixture uses Python's built-in HTTP server to serve the application.
+    When running with pytest-xdist (parallel execution), it ensures only one
+    worker starts the server using FileLock for coordination.
+
+    Works with both VSCode test runner and command-line pytest.
+
+    Args:
+        tmp_path_factory: pytest fixture for creating temp directories
+        request: pytest request object for accessing config
+
+    Returns:
+        str: Base URL of the running server (http://localhost:8000)
     """
     import subprocess
     import time
     import os
     import signal
-    from urllib.parse import urljoin
-    
-    # Start a local HTTP server in the background from the project root directory
+    import json
+    from filelock import FileLock
+    from pathlib import Path
+
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-    process = subprocess.Popen(
-        ["python3", "-m", "http.server", "8000"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        preexec_fn=os.setsid,
-        cwd=project_root
-    )
-    
-    # Give the server a minimal moment to start
-    time.sleep(0.1)
-    
-    # Set the base URL for tests
     base_url = "http://localhost:8000"
-    
-    # Yield the base URL for tests to use
-    yield base_url
-    
-    # Clean up: kill the server process
-    try:
-        os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-    except ProcessLookupError:
-        # Process is already gone, which is fine
-        print("HTTP server process already terminated")
+
+    # Get worker_id if running with pytest-xdist, otherwise use "master"
+    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'master')
+
+    if worker_id == "master":
+        # Not running with pytest-xdist (sequential mode)
+        # Start server directly
+        process = subprocess.Popen(
+            ["python3", "-m", "http.server", "8000"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            preexec_fn=os.setsid,
+            cwd=project_root
+        )
+        time.sleep(0.5)  # Wait for server to start
+
+        yield base_url
+
+        # Clean up: kill the server process
+        try:
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        except ProcessLookupError:
+            print("HTTP server process already terminated")
+    else:
+        # Running with pytest-xdist (parallel mode)
+        # Use FileLock to coordinate server startup across workers
+        root_tmp_dir = tmp_path_factory.getbasetemp().parent
+        server_file = root_tmp_dir / "server.json"
+        lock_file = str(server_file) + ".lock"
+
+        with FileLock(lock_file):
+            if server_file.is_file():
+                # Server already started by another worker
+                data = json.loads(server_file.read_text())
+                print(f"Worker {worker_id}: Using existing server at {data['base_url']}")
+            else:
+                # This worker starts the server
+                print(f"Worker {worker_id}: Starting HTTP server on port 8000")
+                process = subprocess.Popen(
+                    ["python3", "-m", "http.server", "8000"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    preexec_fn=os.setsid,
+                    cwd=project_root
+                )
+                time.sleep(0.5)  # Wait for server to start
+
+                # Store server info and PID for cleanup
+                server_info = {
+                    "base_url": base_url,
+                    "pid": process.pid
+                }
+                server_file.write_text(json.dumps(server_info))
+                print(f"Worker {worker_id}: Server started with PID {process.pid}")
+
+                # Register cleanup handler to run when pytest exits
+                def cleanup_server():
+                    try:
+                        if os.path.exists(str(server_file)):
+                            with open(str(server_file)) as f:
+                                data = json.load(f)
+                                pid = data.get("pid")
+                                if pid:
+                                    try:
+                                        os.killpg(os.getpgid(pid), signal.SIGTERM)
+                                        print(f"Cleanup: Stopped HTTP server (PID {pid})")
+                                    except (ProcessLookupError, PermissionError):
+                                        pass
+                            os.unlink(str(server_file))
+                    except Exception as e:
+                        print(f"Cleanup error: {e}")
+
+                atexit.register(cleanup_server)
+
+        yield base_url
+
+        # No cleanup here - server stays running for all workers
+        # Cleanup happens via atexit handler when pytest exits
 
 @pytest.fixture(scope="function")
 def api_key():
@@ -137,6 +219,55 @@ def groq_api_key():
 def berget_api_key():
     """Fixture to provide the Berget API key."""
     return BERGET_API_KEY
+
+@pytest.fixture(scope="function")
+def isolated_page(page, serve_hacka_re):
+    """
+    Provide an isolated page with unique namespace for parallel test execution.
+
+    This fixture:
+    1. Navigates to the application
+    2. Sets up unique namespace to prevent data collisions
+    3. Clears storage before and after test
+    4. Ensures clean state for parallel testing
+
+    Usage: Use `isolated_page` instead of `page` fixture for tests that need isolation.
+    """
+    import uuid
+
+    # Generate unique namespace for this test
+    unique_namespace = f"test_{uuid.uuid4().hex[:8]}"
+
+    # Navigate to the application
+    page.goto(serve_hacka_re)
+
+    # Wait for page to load and then set up isolated environment
+    page.wait_for_load_state("domcontentloaded")
+
+    # Set unique namespace and clear storage
+    page.evaluate(f"""() => {{
+        // Clear all storage
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // Set unique namespace for this test
+        localStorage.setItem('namespace', '{unique_namespace}');
+
+        // Mark welcome as seen to skip modal
+        localStorage.setItem('welcomeShown', 'true');
+    }}""")
+
+    yield page
+
+    # Cleanup after test
+    try:
+        page.evaluate("""() => {
+            localStorage.clear();
+            sessionStorage.clear();
+        }""")
+    except:
+        # Page may be closed, ignore cleanup errors
+        pass
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_test_environment(page):
