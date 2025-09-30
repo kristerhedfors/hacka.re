@@ -263,7 +263,7 @@ window.PromptsModalRenderer = (function() {
     }
     
     /**
-     * Render a nested section with its items
+     * Render a nested section with its items (supports recursive nesting)
      * @param {Object} sectionPrompt - Section prompt object
      * @param {Array} selectedIds - Array of selected prompt IDs
      * @returns {HTMLElement} Nested section element
@@ -271,23 +271,30 @@ window.PromptsModalRenderer = (function() {
     function renderNestedSection(sectionPrompt, selectedIds) {
         const nestedSection = document.createElement('div');
         nestedSection.className = 'nested-section';
-        
+
         // Create nested section header
         const nestedHeader = renderNestedSectionHeader(sectionPrompt.name);
         nestedSection.appendChild(nestedHeader);
-        
+
         // Create container for nested items
         const nestedList = document.createElement('div');
         nestedList.className = 'nested-section-list';
         nestedList.style.display = 'none'; // Initially collapsed
-        
-        // Add each nested item
+
+        // Add each nested item - handle recursive nesting
         sectionPrompt.items.forEach(nestedPrompt => {
-            const isSelected = selectedIds.includes(nestedPrompt.id);
-            const nestedItem = renderDefaultPromptItem(nestedPrompt, isSelected);
-            nestedList.appendChild(nestedItem);
+            if (nestedPrompt.isSection && nestedPrompt.items && nestedPrompt.items.length > 0) {
+                // This is another nested section - recursively render it
+                const deeplyNestedSection = renderNestedSection(nestedPrompt, selectedIds);
+                nestedList.appendChild(deeplyNestedSection);
+            } else {
+                // Regular prompt item
+                const isSelected = selectedIds.includes(nestedPrompt.id);
+                const nestedItem = renderDefaultPromptItem(nestedPrompt, isSelected);
+                nestedList.appendChild(nestedItem);
+            }
         });
-        
+
         nestedSection.appendChild(nestedList);
         return nestedSection;
     }

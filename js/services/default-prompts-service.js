@@ -12,30 +12,35 @@ window.DefaultPromptsService = (function() {
     
 /**
  * Initialize the default prompts
- * This function loads only the three required default prompts for RAG functionality
+ * This function loads the default prompts including RAG prompts and OpenAI Prompt Packs
  */
 function initializeDefaultPrompts() {
     // Clear the array first
     DEFAULT_PROMPTS = [];
-    
-    // Only load the three specified default prompts at the bottom:
-    
+
+    // Load core default prompts for RAG functionality:
+
     // 1. About hacka.re Project
     if (window.HackaReProjectPrompt) {
         DEFAULT_PROMPTS.push(window.HackaReProjectPrompt);
     }
-    
+
     // 2. OWASP Top 10 for LLM Applications
     if (window.OwaspLlmTop10Prompt) {
         DEFAULT_PROMPTS.push(window.OwaspLlmTop10Prompt);
     }
-    
+
     // 3. LLM Security Literacy
     if (window.LlmSecurityLiteracyPrompt) {
         DEFAULT_PROMPTS.push(window.LlmSecurityLiteracyPrompt);
     }
-    
-    console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts for RAG functionality`);
+
+    // 4. OpenAI Prompt Packs (173 professional prompts organized by role)
+    if (window.OpenAIPromptPacksSection) {
+        DEFAULT_PROMPTS.push(window.OpenAIPromptPacksSection);
+    }
+
+    console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts/sections`);
     console.log("Default prompts loaded:", DEFAULT_PROMPTS.map(p => p.name));
 }
     
