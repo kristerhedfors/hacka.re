@@ -42,7 +42,7 @@ window.PromptLibraryIconManager = (function() {
             if (!statusSpan) return;
 
             if (iconEnabled) {
-                statusSpan.textContent = '(Enabled: Library icon shown)';
+                statusSpan.textContent = '(Enabled: Library icon next to Trashcan)';
             } else {
                 statusSpan.textContent = '(Disabled: Library icon hidden)';
             }
@@ -100,7 +100,7 @@ window.PromptLibraryIconManager = (function() {
             // Create the label
             const label = document.createElement('label');
             label.htmlFor = 'prompt-library-icon-toggle';
-            label.textContent = 'Show Prompt Library Icon';
+            label.textContent = 'Enable Prompt Library';
 
             // Add status text
             const statusSpan = document.createElement('span');
@@ -108,7 +108,17 @@ window.PromptLibraryIconManager = (function() {
             statusSpan.id = 'prompt-library-icon-status';
             statusSpan.style.marginLeft = '10px';
             statusSpan.style.fontSize = '0.85em';
+            statusSpan.style.cursor = 'pointer';
+            statusSpan.title = 'Click to toggle';
             updatePromptLibraryIconStatusText(statusSpan, checkbox.checked);
+
+            // Make status text clickable
+            statusSpan.addEventListener('click', function(e) {
+                e.preventDefault();
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            });
+
             label.appendChild(statusSpan);
 
             // Add event listener to the checkbox

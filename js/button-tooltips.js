@@ -16,7 +16,11 @@ function initButtonTooltips() {
         { id: 'prompts-btn', text: 'System Prompts' },
         { id: 'share-btn', text: 'Share' },
         { id: 'theme-toggle-btn', text: 'Cycle Theme' },
-        { id: 'settings-btn', text: 'Settings' }
+        { id: 'settings-btn', text: 'Settings' },
+        // Chat input buttons
+        { id: 'clear-chat-btn', text: 'Reset Conversation' },
+        { id: 'prompt-library-btn', text: 'Prompt Library' },
+        { id: 'send-btn', text: 'Send to LLM' }
     ];
     
     // Create tooltips for each button
