@@ -1966,6 +1966,33 @@ main {
     }
 }
 
+/* Prompt Library Button */
+#prompt-library-btn {
+    color: var(--text-color);
+    transition: var(--transition);
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    touch-action: manipulation;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#prompt-library-btn:hover {
+    color: var(--primary-color);
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+#prompt-library-btn i {
+    pointer-events: none;
+    opacity: 0.9; /* Slightly reduce opacity to match trash icon appearance */
+}
+
 /* Message input wrapper for microphone integration */
 .message-input-wrapper,
 #message-input-wrapper {
