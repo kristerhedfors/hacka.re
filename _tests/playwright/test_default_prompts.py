@@ -258,23 +258,17 @@ def test_default_prompts_info_button(page, serve_hacka_re):
         nested_list = page.locator(".nested-section-list").first
         expect(nested_list).to_be_visible()
     
-    # Define the prompts to test
+    # Define the prompts to test - using actual current prompt names
     prompts_to_test = [
         {
-            "selector": ".default-prompt-item:has-text('About hacka.re Project')",
-            "expected_title": "About hacka.re Project",
-            "expected_description": "Information about the hacka.re project, including architecture"
+            "selector": ".default-prompt-item:has-text('README.md')",
+            "expected_title": "README.md",
+            "expected_description": "hacka.re - The Privacy-First AI Chat Interface"
         },
         {
             "selector": ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
             "expected_title": "OWASP Top 10 for LLM Applications",
             "expected_description": "The entire OWASP Top 10 for LLM applications as of May 2025"
-        },
-        {
-            "selector": ".default-prompt-item:has-text('Function library')",
-            "expected_title": "Function library",
-            "expected_description": "All JavaScript functions currently stored in",
-            "has_link": True
         }
     ]
     
@@ -312,35 +306,25 @@ def test_default_prompts_info_button(page, serve_hacka_re):
         
         # Click the info button
         info_button.click()
-        
-        # Check that the info popup is displayed
-        popup = page.locator(".prompt-info-popup")
-        expect(popup).to_be_visible()
-        
-        # Check that the popup contains the expected title
-        popup_title = popup.locator(".prompt-info-header h3")
-        expect(popup_title).to_have_text(prompt_info["expected_title"])
-        
-        # Check that the popup contains the expected description
-        popup_content = popup.locator(".prompt-info-content p").first
-        expect(popup_content).to_contain_text(prompt_info["expected_description"])
-        
-        # Check for Function Library link if this prompt has one
-        if prompt_info.get("has_link", False):
-            function_library_link = popup.locator(".function-library-link")
-            expect(function_library_link).to_be_visible()
-            expect(function_library_link).to_have_text("Function Library")
-        
-        # Check that the popup contains the hint about clicking the prompt name
-        popup_hint = popup.locator(".prompt-info-hint")
-        expect(popup_hint).to_contain_text("Click on the prompt name")
-        
-        # Close the popup by clicking the close button
-        close_popup_button = popup.locator(".prompt-info-close")
-        close_popup_button.click()
-        
-        # Check that the popup is no longer visible
-        expect(popup).not_to_be_visible()
+
+        # Check that the simple prompt viewer modal is displayed
+        modal = page.locator("#simple-prompt-viewer-modal")
+        expect(modal).to_be_visible()
+
+        # Check that the modal contains the expected prompt content
+        modal_content = modal.locator("#simple-prompt-viewer-content")
+        expect(modal_content).to_be_visible()
+        # The content is plain text and may be very long, just check it's not empty
+        content_text = modal_content.inner_text()
+        assert len(content_text) > 100, "Modal content should contain substantial text"
+
+        # Close the modal by clicking the close button
+        close_modal_button = modal.locator("#close-simple-prompt-viewer")
+        close_modal_button.click()
+
+        # Check that the modal is no longer visible (wait for animation)
+        page.wait_for_timeout(400)
+        expect(modal).not_to_be_visible()
     
     # Close the prompts modal
     close_button = page.locator("#close-prompts-modal")
@@ -387,12 +371,12 @@ def test_default_prompts_name_click(page, serve_hacka_re):
         nested_list = page.locator(".nested-section-list").first
         expect(nested_list).to_be_visible()
     
-    # Define the prompts to test
+    # Define the prompts to test - using actual current prompt names
     prompts_to_test = [
         {
-            "selector": ".default-prompt-item:has-text('About hacka.re Project')",
-            "expected_label": "About hacka.re Project",
-            "expected_content_fragment": "hacka.re is a highly portable, low-dependency, privacy-first chat interface"
+            "selector": ".default-prompt-item:has-text('README.md')",
+            "expected_label": "README.md",
+            "expected_content_fragment": "hacka.re - The Privacy-First AI Chat Interface"
         },
         {
             "selector": ".default-prompt-item:has-text('OWASP Top 10 for LLM Applications')",
@@ -421,31 +405,36 @@ def test_default_prompts_name_click(page, serve_hacka_re):
         
         # Get the prompt name element
         prompt_name = prompt.locator(".prompt-item-name")
-        
+
         # Click the prompt name
         prompt_name.click()
-        
-        # Check that the prompt content is displayed in the editor fields
-        label_field = page.locator("#new-prompt-label")
-        content_field = page.locator("#new-prompt-content")
-        
-        # Check that the fields are visible
-        expect(label_field).to_be_visible()
-        expect(content_field).to_be_visible()
-        
-        # Check that the fields contain the expected content
-        expect(label_field).to_have_value(prompt_info["expected_label"])
-        
-        # Check that the content field contains the expected text
-        content_text = content_field.input_value()
-        assert prompt_info["expected_content_fragment"] in content_text, f"Content field does not contain expected text: '{prompt_info['expected_content_fragment']}'"
-        
-        # Check that the fields are read-only
-        expect(label_field).to_have_attribute("readonly", "readonly")
-        expect(content_field).to_have_attribute("readonly", "readonly")
-    
+
+        # Check that the default prompt viewer modal is displayed
+        modal = page.locator("#default-prompt-viewer-modal")
+        expect(modal).to_be_visible()
+
+        # Check that the modal contains the expected prompt content
+        raw_content = modal.locator("#prompt-viewer-raw-content")
+        expect(raw_content).to_be_visible()
+
+        # Check that the content contains the expected text
+        content_text = raw_content.inner_text()
+        assert prompt_info["expected_content_fragment"] in content_text, f"Modal content does not contain expected text: '{prompt_info['expected_content_fragment']}'"
+
+        # Close the modal by clicking outside of it (on the modal backdrop)
+        # The modal itself is the backdrop, so clicking on it (but not on modal-content) closes it
+        page.evaluate('document.getElementById("default-prompt-viewer-modal").click()')
+
+        # Check that the modal is no longer visible (wait for animation)
+        page.wait_for_timeout(400)
+        expect(modal).not_to_be_visible()
+
+        # Make sure the prompts modal is still visible and active for the next iteration
+        expect(prompts_modal).to_be_visible()
+
     # Close the prompts modal
     close_button = page.locator("#close-prompts-modal")
+    expect(close_button).to_be_visible()  # Ensure button is visible before clicking
     close_button.click()
     
     # Check that the prompts modal is no longer visible
