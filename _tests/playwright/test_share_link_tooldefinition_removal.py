@@ -94,21 +94,35 @@ function testFunc(input) {
     function_btn.click()
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
-    
-    # Wait a bit for function list to load
+
+    # Wait for function list to render - try up to 5 seconds
     page.wait_for_timeout(1000)
-    
-    # Check if any functions are visible
-    function_items = page.locator(".function-item-name")
-    item_count = function_items.count()
-    print(f"Found {item_count} function items in the list")
-    
-    if item_count > 0:
-        for i in range(item_count):
-            func_name = function_items.nth(i).text_content()
-            print(f"  - Function {i}: {func_name}")
-    
-    # Verify function is present in the list
+
+    # Try to find the function with retries (it may take time to render)
+    max_attempts = 5
+    function_found = False
+
+    for attempt in range(max_attempts):
+        function_items = page.locator(".function-item-name")
+        item_count = function_items.count()
+
+        if attempt == 0:
+            print(f"Found {item_count} function items in the list (attempt {attempt + 1})")
+
+        # Look for our function
+        test_func = page.locator(".function-item-name:has-text('testFunc')")
+        if test_func.count() > 0:
+            function_found = True
+            print(f"✅ Found testFunc on attempt {attempt + 1}")
+            break
+
+        # If not found, wait a bit and try again
+        if attempt < max_attempts - 1:
+            print(f"⏳ testFunc not found yet, waiting... (attempt {attempt + 1}/{max_attempts})")
+            page.wait_for_timeout(1000)
+
+    # Final check - verify function is present in the list
+    assert function_found, f"Function testFunc not found after {max_attempts} attempts"
     expect(page.locator(".function-item-name:has-text('testFunc')")).to_be_visible()
     
     # Click on the function to load it
