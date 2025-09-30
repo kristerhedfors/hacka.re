@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             DebugService.log('Prompt Library Icon Manager initialization deferred - dependencies not ready');
         }
-    }, 1000);
+    }, 100);
     
     // Initialize title and subtitle from localStorage if available
     if (window.StorageService) {
