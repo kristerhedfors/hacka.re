@@ -272,6 +272,7 @@ window.PromptLibrarySelector = (function() {
         availablePrompts.forEach((prompt, index) => {
             const classes = ['model-item', 'prompt-item'];
 
+            // Store original text in a way that won't double-escape
             html += `
                 <div class="${classes.join(' ')}" data-prompt-id="${prompt.id}" data-index="${index}">
                     <div style="flex: 1;">
@@ -361,7 +362,8 @@ window.PromptLibrarySelector = (function() {
             if (matches) {
                 item.classList.remove('filtered-out');
                 item.style.display = '';
-                highlightMatchingText(item, searchText);
+                // Pass original currentSearchTerm (not lowercased) for highlighting
+                highlightMatchingText(item, currentSearchTerm);
                 visibleCount++;
             } else {
                 item.classList.add('filtered-out');
@@ -392,32 +394,38 @@ window.PromptLibrarySelector = (function() {
      * @param {string} searchText - Search term
      */
     function highlightMatchingText(item, searchText) {
-        if (!searchText) return;
+        // Get the prompt data
+        const index = parseInt(item.dataset.index);
+        const prompt = availablePrompts[index];
+        if (!prompt) return;
 
-        const regex = new RegExp(`(${escapeRegExp(searchText)})`, 'gi');
+        // Helper function to highlight an element with original text
+        const highlightElement = (element, originalText) => {
+            if (!element || !originalText) return;
+
+            if (searchText) {
+                const regex = new RegExp(`(${escapeRegExp(searchText)})`, 'gi');
+                const escapedText = escapeHtml(originalText);
+                const highlightedText = escapedText.replace(regex, '<span class="highlight">$1</span>');
+                element.innerHTML = highlightedText;
+            } else {
+                // No search text, restore original
+                element.textContent = originalText;
+            }
+        };
 
         // Highlight in prompt name
         const modelNameEl = item.querySelector('.model-name');
-        if (modelNameEl) {
-            const originalText = modelNameEl.textContent;
-            const highlightedText = originalText.replace(regex, '<span class="highlight">$1</span>');
-            modelNameEl.innerHTML = highlightedText;
-        }
+        highlightElement(modelNameEl, prompt.name);
 
         // Highlight in collection (category)
         const collectionEl = item.querySelector('.model-provider');
-        if (collectionEl) {
-            const originalText = collectionEl.textContent;
-            const highlightedText = originalText.replace(regex, '<span class="highlight">$1</span>');
-            collectionEl.innerHTML = highlightedText;
-        }
+        highlightElement(collectionEl, prompt.collection);
 
         // Highlight in short description
         const shortDescEl = item.querySelector('.prompt-short-desc');
-        if (shortDescEl) {
-            const originalText = shortDescEl.textContent;
-            const highlightedText = originalText.replace(regex, '<span class="highlight">$1</span>');
-            shortDescEl.innerHTML = highlightedText;
+        if (prompt.shortDesc) {
+            highlightElement(shortDescEl, prompt.shortDesc);
         }
     }
 

@@ -3181,7 +3181,9 @@ body:has(.modal.active) #chat-input-container {
     color: var(--text-color);
 }
 
-.model-name .highlight {
+.model-name .highlight,
+.model-provider .highlight,
+.prompt-short-desc .highlight {
     background-color: rgba(255, 235, 59, 0.6);
     padding: 0 2px;
     border-radius: 2px;
