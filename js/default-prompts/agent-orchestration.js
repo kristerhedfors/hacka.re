@@ -162,3 +162,8 @@ This implementation addresses specific constraints in hacka.re's function callin
 This pattern can be extended to more complex agent systems by adding more agent definitions and corresponding handoff functions.
 `
 };
+
+// Register with Advanced section
+if (window.AdvancedSectionPrompt && window.AdvancedSectionPrompt.items) {
+    window.AdvancedSectionPrompt.items.push(window.AgentOrchestrationPrompt);
+}

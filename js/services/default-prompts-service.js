@@ -35,6 +35,11 @@ function initializeDefaultPrompts() {
         DEFAULT_PROMPTS.push(window.LlmSecurityLiteracyPrompt);
     }
 
+    // 4. Advanced Section (contains Function Library and Agent Orchestration)
+    if (window.AdvancedSectionPrompt) {
+        DEFAULT_PROMPTS.push(window.AdvancedSectionPrompt);
+    }
+
     console.log(`Loaded ${DEFAULT_PROMPTS.length} default prompts/sections`);
     console.log("Default prompts loaded:", DEFAULT_PROMPTS.map(p => p.name));
 }
