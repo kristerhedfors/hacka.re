@@ -139,17 +139,22 @@ window.PromptsEventHandlers = (function() {
         const modal = window.PromptsModalRenderer.renderPromptViewerModal(prompt);
         document.body.appendChild(modal);
 
+        // Evaluate content if it's a function
+        const contentText = typeof prompt.content === 'function'
+            ? prompt.content()
+            : prompt.content;
+
         // Populate content
         const rawContent = modal.querySelector('#prompt-viewer-raw-content');
         const renderedContent = modal.querySelector('#prompt-viewer-rendered-content');
 
         if (rawContent) {
-            rawContent.textContent = prompt.content;
+            rawContent.textContent = contentText;
         }
 
         if (renderedContent && window.marked) {
             try {
-                const html = window.marked.parse(prompt.content);
+                const html = window.marked.parse(contentText);
                 if (window.DOMPurify) {
                     renderedContent.innerHTML = window.DOMPurify.sanitize(html);
                 } else {
@@ -157,10 +162,10 @@ window.PromptsEventHandlers = (function() {
                 }
             } catch (error) {
                 console.error('Error rendering markdown:', error);
-                renderedContent.textContent = prompt.content;
+                renderedContent.textContent = contentText;
             }
         } else if (renderedContent) {
-            renderedContent.textContent = prompt.content;
+            renderedContent.textContent = contentText;
         }
 
         // Set up tab switching
@@ -263,7 +268,11 @@ window.PromptsEventHandlers = (function() {
         // Populate content (plain text only, no markdown)
         const content = modal.querySelector('#simple-prompt-viewer-content');
         if (content) {
-            content.textContent = prompt.content;
+            // Handle both string content and function content
+            const contentText = typeof prompt.content === 'function'
+                ? prompt.content()
+                : prompt.content;
+            content.textContent = contentText;
         }
 
         // Set up close button
