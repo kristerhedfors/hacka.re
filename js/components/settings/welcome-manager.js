@@ -254,10 +254,14 @@ window.WelcomeManager = (function() {
             // Check if there's at least one hackare_ localStorage variable
             let hasHackareVar = false;
             let nonHackareVars = [];
-            
+
             // Keys that are allowed to exist without "hackare_" prefix
-            const allowedKeys = [];
-            
+            // These are system keys that don't contain user data
+            const allowedKeys = [
+                '_hacka_re_master_key_default_session',  // Master encryption key
+                '__hacka_re_storage_type__'              // Storage type preference
+            ];
+
             // Check all localStorage variables
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
@@ -269,13 +273,13 @@ window.WelcomeManager = (function() {
                     }
                 }
             }
-            
+
             // Alert if there are any localStorage variables without "hackare_" in their names (excluding allowed keys)
             if (nonHackareVars.length > 0) {
                 console.error('ALERT: Found localStorage variables without "hackare_" in their names:', nonHackareVars);
                 alert('ALERT: Found localStorage variables without "hackare_" in their names: ' + nonHackareVars.join(', '));
             }
-            
+
             return hasHackareVar;
         }
         

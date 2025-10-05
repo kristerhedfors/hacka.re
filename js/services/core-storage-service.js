@@ -125,9 +125,9 @@ window.CoreStorageService = (function() {
             // Also check if this is early in the initialization where cross-storage issues are common
             // Keys that commonly have cross-storage issues during init
             const crossStorageProneKeys = [
-                'js_functions', 'enabled_functions', 'function_collections', 
+                'js_functions', 'enabled_functions', 'function_collections',
                 'function_collection_metadata', 'openai_model', 'system_prompt',
-                'base_url', 'base_url_provider', 'openai_api_key', 'chat_history',
+                'base_url', 'base_url_provider', 'api_key', 'chat_history',
                 'function_tools_enabled', 'tool_calling_enabled', 'theme_mode'
             ];
             

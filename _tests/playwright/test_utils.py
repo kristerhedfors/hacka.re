@@ -68,50 +68,80 @@ def enable_rag_for_openai(page):
     
     return False
 
+def wait_for_storage_service_ready(page, timeout_ms=5000):
+    """
+    Wait for StorageService to be fully initialized and ready.
+
+    Args:
+        page: Playwright page object
+        timeout_ms: Maximum time to wait in milliseconds
+
+    Returns:
+        bool: True if StorageService is ready, False if timeout
+    """
+    try:
+        page.wait_for_function("""
+            () => {
+                return window.StorageService &&
+                       typeof window.StorageService.saveApiKey === 'function' &&
+                       typeof window.StorageService.getApiKey === 'function';
+            }
+        """, timeout=timeout_ms)
+        return True
+    except Exception as e:
+        print(f"StorageService not ready after {timeout_ms}ms: {e}")
+        return False
+
+
 def setup_api_key_properly(page, api_key):
     """
     Properly configure API key with retry logic to handle persistence issues.
-    
+
     Args:
         page: Playwright page object
         api_key: API key to configure
-        
+
     Returns:
         bool: True if API key was successfully configured
     """
+    # Wait for StorageService to be ready (REQUIRED for encrypted storage)
+    if not wait_for_storage_service_ready(page):
+        print("ERROR: StorageService not available - cannot save API key securely")
+        return False
+
     # Wait for API system to be ready
     if wait_for_api_ready:
         if not wait_for_api_ready(page):
             print("Warning: API system may not be fully initialized")
-    
+
     # Try to configure with retry logic
     if configure_api_key_with_retry:
         success = configure_api_key_with_retry(page, api_key, use_modal=False)
         if success:
             print("API key configured successfully with persistence fix")
             return True
-    
-    # Fallback to standard method
+
+    # Fallback: use StorageService directly (encrypted)
     try:
-        page.evaluate(f"""
+        result = page.evaluate(f"""
             () => {{
-                // Try multiple storage methods
-                localStorage.setItem('openai_api_key', '{api_key}');
-                
-                // Also try with namespace
-                const namespace = localStorage.getItem('namespace') || 'default';
-                localStorage.setItem(namespace + '_openai_api_key', '{api_key}');
-                
-                // Force a storage event
-                window.dispatchEvent(new StorageEvent('storage', {{
-                    key: 'openai_api_key',
-                    newValue: '{api_key}',
-                    storageArea: localStorage
-                }}));
+                // SECURITY: Only use encrypted storage via StorageService
+                if (!window.StorageService || !window.StorageService.saveApiKey) {{
+                    console.error('StorageService not available - cannot save API key securely');
+                    return false;
+                }}
+
+                window.StorageService.saveApiKey('{api_key}');
+                return window.StorageService.getApiKey() === '{api_key}';
             }}
         """)
-        print("API key configured using fallback method")
-        return True
+
+        if result:
+            print("API key configured using secure StorageService")
+            return True
+        else:
+            print("Failed to configure API key - StorageService not ready")
+            return False
     except Exception as e:
         print(f"Failed to configure API key: {e}")
         return False

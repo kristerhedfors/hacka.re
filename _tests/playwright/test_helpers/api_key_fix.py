@@ -35,24 +35,21 @@ def ensure_api_key_persisted(page: Page, api_key: str, max_retries: int = 3):
             # Small delay for namespace to initialize
             time.sleep(0.5)
             
-            # Store the API key directly via StorageService
+            # Store the API key ONLY via StorageService (encrypted)
             success = page.evaluate(f"""
                 () => {{
                     try {{
-                        // Use the proper storage service chain
-                        if (window.StorageService && window.StorageService.saveApiKey) {{
-                            window.StorageService.saveApiKey('{api_key}');
-                            
-                            // Verify it was saved
-                            const savedKey = window.StorageService.getApiKey();
-                            return savedKey === '{api_key}';
+                        // SECURITY: Only use StorageService which encrypts the key
+                        if (!window.StorageService || !window.StorageService.saveApiKey) {{
+                            console.error('StorageService not available - cannot save API key securely');
+                            return false;
                         }}
-                        
-                        // Fallback to direct localStorage if service not available
-                        const namespace = localStorage.getItem('namespace') || 'default';
-                        const key = namespace + '_openai_api_key';
-                        localStorage.setItem(key, '{api_key}');
-                        return true;
+
+                        window.StorageService.saveApiKey('{api_key}');
+
+                        // Verify it was saved
+                        const savedKey = window.StorageService.getApiKey();
+                        return savedKey === '{api_key}';
                     }} catch (e) {{
                         console.error('Failed to save API key:', e);
                         return false;
@@ -68,12 +65,10 @@ def ensure_api_key_persisted(page: Page, api_key: str, max_retries: int = 3):
                         if (window.StorageService && window.StorageService.getApiKey) {{
                             return window.StorageService.getApiKey() === '{api_key}';
                         }}
-                        const namespace = localStorage.getItem('namespace') || 'default';
-                        const key = namespace + '_openai_api_key';
-                        return localStorage.getItem(key) === '{api_key}';
+                        return false;
                     }}
                 """)
-                
+
                 if verified:
                     return True
                     
