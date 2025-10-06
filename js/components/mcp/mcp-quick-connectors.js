@@ -29,24 +29,23 @@ window.MCPQuickConnectors = (function() {
                 docUrl: 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token'
             }
         },
-        gmail: {
-            name: 'Gmail',
-            icon: 'fas fa-envelope',
-            description: 'Read and send emails through Gmail',
+        huggingface: {
+            name: 'Hugging Face',
+            icon: 'images/huggingface-icon.svg',
+            iconType: 'svg',
+            description: 'Access Hugging Face Hub: search models, datasets, Spaces, papers, and run AI apps',
             transport: 'service-connector',
-            authType: 'oauth-device',
+            authType: 'mcp-introspection',
             setupInstructions: {
-                title: 'Gmail OAuth Setup',
+                title: 'Hugging Face MCP Setup',
                 steps: [
-                    'Go to Google Cloud Console (console.cloud.google.com)',
-                    'Create a new project or select existing one',
-                    'Enable Gmail API in "APIs & Services" > "Library"',
-                    'Go to "APIs & Services" > "Credentials"',
-                    'Create OAuth 2.0 Client ID (Desktop application type)',
-                    'Copy the Client ID and Client Secret',
-                    'Enter them when prompted to start device flow authentication'
+                    'Click "Connect" to access the Hugging Face MCP server',
+                    'You will be redirected to huggingface.co to login',
+                    'Authorize access to your Hugging Face account',
+                    'Tools will be automatically discovered and registered',
+                    'Start using HF models, datasets, and Spaces!'
                 ],
-                docUrl: 'https://developers.google.com/gmail/api/quickstart/js'
+                docUrl: 'https://huggingface.co/docs/hub/hf-mcp-server'
             }
         },
         /* TODO: Re-enable after testing

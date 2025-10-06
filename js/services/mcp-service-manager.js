@@ -27,9 +27,9 @@
                 this.registerConnector('shodan', new global.ShodanConnector());
             }
 
-            // Register Gmail connector
-            if (global.GmailConnector) {
-                this.registerConnector('gmail', new global.GmailConnector());
+            // Register Hugging Face connector
+            if (global.HuggingFaceConnector) {
+                this.registerConnector('huggingface', new global.HuggingFaceConnector());
             }
 
             // Register Google Docs connector (when implemented)

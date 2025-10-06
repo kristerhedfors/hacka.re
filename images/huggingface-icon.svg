@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <!-- Hugging Face emoji-style icon - simplified version -->
+  <!-- Face circle -->
+  <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9"/>
+
+  <!-- Eyes (happy/smiling eyes) -->
+  <ellipse cx="8.5" cy="10" rx="1.5" ry="2" fill="white"/>
+  <ellipse cx="15.5" cy="10" rx="1.5" ry="2" fill="white"/>
+
+  <!-- Pupils -->
+  <circle cx="8.5" cy="10.5" r="0.8" fill="black"/>
+  <circle cx="15.5" cy="10.5" r="0.8" fill="black"/>
+
+  <!-- Smile (curved path) -->
+  <path d="M 7 14 Q 12 17 17 14" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Blush marks (optional cute touches) -->
+  <ellipse cx="5" cy="13" rx="1.2" ry="0.8" fill="white" opacity="0.5"/>
+  <ellipse cx="19" cy="13" rx="1.2" ry="0.8" fill="white" opacity="0.5"/>
+</svg>
