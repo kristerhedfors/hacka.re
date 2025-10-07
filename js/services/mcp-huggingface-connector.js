@@ -197,6 +197,56 @@
 
             try {
                 console.log('[HuggingFaceConnector] Connecting to MCP server with token authentication');
+
+                // Try a ping first to check if proxy is available
+                try {
+                    const pingResponse = await fetch(this.config.mcpServerUrl, {
+                        method: 'POST',
+                        headers: mcpConfig.transport.headers,
+                        body: JSON.stringify({
+                            jsonrpc: '2.0',
+                            id: 'ping-test',
+                            method: 'ping'
+                        })
+                    });
+
+                    // If we get a response (even 400), the proxy is working
+                    // HF MCP requires session ID, so 400 with "Session ID required" means proxy is OK
+                    if (!pingResponse.ok) {
+                        // Check if it's the expected "Session ID required" error
+                        try {
+                            const errorBody = await pingResponse.json();
+                            if (errorBody.error && errorBody.error.message === 'Session ID required') {
+                                console.log('[HuggingFaceConnector] Proxy is working (session ID will be handled by MCP client)');
+                                // Proxy is working, continue with normal MCP connection
+                            } else {
+                                throw new Error(`Proxy returned unexpected error: ${JSON.stringify(errorBody)}`);
+                            }
+                        } catch (jsonError) {
+                            throw new Error(`Proxy returned status ${pingResponse.status}`);
+                        }
+                    }
+                } catch (pingError) {
+                    console.error('[HuggingFaceConnector] Ping test failed:', pingError);
+
+                    // Only show modal if it's a network error (proxy not running)
+                    // TypeError: Failed to fetch = proxy is not running
+                    if (pingError.name === 'TypeError' || pingError.message.includes('Failed to fetch')) {
+                        // Show modal with proxy setup instructions
+                        this.showProxyRequiredModal();
+
+                        throw new Error(
+                            'Failed to connect to Hugging Face MCP proxy.\n\n' +
+                            'Please start the proxy server:\n' +
+                            '  .venv/bin/python mcp_proxy/huggingface_proxy.py\n\n' +
+                            'Then try connecting again.'
+                        );
+                    }
+
+                    // For other errors, let them propagate
+                    throw pingError;
+                }
+
                 await window.MCPClientService.connect(serverName, mcpConfig);
                 this.mcpClient = window.MCPClientService;
                 console.log('[HuggingFaceConnector] MCP server connected');
@@ -206,6 +256,9 @@
 
                 // Check if it's a proxy error
                 if (error.message && error.message.includes('Failed to fetch')) {
+                    // Show modal with proxy setup instructions
+                    this.showProxyRequiredModal();
+
                     throw new Error(
                         'Failed to connect to Hugging Face MCP proxy.\n\n' +
                         'Please start the proxy server:\n' +
@@ -371,6 +424,89 @@
 
             console.log('[HuggingFaceConnector] Disconnected');
             return true;
+        }
+
+        /**
+         * Show modal with proxy setup instructions
+         */
+        showProxyRequiredModal() {
+            // Remove existing modal if present
+            const existingModal = document.getElementById('huggingface-proxy-required-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'modal active';
+            modal.id = 'huggingface-proxy-required-modal';
+            modal.style.zIndex = '10001'; // Ensure it's on top
+
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>⚠️ Hugging Face MCP Proxy Required</h3>
+
+                    <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
+                        <strong>🧪 Experimental Feature</strong><br>
+                        Hugging Face MCP integration is experimental and requires a local proxy server.
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <p><strong>Why do I need a proxy?</strong></p>
+                        <p>hacka.re is not yet on the CORS allow list for Hugging Face's MCP server.
+                           Until this is resolved, you need to run a local proxy that forwards requests.</p>
+                    </div>
+
+                    <div style="background: #f8f9fa; border-radius: 4px; padding: 1rem; margin-bottom: 1rem;">
+                        <p><strong>📝 To start the proxy:</strong></p>
+                        <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                            <li>Open a terminal in your repository root</li>
+                            <li>Run this command:</li>
+                        </ol>
+                        <div style="background: #2d2d2d; color: #f8f8f2; padding: 0.75rem; border-radius: 4px; margin: 0.5rem 0; font-family: 'Courier New', monospace; font-size: 0.9em; overflow-x: auto;">
+                            .venv/bin/python mcp_proxy/huggingface_proxy.py
+                        </div>
+                        <ol start="3" style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                            <li>Leave the proxy running while using Hugging Face features</li>
+                            <li>Come back here and try connecting again</li>
+                        </ol>
+                    </div>
+
+                    <div style="background: #e7f3ff; border: 1px solid #2196F3; border-radius: 4px; padding: 1rem; margin-bottom: 1rem; font-size: 0.9em;">
+                        <strong>💡 Note:</strong> The proxy runs on <code>localhost:8014</code> and only forwards requests to Hugging Face.
+                        Your access token is sent directly to Hugging Face's servers.
+                    </div>
+
+                    <div class="modal-buttons" style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                        <button id="hf-proxy-modal-close" class="btn btn-primary" style="padding: 0.5rem 1.5rem;">
+                            Got it!
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Add close handler
+            const closeBtn = document.getElementById('hf-proxy-modal-close');
+            if (closeBtn) {
+                closeBtn.onclick = () => modal.remove();
+            }
+
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+
+            // Close on Escape key
+            const escapeHandler = (e) => {
+                if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            };
+            document.addEventListener('keydown', escapeHandler);
         }
     }
 
