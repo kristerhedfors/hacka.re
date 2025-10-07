@@ -184,6 +184,7 @@
             const mcpConfig = {
                 name: serverName,
                 description: this.config.description,
+                skipAutoToolRegistration: true, // We handle tool registration manually for better control
                 transport: {
                     type: 'http',
                     url: this.config.mcpServerUrl,
@@ -315,10 +316,12 @@
                 }
 
                 // Convert MCP tool definitions to our format
+                // Store both the display name (without hf_) and the MCP server name (as-is)
                 for (const tool of connectionInfo.tools) {
-                    const toolName = tool.name.replace('hf_', ''); // Remove hf_ prefix if present
+                    const toolName = tool.name.replace('hf_', ''); // Remove hf_ prefix for display/registration
 
                     this.discoveredTools[toolName] = {
+                        mcpName: tool.name, // Store the original MCP server name
                         description: tool.description || `Hugging Face tool: ${toolName}`,
                         parameters: tool.inputSchema || {
                             type: 'object',
@@ -356,13 +359,52 @@
 
             const serverName = 'huggingface-mcp';
 
-            // Add hf_ prefix if not present (HF tools typically have this prefix)
-            const mcpToolName = toolName.startsWith('hf_') ? toolName : `hf_${toolName}`;
+            // discoveredTools is a dictionary where keys are tool names (without hf_ prefix)
+            // and values contain the original MCP server name
+            let mcpToolName = toolName;
+
+            // Remove hf_ prefix if present to match discoveredTools keys
+            const toolBaseName = toolName.replace(/^hf_/, '');
+
+            // Check if this tool exists in our discovered tools
+            if (this.discoveredTools[toolBaseName]) {
+                // Use the original MCP server name (some have hf_ prefix, some don't)
+                mcpToolName = this.discoveredTools[toolBaseName].mcpName;
+                console.log(`[HuggingFaceConnector] Found tool in registry, using MCP name: ${mcpToolName}`);
+            } else {
+                // Fallback: use the tool name as-is
+                mcpToolName = toolName;
+                console.log(`[HuggingFaceConnector] Tool not in registry, using as-is: ${mcpToolName}`);
+            }
 
             try {
                 console.log(`[HuggingFaceConnector] Calling MCP tool: ${mcpToolName}`);
+                console.log(`[HuggingFaceConnector] Tool params:`, JSON.stringify(params, null, 2));
+
                 const result = await this.mcpClient.callTool(serverName, mcpToolName, params);
-                console.log('[HuggingFaceConnector] Tool result:', result);
+
+                console.log('[HuggingFaceConnector] ===== TOOL RESULT =====');
+                console.log('[HuggingFaceConnector] Result type:', typeof result);
+                console.log('[HuggingFaceConnector] Result keys:', result ? Object.keys(result) : 'null');
+                console.log('[HuggingFaceConnector] Full result:', JSON.stringify(result, null, 2));
+
+                // Special logging for image generation tools
+                if (toolName.includes('infer') || toolName.includes('image') || toolName.includes('gr1')) {
+                    console.log('[HuggingFaceConnector] 🖼️ IMAGE GENERATION RESULT DETECTED');
+                    if (result && result.content) {
+                        console.log('[HuggingFaceConnector] Content array length:', result.content.length);
+                        result.content.forEach((item, index) => {
+                            console.log(`[HuggingFaceConnector] Content[${index}]:`, {
+                                type: item.type,
+                                hasData: !!item.data,
+                                dataLength: item.data ? item.data.length : 0,
+                                mimeType: item.mimeType
+                            });
+                        });
+                    }
+                }
+
+                console.log('[HuggingFaceConnector] =====================');
                 return result;
             } catch (error) {
                 console.error('[HuggingFaceConnector] Tool execution failed:', error);

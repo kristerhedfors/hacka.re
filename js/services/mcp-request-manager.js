@@ -14,7 +14,7 @@
 
 // Constants
 const JSONRPC_VERSION = '2.0';
-const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 120000; // 2 minutes for image generation and long-running tasks
 
 /**
  * Custom error class for MCP-specific errors
@@ -124,9 +124,20 @@ class RequestManager {
                 clearTimeout(pending.timeoutTimer);
                 this.pendingRequests.delete(requestKey);
 
+                console.log(`[MCPRequestManager] handleResponse for ${serverName}:`, {
+                    messageId: message.id,
+                    hasError: !!message.error,
+                    hasResult: !!message.result,
+                    resultType: typeof message.result,
+                    resultKeys: message.result ? Object.keys(message.result) : []
+                });
+
                 if (message.error) {
+                    console.error('[MCPRequestManager] Error in response:', message.error);
                     pending.reject(new MCPError(message.error.message || 'Unknown error', message.error.code));
                 } else {
+                    console.log('[MCPRequestManager] Result preview:',
+                        JSON.stringify(message.result, null, 2).substring(0, 500));
                     pending.resolve(message.result);
                 }
                 return true;

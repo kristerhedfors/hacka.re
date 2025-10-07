@@ -124,9 +124,11 @@ class Connection {
                 
                 if (toolRegistry) {
                     toolRegistry.registerServerTools(this.name, this.tools, this.config);
-                    
+
                     // Register tools with Function Calling Manager for UI display
-                    if (window.MCPToolsManager && window.MCPToolsManager.registerServerTools) {
+                    // Skip auto-registration if the connector handles it manually (e.g., huggingface)
+                    const skipAutoRegistration = this.config?.skipAutoToolRegistration || false;
+                    if (!skipAutoRegistration && window.MCPToolsManager && window.MCPToolsManager.registerServerTools) {
                         try {
                             // First unregister existing tools to avoid collisions
                             if (window.MCPToolsManager.unregisterServerTools) {
