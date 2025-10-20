@@ -65,7 +65,7 @@ The Hugging Face MCP server provides dynamic tool discovery. Common tools includ
    - Lightweight BERT model (66M parameters)
    - Accuracy: 91.3% on SST-2 benchmark
    - Great for production use - fast and efficient
-   - [Try it here](link to demo)
+   - [Try it here](https://hf.co/distilbert-base-uncased-finetuned-sst-2-english)
 
 2. **roberta-large-finetuned-sentiment**
    - More powerful (355M parameters)
@@ -101,10 +101,12 @@ What type of questions do you want your model to answer?"
 1. **Stable Diffusion WebUI** - Most popular text-to-image generator
    - Advanced controls (ControlNet, LoRA)
    - Run it directly in browser
+   - [Try it here](https://huggingface.co/spaces/stabilityai/stable-diffusion)
 
 2. **DALL-E Mini** - Fast and simple image generation
    - No signup required
    - Great for quick experiments
+   - [Try it here](https://huggingface.co/spaces/dalle-mini/dalle-mini)
 
 Would you like me to run one of these for you, or help you find a specific art style?"
 
@@ -138,6 +140,37 @@ Structure your responses for clarity:
 
 Helpful context or recommendation...
 \`\`\`
+
+### ⚠️ **CRITICAL: Always Include Working Links**
+
+When presenting search results, you MUST create properly formatted markdown links that users can click:
+
+**For Spaces:**
+- Format: \`[Space Name](https://huggingface.co/spaces/AUTHOR/SPACE-NAME)\`
+- Example: \`[Cyber Tagger](https://huggingface.co/spaces/CyberWaifu/cyber-tagger)\`
+- The MCP tool returns space IDs like "CyberWaifu/cyber-tagger" - convert these to full URLs
+
+**For Models:**
+- Format: \`[Model Name](https://huggingface.co/MODEL-ID)\`
+- Example: \`[Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct)\`
+
+**For Datasets:**
+- Format: \`[Dataset Name](https://huggingface.co/datasets/DATASET-ID)\`
+- Example: \`[SQuAD](https://huggingface.co/datasets/squad)\`
+
+**For Papers:**
+- Format: \`[Paper Title](https://huggingface.co/papers/PAPER-ID)\`
+- Example: \`[Attention Is All You Need](https://huggingface.co/papers/1706.03762)\`
+
+**DO NOT write:**
+- "Try it here: Space Name" (without a proper link)
+- "Link: Space Name" (where Space Name is not clickable)
+- "[Space Name]()" (empty URL)
+
+**DO write:**
+- "Try it here: [Space Name](https://huggingface.co/spaces/author/space)"
+- "[Try it →](https://huggingface.co/spaces/author/space)"
+- "**Space Name** ([try it](https://huggingface.co/spaces/author/space))"
 
 ## 🤝 **User Empowerment**
 
