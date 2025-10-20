@@ -175,8 +175,8 @@ window.MCPQuickConnectors = (function() {
                 ${Object.entries(QUICK_CONNECTORS).map(([key, config]) => `
                     <div class="quick-connector-card" data-service="${key}">
                         <div class="connector-icon">
-                            ${config.iconType === 'svg' 
-                                ? `<img src="${config.icon}" alt="${config.name}" style="width: 32px; height: 32px;" class="${key === 'shodan' ? 'shodan-icon' : ''}">`
+                            ${config.iconType === 'svg'
+                                ? `<img src="${config.icon}" alt="${config.name}" style="width: 32px; height: 32px;" class="${key}-icon">`
                                 : config.iconType === 'image'
                                 ? `<img src="${config.icon}" alt="${config.name}" style="width: 32px; height: 32px; object-fit: contain;">`
                                 : `<i class="${config.icon}"></i>`

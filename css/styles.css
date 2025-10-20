@@ -4351,19 +4351,30 @@ body:has(.modal.active) #chat-input-container {
     color: rgba(255, 255, 255, 0.6);
 }
 
-/* Shodan Icon Theme Support */
+/* MCP Service Icon Theme Support */
+
+/* Hugging Face Icon - default for light theme, shows as dark */
+.huggingface-icon {
+    filter: none;
+}
+
+/* Shodan Icon - default for light theme, shows as dark */
 .shodan-icon {
-    /* Default for light theme - no filter needed, shows as dark */
     filter: none;
 }
 
 /* Apply white filter for all dark themes */
+.dark-mode .huggingface-icon,
+.theme-sunset .huggingface-icon,
+.theme-ocean .huggingface-icon,
+.theme-forest .huggingface-icon,
+.theme-midnight .huggingface-icon,
 .dark-mode .shodan-icon,
 .theme-sunset .shodan-icon,
 .theme-ocean .shodan-icon,
 .theme-forest .shodan-icon,
 .theme-midnight .shodan-icon {
-    /* Turn icon white for dark themes */
+    /* Turn icons white for dark themes */
     filter: brightness(0) invert(1);
 }
 
