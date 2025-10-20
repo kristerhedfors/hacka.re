@@ -35,17 +35,20 @@ window.MCPQuickConnectors = (function() {
             iconType: 'svg',
             description: 'Access Hugging Face Hub: search models, datasets, Spaces, papers, and run AI apps',
             transport: 'service-connector',
-            authType: 'mcp-introspection',
+            authType: 'token',
             setupInstructions: {
-                title: 'Hugging Face MCP Setup',
+                title: 'Hugging Face Access Token Setup',
                 steps: [
-                    'Click "Connect" to access the Hugging Face MCP server',
-                    'You will be redirected to huggingface.co to login',
-                    'Authorize access to your Hugging Face account',
-                    'Tools will be automatically discovered and registered',
-                    'Start using HF models, datasets, and Spaces!'
+                    '1. Go to https://huggingface.co/settings/tokens',
+                    '2. Click "New token" button',
+                    '3. Give your token a name like "hacka.re MCP"',
+                    '4. Select token type: "Read" (or "Write" if needed)',
+                    '5. Click "Generate token"',
+                    '6. Copy the token immediately (you won\'t see it again)',
+                    '7. Paste the token when prompted',
+                    'Your token will be encrypted and stored locally'
                 ],
-                docUrl: 'https://huggingface.co/docs/hub/hf-mcp-server'
+                docUrl: 'https://huggingface.co/settings/tokens'
             }
         },
         /* TODO: Re-enable after testing

@@ -14,43 +14,30 @@ The Hugging Face MCP integration allows hacka.re to access the Hugging Face Hub 
 
 ## Quick Start
 
-### 1. Start the CORS Proxy
+### 1. Get Your Hugging Face Access Token
 
-Hugging Face MCP requires authentication and doesn't allow direct browser connections. We use a local proxy:
+1. Go to [Hugging Face Settings > Tokens](https://huggingface.co/settings/tokens)
+2. Click **"New token"** button
+3. Give your token a name like "hacka.re MCP"
+4. Select token type: **"Read"** (or "Write" if you need write access)
+5. Click **"Generate token"**
+6. Copy the token immediately (you won't see it again)
 
-```bash
-# From the hacka.re root directory
-python mcp_proxy/huggingface_proxy.py
-```
-
-The proxy will start on `http://localhost:8014` and forward requests to `https://huggingface.co/mcp`.
-
-### 2. Test the Proxy (Optional)
-
-```bash
-./mcp_proxy/test_proxy.sh
-```
-
-You should see:
-```
-✅ Proxy is running
-✅ MCP endpoint responding
-```
-
-### 3. Connect in hacka.re
+### 2. Connect in hacka.re
 
 1. Open hacka.re in your browser
 2. Click the **MCP** button
 3. Find **Hugging Face** in the quick connectors
 4. Click **Connect**
+5. Paste your access token when prompted
 
 The connector will:
-- Try direct connection (will fail due to CORS)
-- Automatically fall back to using the proxy
+- Connect directly to `https://huggingface.co/mcp`
+- Validate your access token
 - Discover available tools via MCP introspection
 - Register tools as functions in hacka.re
 
-### 4. Start Using HF Tools
+### 3. Start Using HF Tools
 
 Once connected, you can use Hugging Face tools in your chat:
 
@@ -65,33 +52,32 @@ Show me text-to-image Spaces
 ## Architecture
 
 ```
-┌─────────────┐        ┌──────────────┐        ┌────────────────────┐
-│             │  HTTP  │              │  HTTP  │                    │
-│  hacka.re   ├───────→│ Local Proxy  ├───────→│ huggingface.co/mcp │
-│  (browser)  │        │ (port 8014)  │        │                    │
-└─────────────┘        └──────────────┘        └────────────────────┘
-                             │
-                             │ Adds CORS headers
-                             │ Forwards auth cookies
-                             └─ Proxies SSE streams
+┌─────────────┐                  ┌────────────────────┐
+│             │      HTTPS       │                    │
+│  hacka.re   ├─────────────────→│ huggingface.co/mcp │
+│  (browser)  │   Direct Connect │                    │
+└─────────────┘                  └────────────────────┘
+                                          │
+                                          │ Bearer token auth
+                                          │ CORS enabled for hacka.re
+                                          └─ JSON-RPC over HTTP
 ```
 
 ## Technical Details
 
-### Why a Proxy?
+### Direct Connection
 
-1. **CORS**: Hugging Face MCP doesn't allow direct browser connections (CORS policy)
-2. **Authentication**: HF MCP requires login via browser cookies
-3. **SSE Support**: The proxy handles Server-Sent Events for real-time updates
+1. **CORS Support**: Hugging Face MCP accepts requests from `https://hacka.re`
+2. **Authentication**: Uses Bearer token authentication (Hugging Face access tokens)
+3. **Transport**: JSON-RPC 2.0 over HTTPS
 
 ### Connection Flow
 
-1. **Direct attempt**: Connector tries `https://huggingface.co/mcp?login`
-2. **CORS failure**: Browser blocks the request (expected)
-3. **Proxy fallback**: Connector switches to `http://localhost:8014/mcp?login`
-4. **Proxy forwards**: Local proxy relays request to HF with CORS headers
-5. **Tool discovery**: MCP introspection discovers available tools
-6. **Registration**: Tools are registered as callable functions
+1. **Token Setup**: User provides Hugging Face access token
+2. **Token Validation**: Token is validated via `https://huggingface.co/api/whoami-v2`
+3. **MCP Connection**: Direct connection to `https://huggingface.co/mcp` with Bearer token
+4. **Tool Discovery**: MCP introspection discovers available tools
+5. **Registration**: Tools are registered as callable functions
 
 ### Discovered Tools
 
@@ -107,57 +93,45 @@ Tools are discovered dynamically via MCP introspection. Common tools include:
 
 ## Troubleshooting
 
-### Proxy Won't Start
+### Invalid Token Error
 
-**Error**: `Address already in use`
+**Error**: `Invalid Hugging Face access token`
 
-**Solution**: Port 8014 is already taken
-```bash
-# Find what's using port 8014
-lsof -i :8014
-
-# Kill it or use a different port
-# Edit huggingface_proxy.py and change port=8014
-```
-
-**Error**: `Module not found: starlette`
-
-**Solution**: Install dependencies
-```bash
-pip install starlette uvicorn httpx
-```
+**Solutions**:
+1. Verify you copied the complete token (starts with `hf_`)
+2. Check that the token hasn't expired
+3. Ensure the token has "Read" permissions at minimum
+4. Generate a new token at https://huggingface.co/settings/tokens
 
 ### Connection Fails
 
-**Error**: `Failed to connect to Hugging Face MCP`
+**Error**: `Failed to connect to Hugging Face MCP server`
 
 **Solutions**:
-1. Verify proxy is running: `curl http://localhost:8014/health`
-2. Check proxy logs for errors
-3. Ensure you're logged into huggingface.co in your browser
-4. Try restarting the proxy
+1. Verify your internet connection
+2. Check that you can access https://huggingface.co in your browser
+3. Ensure your access token is valid
+4. Check HF service status: https://status.huggingface.co
 
 ### No Tools Discovered
 
 **Error**: `No tools discovered via introspection`
 
 **Solutions**:
-1. Check proxy logs for authentication errors
-2. Verify your HF account has API access
-3. Try logging out and back into huggingface.co
-4. Check HF service status: https://status.huggingface.co
+1. Verify your token has sufficient permissions
+2. Check your HF account is in good standing
+3. Try disconnecting and reconnecting
+4. Check browser console for detailed error messages
 
-### Authentication Required
+### CORS Errors
 
-**Message**: `⚠️ Authentication required (expected for HF MCP)`
+**Error**: CORS-related errors in browser console
 
-This is **normal**. The Hugging Face MCP server requires authentication. The proxy should handle this automatically by forwarding browser cookies.
-
-**If authentication still fails**:
-1. Open https://huggingface.co in the same browser
-2. Log in to your account
-3. Keep that tab open
-4. Try connecting in hacka.re again
+This should not happen with the production deployment to hacka.re. If you see CORS errors:
+1. Ensure you're using the production URL (https://hacka.re)
+2. Check that you're not testing from a different origin
+3. Clear browser cache and cookies
+4. Try a different browser
 
 ## Development
 
@@ -169,42 +143,29 @@ _tests/playwright/.venv/bin/python -m pytest \
   _tests/playwright/test_huggingface_mcp_basic.py -v
 ```
 
-### Modifying the Proxy
+### Local Development
 
-The proxy is at `mcp_proxy/huggingface_proxy.py`. Key features:
+For local development (http://localhost:8000), you may need to use the CORS proxy since Hugging Face MCP may not accept localhost origins.
 
-- **CORS headers**: Allows browser connections
-- **Request forwarding**: Proxies all headers and body
-- **SSE streaming**: Supports Server-Sent Events
-- **Health endpoint**: `/health` for monitoring
-
-### Adding Support for Direct Connections
-
-When Hugging Face adds hacka.re to their CORS whitelist, update the connector:
-
-```javascript
-// In mcp-huggingface-connector.js connectMCPServer()
-// Remove the try/catch proxy fallback
-// Use only direct connection
-```
+See `mcp_proxy/huggingface_proxy.py` for the local development proxy.
 
 ## Alternative: Desktop Clients
 
-If you prefer not to use the proxy, Hugging Face MCP works natively with desktop clients:
+Hugging Face MCP also works with desktop AI clients:
 
 - **Claude Desktop**: https://claude.ai/download
 - **VS Code**: via MCP extension
 - **Cursor**: built-in MCP support
 - **Zed**: built-in MCP support
 
-These don't have CORS restrictions and connect directly to `https://huggingface.co/mcp`.
+These clients connect directly to `https://huggingface.co/mcp` without browser CORS restrictions.
 
 ## Files
 
 - `js/services/mcp-huggingface-connector.js` - Main connector
 - `js/default-prompts/huggingface-integration-guide.js` - Usage guide
-- `mcp_proxy/huggingface_proxy.py` - CORS proxy server
-- `mcp_proxy/test_proxy.sh` - Proxy test script
+- `js/components/mcp/mcp-quick-connectors.js` - Quick connector UI
+- `mcp_proxy/huggingface_proxy.py` - Local development proxy (optional)
 - `images/huggingface-icon.svg` - UI icon
 
 ## Resources
