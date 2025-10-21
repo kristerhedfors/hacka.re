@@ -1246,7 +1246,14 @@ window.ShareManager = (function() {
                         mcpConnections.gmail = gmailAuth;
                         console.log('🔌 ShareManager: Found Gmail OAuth');
                     }
-                    
+
+                    // Check Hugging Face connection
+                    const huggingfaceToken = await window.CoreStorageService.getValue('mcp_huggingface_token');
+                    if (huggingfaceToken && typeof huggingfaceToken === 'string') {
+                        mcpConnections.huggingface = huggingfaceToken;
+                        console.log('🔌 ShareManager: Found Hugging Face token');
+                    }
+
                     if (Object.keys(mcpConnections).length > 0) {
                         console.log('🔌 ShareManager: Collected MCP connections:', Object.keys(mcpConnections));
                     } else {
