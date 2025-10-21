@@ -107,7 +107,7 @@ test_all_services_loaded_without_errors          ✅ PASSED
 
 ---
 
-## 📋 Files Modified (10 Total)
+## 📋 Files Modified (11 Total)
 
 1. `js/services/core-storage-service.js` - Sensitive keys list
 2. `js/services/mcp-huggingface-connector.js` - Standardized storage key
@@ -116,9 +116,10 @@ test_all_services_loaded_without_errors          ✅ PASSED
 5. `js/services/mcp-share-link-service.js` - Connection checks (2 locations)
 6. `js/services/share-service.js` - Token collection
 7. `js/utils/compression-utils.js` - Key mapping ('H')
-8. `HUGGINGFACE_MCP_SETUP.md` - Documentation
-9. `js/default-prompts/huggingface-integration-guide.js` - Integration guide
-10. `_tests/playwright/test_huggingface_integration_validation.py` - Validation tests
+8. `js/components/share-manager.js` - Share modal connection detection (2 locations)
+9. `HUGGINGFACE_MCP_SETUP.md` - Documentation
+10. `js/default-prompts/huggingface-integration-guide.js` - Integration guide
+11. `_tests/playwright/test_huggingface_integration_validation.py` - Validation tests
 
 ---
 
