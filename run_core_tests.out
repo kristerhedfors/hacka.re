@@ -11,25 +11,7 @@
 💡 TIP: Run ./show_test_artifacts.sh to see all artifacts
 ======================================
 
-Running Core Functionality tests with chromium browser (PARALLEL mode: 4 workers)...
-Test filter: test_page or test_api or test_chat or test_welcome_modal
 
-=== Running Core Tests ===
-============================= test session starts ==============================
-platform darwin -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
-rootdir: /Users/user/dev/hacka.re/_tests/playwright
-configfile: pytest.ini
-plugins: xdist-3.8.0, timeout-2.4.0, asyncio-0.26.0, base-url-2.1.0, playwright-0.7.1
-timeout: 120.0s
-timeout method: signal
-timeout func_only: False
-asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-created: 4/4 workers
-4 workers [0 items]
-
-scheduling tests via LoadFileScheduling
-
-============================ no tests ran in 0.43s =============================
 Generating test results markdown files...
 No arguments provided. Using default files.
 Processing default files...

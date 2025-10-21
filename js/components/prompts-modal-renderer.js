@@ -170,12 +170,12 @@ window.PromptsModalRenderer = (function() {
         promptName.title = 'Click to view prompt content';
         promptItem.appendChild(promptName);
         
-        // Create info button instead of delete
-        const infoIcon = document.createElement('button');
-        infoIcon.className = 'prompt-item-info';
-        infoIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
-        infoIcon.title = 'About this prompt';
-        promptItem.appendChild(infoIcon);
+        // Create view button instead of delete
+        const viewIcon = document.createElement('button');
+        viewIcon.className = 'prompt-item-info';
+        viewIcon.innerHTML = '<i class="fas fa-eye"></i>';
+        viewIcon.title = 'View prompt';
+        promptItem.appendChild(viewIcon);
         
         return promptItem;
     }
@@ -189,39 +189,60 @@ window.PromptsModalRenderer = (function() {
     function renderSectionHeader(title, iconClass = 'fas fa-chevron-right') {
         const sectionHeader = document.createElement('div');
         sectionHeader.className = 'default-prompts-header';
-        
+
         // Add expand/collapse icon
         const expandIcon = document.createElement('i');
         expandIcon.className = iconClass;
         sectionHeader.appendChild(expandIcon);
-        
+
         // Add section title
         const sectionTitle = document.createElement('h4');
         sectionTitle.textContent = title;
         sectionHeader.appendChild(sectionTitle);
-        
+
+        // Add count span for showing enabled/total
+        const sectionCount = document.createElement('span');
+        sectionCount.className = 'prompt-section-count';
+        sectionCount.id = 'default-prompts-section-count';
+        sectionCount.style.marginLeft = '10px';
+        sectionCount.style.color = 'var(--text-color-secondary)';
+        sectionCount.style.fontSize = '14px';
+        sectionCount.style.display = 'none'; // Initially hidden
+        sectionHeader.appendChild(sectionCount);
+
         return sectionHeader;
     }
     
     /**
      * Render a nested section header
-     * @param {string} title - Section title  
+     * @param {string} title - Section title
+     * @param {string} sectionId - Section ID for count tracking
      * @returns {HTMLElement} Nested section header element
      */
-    function renderNestedSectionHeader(title) {
+    function renderNestedSectionHeader(title, sectionId) {
         const nestedHeader = document.createElement('div');
         nestedHeader.className = 'nested-section-header';
-        
+
         // Add expand/collapse icon
         const nestedExpandIcon = document.createElement('i');
         nestedExpandIcon.className = 'fas fa-chevron-right';
         nestedHeader.appendChild(nestedExpandIcon);
-        
+
         // Add title
         const nestedTitle = document.createElement('h4');
         nestedTitle.textContent = title || 'Unnamed Section';
         nestedHeader.appendChild(nestedTitle);
-        
+
+        // Add count span for showing enabled/total
+        const nestedCount = document.createElement('span');
+        nestedCount.className = 'prompt-section-count';
+        nestedCount.id = `prompt-section-count-${sectionId}`;
+        nestedCount.style.marginLeft = '10px';
+        nestedCount.style.color = 'var(--text-color-secondary)';
+        nestedCount.style.fontSize = '14px';
+        nestedCount.style.display = 'none'; // Initially hidden
+        nestedHeader.appendChild(nestedCount);
+
         return nestedHeader;
     }
     
@@ -263,7 +284,7 @@ window.PromptsModalRenderer = (function() {
     }
     
     /**
-     * Render a nested section with its items
+     * Render a nested section with its items (supports recursive nesting)
      * @param {Object} sectionPrompt - Section prompt object
      * @param {Array} selectedIds - Array of selected prompt IDs
      * @returns {HTMLElement} Nested section element
@@ -271,23 +292,31 @@ window.PromptsModalRenderer = (function() {
     function renderNestedSection(sectionPrompt, selectedIds) {
         const nestedSection = document.createElement('div');
         nestedSection.className = 'nested-section';
-        
+        nestedSection.dataset.sectionId = sectionPrompt.id; // Store section ID for counting
+
         // Create nested section header
-        const nestedHeader = renderNestedSectionHeader(sectionPrompt.name);
+        const nestedHeader = renderNestedSectionHeader(sectionPrompt.name, sectionPrompt.id);
         nestedSection.appendChild(nestedHeader);
-        
+
         // Create container for nested items
         const nestedList = document.createElement('div');
         nestedList.className = 'nested-section-list';
         nestedList.style.display = 'none'; // Initially collapsed
-        
-        // Add each nested item
+
+        // Add each nested item - handle recursive nesting
         sectionPrompt.items.forEach(nestedPrompt => {
-            const isSelected = selectedIds.includes(nestedPrompt.id);
-            const nestedItem = renderDefaultPromptItem(nestedPrompt, isSelected);
-            nestedList.appendChild(nestedItem);
+            if (nestedPrompt.isSection && nestedPrompt.items && nestedPrompt.items.length > 0) {
+                // This is another nested section - recursively render it
+                const deeplyNestedSection = renderNestedSection(nestedPrompt, selectedIds);
+                nestedList.appendChild(deeplyNestedSection);
+            } else {
+                // Regular prompt item
+                const isSelected = selectedIds.includes(nestedPrompt.id);
+                const nestedItem = renderDefaultPromptItem(nestedPrompt, isSelected);
+                nestedList.appendChild(nestedItem);
+            }
         });
-        
+
         nestedSection.appendChild(nestedList);
         return nestedSection;
     }
@@ -358,10 +387,10 @@ window.PromptsModalRenderer = (function() {
     function renderInfoPopup(prompt) {
         const popup = document.createElement('div');
         popup.className = 'prompt-info-popup';
-        
-        // Get description based on prompt ID
-        let description = getPromptDescription(prompt.id);
-        
+
+        // Get description - prefer prompt's own description/shortDesc, then fall back to ID-based lookup
+        let description = prompt.description || prompt.shortDesc || getPromptDescription(prompt.id);
+
         // Create popup content
         popup.innerHTML = `
             <div class="prompt-info-header">
@@ -370,10 +399,16 @@ window.PromptsModalRenderer = (function() {
             </div>
             <div class="prompt-info-content">
                 <p>${description}</p>
-                <p class="prompt-info-hint">Click on the prompt name to view its content in the editor.</p>
+                <div class="prompt-info-usage">
+                    <p class="prompt-info-hint"><strong>How to use this prompt:</strong></p>
+                    <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.9em; color: var(--text-color-secondary);">
+                        <li><strong>Check the box</strong> to include it in your system prompt</li>
+                        <li><strong>Click the prompt name</strong> to view, copy, or send to chat</li>
+                    </ul>
+                </div>
             </div>
         `;
-        
+
         return popup;
     }
     
@@ -391,8 +426,106 @@ window.PromptsModalRenderer = (function() {
             'owasp-llm-top10': 'The entire OWASP Top 10 for LLM applications as of May 2025. Markdown format, about 60 pages printed.',
             'mcp-sdk-readme': 'Documentation for the Model Context Protocol SDK, which enables communication between AI models and external tools.'
         };
-        
+
         return descriptions[promptId] || 'A default system prompt component for the hacka.re chat interface.';
+    }
+
+    /**
+     * Render prompt viewer modal (matches system prompt viewer style)
+     * @param {Object} prompt - Prompt object
+     * @returns {HTMLElement} Prompt viewer modal element
+     */
+    function renderPromptViewerModal(prompt) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'default-prompt-viewer-modal';
+
+        // Get description - prefer prompt's own description/shortDesc, then fall back to ID-based lookup
+        let description = prompt.description || prompt.shortDesc || getPromptDescription(prompt.id);
+
+        // Create modal content (matching system prompt viewer structure)
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px; max-height: 80vh;">
+                <div class="settings-header">
+                    <h2>${escapeHtml(prompt.name)}</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn icon-btn" id="prompt-viewer-copy-btn" title="Copy to clipboard">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button type="button" class="btn icon-btn" id="prompt-viewer-populate-btn" title="Populate chat input">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="prompt-viewer-description" style="padding: 12px 20px; background-color: var(--bg-color-secondary); border-bottom: 1px solid var(--border-color); font-size: 14px; color: var(--text-color-secondary);">
+                    ${description}
+                </div>
+
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button type="button" class="tab-btn active" data-tab="raw">Raw Markdown</button>
+                        <button type="button" class="tab-btn" data-tab="rendered">Rendered</button>
+                    </div>
+
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="prompt-viewer-raw-tab">
+                            <div class="scrollable-content">
+                                <pre id="prompt-viewer-raw-content" class="code-block"></pre>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane" id="prompt-viewer-rendered-tab">
+                            <div class="scrollable-content">
+                                <div id="prompt-viewer-rendered-content" class="markdown-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return modal;
+    }
+
+    /**
+     * Render a simple prompt viewer modal (plain text, no markdown)
+     * @param {Object} prompt - Prompt object
+     * @returns {HTMLElement} Simple modal element
+     */
+    function renderSimplePromptViewerModal(prompt) {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'simple-prompt-viewer-modal';
+
+        // Create simple modal content
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px; max-height: 70vh;">
+                <div class="settings-header">
+                    <h2>${escapeHtml(prompt.name)}</h2>
+                    <button type="button" class="btn icon-btn" id="close-simple-prompt-viewer" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="scrollable-content" style="padding: 20px; max-height: calc(70vh - 80px); overflow-y: auto;">
+                    <pre id="simple-prompt-viewer-content" style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; line-height: 1.5; margin: 0;"></pre>
+                </div>
+            </div>
+        `;
+
+        return modal;
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     // Public API
@@ -407,7 +540,10 @@ window.PromptsModalRenderer = (function() {
         renderNewPromptForm,
         renderNoPromptsMessage,
         renderInfoPopup,
+        renderPromptViewerModal,
+        renderSimplePromptViewerModal,
         getPromptDescription,
-        getFileIcon
+        getFileIcon,
+        escapeHtml
     };
 })();

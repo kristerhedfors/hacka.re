@@ -290,7 +290,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             DebugService.log('Model Selection Manager initialization deferred - dependencies not ready');
         }
-    }, 1000);
+
+        // Initialize Prompt Library Selector
+        if (window.PromptLibrarySelector && window.aiHackare && window.aiHackare.elements) {
+            window.PromptLibrarySelector.init(window.aiHackare.elements);
+            DebugService.log('Prompt Library Selector initialized');
+        } else {
+            DebugService.log('Prompt Library Selector initialization deferred - dependencies not ready');
+        }
+
+        // Initialize Prompt Library Icon Manager
+        if (window.PromptLibraryIconManager && window.aiHackare && window.aiHackare.elements) {
+            const promptLibraryIconManager = window.PromptLibraryIconManager.createPromptLibraryIconManager(window.aiHackare.elements);
+            promptLibraryIconManager.init();
+            DebugService.log('Prompt Library Icon Manager initialized');
+        } else {
+            DebugService.log('Prompt Library Icon Manager initialization deferred - dependencies not ready');
+        }
+    }, 100);
     
     // Initialize title and subtitle from localStorage if available
     if (window.StorageService) {

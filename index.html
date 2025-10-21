@@ -1089,6 +1089,29 @@ async function getCurrentTimeInBerlin() {
             </div>
         </div>
 
+        <!-- Prompt library selection modal with live search -->
+        <div id="prompt-library-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Select Prompt</h2>
+                    <button type="button" class="close-btn" id="close-prompt-library-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="model-selection-body">
+                    <div class="model-search-container">
+                        <input type="text" id="prompt-library-search-input" class="model-search-input" placeholder="Type to search prompts..." autocomplete="off">
+                    </div>
+                    <div id="prompt-library-list-container" class="model-list-container">
+                        <div class="loading-models">Loading prompts...</div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" id="prompt-library-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+
         <div id="settings-modal" class="modal">
             <div class="modal-content">
                 <div class="settings-header">
@@ -1169,7 +1192,7 @@ async function getCurrentTimeInBerlin() {
         <main>
             <div id="chat-container">
                 <div id="chat-header">
-                    <button id="copy-chat-btn" class="icon-btn chat-action-btn" title="Copy Chat Content">
+                    <button id="copy-chat-btn" class="icon-btn chat-action-btn">
                         <i class="fas fa-copy"></i>
                     </button>
                 </div>
@@ -1182,14 +1205,17 @@ async function getCurrentTimeInBerlin() {
                 </div>
                 <div id="chat-input-container">
                     <div class="input-with-actions">
-                        <button id="clear-chat-btn" class="icon-btn" title="Clear chat history">
+                        <button id="clear-chat-btn" class="icon-btn">
                             <i class="fas fa-trash"></i>
+                        </button>
+                        <button id="prompt-library-btn" class="icon-btn" style="display: none;">
+                            <i class="fas fa-book"></i>
                         </button>
                         <form id="chat-form">
                             <div id="message-input-wrapper" class="message-input-wrapper">
                                 <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
                             </div>
-                            <button type="submit" id="send-btn" class="icon-btn" title="Send message" name="send-message-button" aria-label="Send Message Button">
+                            <button type="submit" id="send-btn" class="icon-btn" name="send-message-button" aria-label="Send Message Button">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </form>
@@ -1304,18 +1330,18 @@ async function getCurrentTimeInBerlin() {
     <script src="js/services/mcp-oauth-connector.js"></script>
     <script src="js/services/mcp-github-connector.js"></script>
     <script src="js/services/mcp-shodan-connector.js"></script>
-    <script src="js/services/mcp-huggingface-connector.js"></script>
+<script src="js/services/mcp-huggingface-connector.js"></script>
     <script src="js/services/mcp-service-manager.js"></script>
     <script src="js/services/mcp-service-ui-helper.js"></script>
     <!-- Orchestration Services -->
     <script src="js/services/orchestration-mcp-server.js"></script>
     <script src="js/services/orchestration-agent-service.js"></script>
-    <script src="js/services/link-sharing-service.js"></script>
+<script src="js/services/link-sharing-service.js"></script>
     <script src="js/services/share-service.js"></script>
     <!-- Agent Services -->
     <script src="js/services/configuration-service.js"></script>
     <script src="js/services/agent-context-manager.js"></script>
-    <script src="js/services/agent-service.js"></script>
+  <script src="js/services/agent-service.js"></script>
     <script src="js/services/agent-cache.js"></script>
     <script src="js/services/agent-orchestrator.js"></script>
     <script src="js/services/agent-interface.js"></script>
@@ -1326,14 +1352,18 @@ async function getCurrentTimeInBerlin() {
     <script src="js/default-prompts/hacka-re-project.js"></script>
     <script src="js/default-prompts/function-calling.js"></script>
     <script src="js/default-prompts/owasp-llm-top10.js"></script>
+    <script src="js/default-prompts/llm-security-literacy.js"></script>
+    <script src="js/default-prompts/advanced-section.js"></script>
     <script src="js/default-prompts/function-library.js"></script>
     <script src="js/default-prompts/agent-orchestration.js"></script>
     <script src="js/default-prompts/api-auth-libsodium.js"></script>
     <script src="js/default-prompts/openai-proxies-python.js"></script>
-    <script src="js/default-prompts/llm-security-literacy.js"></script>
     <script src="js/default-prompts/mcp-sdk-readme.js"></script>
+
     <script src="js/default-prompts/code-section.js"></script>
     <script src="js/default-prompts/huggingface-integration-guide.js"></script>
+
+
     <script src="js/default-prompts/github-integration-guide.js"></script>
     <script src="js/default-prompts/shodan-integration-guide.js"></script>
     <script src="js/default-prompts/share-link-mcp-guide.js"></script>
@@ -1348,6 +1378,8 @@ async function getCurrentTimeInBerlin() {
     <script src="js/default-prompts/agent-security-analyst.js"></script>
     <script src="js/default-prompts/agent-data-analyst.js"></script>
     <script src="js/default-prompts/agent-project-manager.js"></script>
+    <!-- OpenAI Prompt Packs - loaded for standalone Prompt Library, NOT included in Default Prompts -->
+    <script src="js/default-prompts/openai-prompt-packs-section.js"></script>
     <script src="js/services/default-prompts-service.js"></script>
     <!-- Default functions -->
     <script src="js/default-functions/rc4-encryption.js"></script>
@@ -1380,6 +1412,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/ui/context-usage-display.js"></script>
     <script src="js/components/ui/model-info-display.js"></script>
     <script src="js/components/ui/model-selection-manager.js"></script>
+    <script src="js/components/ui/prompt-library-selector.js"></script>
     <script src="js/components/ui/share-ui-manager.js"></script>
     <script src="js/components/ui/ui-coordinator.js"></script>
     <!-- Legacy UI manager wrapper -->
@@ -1434,6 +1467,7 @@ async function getCurrentTimeInBerlin() {
     <script src="js/components/settings/model-manager.js"></script>
     <script src="js/components/settings/system-prompt-manager.js"></script>
     <script src="js/components/settings/yolo-mode-manager.js"></script>
+    <script src="js/components/settings/prompt-library-icon-manager.js"></script>
     <script src="js/components/settings/debug-manager.js"></script>
     <script src="js/components/settings/voice-control-manager.js"></script>
     <script src="js/components/settings/base-url-manager.js"></script>

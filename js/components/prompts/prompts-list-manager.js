@@ -123,7 +123,10 @@ function createPromptsListManager() {
             elements.promptsList.appendChild(defaultPromptsSection);
         }
         elements.promptsList.appendChild(newPromptForm);
-        
+
+        // Update all section counts after rendering
+        updateAllSectionCounts();
+
         // If there's a current prompt being edited, populate the form fields
         if (currentPrompt && !currentPrompt.isDefault) {
             setTimeout(() => {
@@ -347,34 +350,17 @@ function createPromptsListManager() {
                                 if (updateAfterSelectionChange) {
                                     updateAfterSelectionChange();
                                 }
+                                // Update section counts after selection change
+                                updateAllSectionCounts();
                             }
                         );
                         checkbox.addEventListener('change', checkboxHandler);
                     }
                     
-                    // Bind prompt name click handler for viewing content
+                    // Bind prompt name click handler for viewing content in modal
                     const promptName = promptElement.querySelector('.prompt-item-name');
                     if (promptName) {
-                        const viewHandler = PromptsEventHandlers.createDefaultPromptViewHandler(
-                            prompt,
-                            (viewedPrompt) => {
-                                // Load prompt content into the new prompt form editor
-                                const labelField = document.getElementById('new-prompt-label');
-                                const contentField = document.getElementById('new-prompt-content');
-                                
-                                if (labelField && contentField) {
-                                    labelField.value = viewedPrompt.name || '';
-                                    contentField.value = viewedPrompt.content || '';
-                                    
-                                    // Make fields read-only when viewing default prompts
-                                    labelField.setAttribute('readonly', 'readonly');
-                                    contentField.setAttribute('readonly', 'readonly');
-                                    
-                                    // Scroll to the form fields so they're visible
-                                    contentField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                }
-                            }
-                        );
+                        const viewHandler = PromptsEventHandlers.createDefaultPromptViewHandler(prompt);
                         promptName.addEventListener('click', viewHandler);
                     }
                     
@@ -387,16 +373,19 @@ function createPromptsListManager() {
                 }
             };
             
-            // Bind events for all prompts (including nested ones)
-            defaultPrompts.forEach(defaultPrompt => {
-                if (defaultPrompt.isSection && defaultPrompt.items) {
-                    // Bind events for items in nested sections
-                    defaultPrompt.items.forEach(bindPromptEvents);
+            // Recursive function to bind events for all prompts (including deeply nested ones)
+            const bindEventsRecursively = (prompt) => {
+                if (prompt.isSection && prompt.items) {
+                    // This is a section - recursively process its items
+                    prompt.items.forEach(bindEventsRecursively);
                 } else {
-                    // Bind events for top-level prompts
-                    bindPromptEvents(defaultPrompt);
+                    // This is a regular prompt - bind its events
+                    bindPromptEvents(prompt);
                 }
-            });
+            };
+
+            // Bind events for all prompts recursively
+            defaultPrompts.forEach(bindEventsRecursively);
         }
         
         // Bind expand/collapse events for section headers
@@ -455,17 +444,119 @@ function createPromptsListManager() {
     function resetSetupFlags() {
         // Nothing to reset now that drag-and-drop is removed
     }
-    
-    
-    
-    
+
+    /**
+     * Update count display for a specific nested section
+     * @param {Object} sectionPrompt - Section prompt object with id and items
+     */
+    function updateNestedSectionCount(sectionPrompt) {
+        const countElement = document.getElementById(`prompt-section-count-${sectionPrompt.id}`);
+        if (!countElement || !sectionPrompt.items) return;
+
+        const selectedIds = DefaultPromptsService.getSelectedDefaultPromptIds();
+
+        // Recursively count enabled and total prompts in this section
+        let enabledCount = 0;
+        let totalCount = 0;
+
+        function countPromptsInSection(section) {
+            section.items.forEach(item => {
+                if (item.isSection && item.items) {
+                    // Recursively count nested sections
+                    countPromptsInSection(item);
+                } else {
+                    // This is a prompt, count it
+                    totalCount++;
+                    if (selectedIds.includes(item.id)) {
+                        enabledCount++;
+                    }
+                }
+            });
+        }
+
+        countPromptsInSection(sectionPrompt);
+
+        // Only show count if at least 1 prompt is enabled
+        if (enabledCount > 0) {
+            const pluralText = totalCount !== 1 ? 's' : '';
+            countElement.textContent = `(${enabledCount}/${totalCount} prompt${pluralText} enabled)`;
+            countElement.style.display = 'inline';
+        } else {
+            countElement.style.display = 'none';
+        }
+    }
+
+    /**
+     * Update the main default prompts section count (all prompts across all sections)
+     */
+    function updateDefaultPromptsSectionCount() {
+        const sectionCountElement = document.getElementById('default-prompts-section-count');
+        if (!sectionCountElement) return;
+
+        const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
+        const selectedIds = DefaultPromptsService.getSelectedDefaultPromptIds();
+
+        let totalEnabled = 0;
+        let totalPrompts = 0;
+
+        // Recursively count all prompts
+        function countAllPrompts(prompt) {
+            if (prompt.isSection && prompt.items) {
+                // Recursively count nested sections
+                prompt.items.forEach(countAllPrompts);
+            } else {
+                // This is a prompt, count it
+                totalPrompts++;
+                if (selectedIds.includes(prompt.id)) {
+                    totalEnabled++;
+                }
+            }
+        }
+
+        defaultPrompts.forEach(countAllPrompts);
+
+        // Only show count if at least 1 prompt is enabled
+        if (totalEnabled > 0) {
+            const pluralText = totalPrompts !== 1 ? 's' : '';
+            sectionCountElement.textContent = `(${totalEnabled}/${totalPrompts} prompt${pluralText} enabled)`;
+            sectionCountElement.style.display = 'inline';
+        } else {
+            sectionCountElement.style.display = 'none';
+        }
+    }
+
+    /**
+     * Update all section counts (recursively updates all nested sections)
+     */
+    function updateAllSectionCounts() {
+        const defaultPrompts = DefaultPromptsService.getDefaultPrompts();
+
+        // Recursively update all section counts
+        function updateSectionCountsRecursively(prompt) {
+            if (prompt.isSection && prompt.items) {
+                // Update this section's count
+                updateNestedSectionCount(prompt);
+                // Recursively update nested sections
+                prompt.items.forEach(updateSectionCountsRecursively);
+            }
+        }
+
+        defaultPrompts.forEach(updateSectionCountsRecursively);
+
+        // Update the main section count
+        updateDefaultPromptsSectionCount();
+    }
+
     return {
         loadPromptsList,
         bindPromptItemEvents,
         bindMcpPromptItemEvents,
         bindFormEvents,
         bindDefaultPromptsEvents,
-        setCallbacks
+        setCallbacks,
+        updateNestedSectionCount,
+        updateDefaultPromptsSectionCount,
+        updateAllSectionCounts
     };
 }
 

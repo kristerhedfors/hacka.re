@@ -214,11 +214,26 @@ function test_function(text, count = 1) {
     # Open function modal to verify the function works
     function_btn = page.locator("#function-btn")
     function_btn.click()
-    
+
     function_modal = page.locator("#function-modal")
     expect(function_modal).to_be_visible()
-    
+
+    # Wait for function list to render with retries
+    max_attempts = 5
+    function_found = False
+
+    for attempt in range(max_attempts):
+        page.wait_for_timeout(1000)
+        test_func = page.locator(".function-item-name:has-text('test_function')")
+        if test_func.count() > 0:
+            function_found = True
+            print(f"✅ Found test_function on attempt {attempt + 1}")
+            break
+        if attempt < max_attempts - 1:
+            print(f"⏳ test_function not found yet, waiting... (attempt {attempt + 1}/{max_attempts})")
+
     # Verify function is present
+    assert function_found, f"Function test_function not found after {max_attempts} attempts"
     expect(page.locator(".function-item-name:has-text('test_function')")).to_be_visible()
     
     # Click on the function to load it
