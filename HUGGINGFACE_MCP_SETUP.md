@@ -160,6 +160,43 @@ Hugging Face MCP also works with desktop AI clients:
 
 These clients connect directly to `https://huggingface.co/mcp` without browser CORS restrictions.
 
+## Share Links
+
+Hugging Face MCP connections are **fully supported in shared links**:
+
+- **Automatic Inclusion**: Your HF token is automatically included when you create a share link with "MCP Connections" checked
+- **Encrypted Storage**: The token is encrypted along with other credentials in the share link
+- **Auto-Connection**: When someone opens your share link, the HF MCP connection is automatically established
+- **Tool Registration**: All HF tools are automatically registered and ready to use
+- **Link Optimization**: Uses compressed key mapping ('H') to minimize share link size
+
+### Creating a Share Link with HF
+
+1. Connect to Hugging Face MCP (see Quick Start above)
+2. Click the **Share** button in the header
+3. Check **"MCP Connections"** option
+4. Click **"Generate Link"**
+5. Your HF token will be included in the encrypted share link
+
+### Opening a Share Link with HF
+
+When you open a share link containing a HF connection:
+
+1. Enter the password to decrypt the link
+2. HF token is automatically restored
+3. Connection to `https://huggingface.co/mcp` is established
+4. All HF tools are registered and available
+5. Start using HF search and inference tools immediately
+
+## Namespace Management
+
+Hugging Face MCP connections are **fully integrated with namespace management**:
+
+- **Delete Current Namespace**: Removes HF token and connection data
+- **"Delete current namespace and settings"** button in Settings modal clears all HF data
+- **Clean Slate**: Ensures no HF credentials remain after namespace deletion
+- **Privacy**: All HF tokens are encrypted and stored in the current namespace only
+
 ## Files
 
 - `js/services/mcp-huggingface-connector.js` - Main connector

@@ -42,6 +42,7 @@ window.CompressionUtils = (function() {
         // MCP connection keys
         'github': 'g',
         'gmail': 'G',
+        'huggingface': 'H',
         'shodan': 'h'
     };
 

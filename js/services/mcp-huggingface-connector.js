@@ -53,8 +53,8 @@
                 return true;
             }
 
-            // Check for existing token
-            const storageKey = this.getStorageKey('access_token');
+            // Check for existing token using standardized storage key
+            const storageKey = 'mcp_huggingface_token';
             const existingToken = await this.storage.getValue(storageKey);
 
             if (existingToken) {
@@ -110,8 +110,8 @@
 
             await this.storeConnection(connectionData);
 
-            // Store token separately for compatibility
-            const tokenStorage = this.getStorageKey('access_token');
+            // Store token separately using standardized storage key for share link compatibility
+            const tokenStorage = 'mcp_huggingface_token';
             await this.storage.setValue(tokenStorage, accessToken);
 
             // Connect to MCP server with token

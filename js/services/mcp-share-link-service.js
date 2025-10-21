@@ -122,10 +122,13 @@ window.MCPShareLinkService = (function() {
             if (window.CoreStorageService) {
                 const githubToken = await window.CoreStorageService.getValue('mcp_github_token');
                 if (githubToken) connections.push('GitHub');
-                
+
                 const gmailAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
                 if (gmailAuth) connections.push('Gmail');
-                
+
+                const huggingfaceToken = await window.CoreStorageService.getValue('mcp_huggingface_token');
+                if (huggingfaceToken) connections.push('Hugging Face');
+
                 const shodanApiKey = await window.CoreStorageService.getValue('mcp_shodan_api_key');
                 if (shodanApiKey) connections.push('Shodan');
             }
@@ -213,12 +216,17 @@ window.MCPShareLinkService = (function() {
                     if (githubToken) {
                         mcpConnections.github = typeof githubToken === 'string' ? githubToken : githubToken.token;
                     }
-                    
+
+                    const huggingfaceToken = await window.CoreStorageService.getValue('mcp_huggingface_token');
+                    if (huggingfaceToken) {
+                        mcpConnections.huggingface = huggingfaceToken;
+                    }
+
                     const shodanApiKey = await window.CoreStorageService.getValue('mcp_shodan_api_key');
                     if (shodanApiKey) {
                         mcpConnections.shodan = shodanApiKey;
                     }
-                    
+
                     const gmailAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
                     if (gmailAuth) {
                         mcpConnections.gmail = gmailAuth;
