@@ -29,24 +29,26 @@ window.MCPQuickConnectors = (function() {
                 docUrl: 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token'
             }
         },
-        gmail: {
-            name: 'Gmail',
-            icon: 'fas fa-envelope',
-            description: 'Read and send emails through Gmail',
+        huggingface: {
+            name: 'Hugging Face',
+            icon: 'images/huggingface-icon.svg',
+            iconType: 'svg',
+            description: 'Access Hugging Face Hub: search models, datasets, Spaces, papers, and run AI apps',
             transport: 'service-connector',
-            authType: 'oauth-device',
+            authType: 'token',
             setupInstructions: {
-                title: 'Gmail OAuth Setup',
+                title: 'Hugging Face Access Token Setup',
                 steps: [
-                    'Go to Google Cloud Console (console.cloud.google.com)',
-                    'Create a new project or select existing one',
-                    'Enable Gmail API in "APIs & Services" > "Library"',
-                    'Go to "APIs & Services" > "Credentials"',
-                    'Create OAuth 2.0 Client ID (Desktop application type)',
-                    'Copy the Client ID and Client Secret',
-                    'Enter them when prompted to start device flow authentication'
+                    '1. Go to https://huggingface.co/settings/tokens',
+                    '2. Click "New token" button',
+                    '3. Give your token a name like "hacka.re MCP"',
+                    '4. Select token type: "Read" (or "Write" if needed)',
+                    '5. Click "Generate token"',
+                    '6. Copy the token immediately (you won\'t see it again)',
+                    '7. Paste the token when prompted',
+                    'Your token will be encrypted and stored locally'
                 ],
-                docUrl: 'https://developers.google.com/gmail/api/quickstart/js'
+                docUrl: 'https://huggingface.co/settings/tokens'
             }
         },
         /* TODO: Re-enable after testing
@@ -173,8 +175,8 @@ window.MCPQuickConnectors = (function() {
                 ${Object.entries(QUICK_CONNECTORS).map(([key, config]) => `
                     <div class="quick-connector-card" data-service="${key}">
                         <div class="connector-icon">
-                            ${config.iconType === 'svg' 
-                                ? `<img src="${config.icon}" alt="${config.name}" style="width: 32px; height: 32px;" class="${key === 'shodan' ? 'shodan-icon' : ''}">`
+                            ${config.iconType === 'svg'
+                                ? `<img src="${config.icon}" alt="${config.name}" style="width: 32px; height: 32px;" class="${key}-icon">`
                                 : config.iconType === 'image'
                                 ? `<img src="${config.icon}" alt="${config.name}" style="width: 32px; height: 32px; object-fit: contain;">`
                                 : `<i class="${config.icon}"></i>`

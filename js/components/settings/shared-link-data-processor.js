@@ -814,6 +814,49 @@ function createSharedLinkDataProcessor() {
                         }
                         
                         perfLogger.log('Shodan credentials stored and connection attempted');
+                    } else if (serviceKey === 'huggingface') {
+                        // Hugging Face uses access tokens - extract string token from object if needed
+                        let token = connectionData;
+                        if (typeof connectionData === 'object' && connectionData !== null && connectionData.token) {
+                            token = connectionData.token;
+                        } else if (typeof connectionData !== 'string') {
+                            console.error(`Invalid Hugging Face token format`);
+                            continue;
+                        }
+
+                        // Store the access token using the standardized storage key
+                        const storageKey = 'mcp_huggingface_token';
+                        await window.CoreStorageService.setValue(storageKey, token);
+                        perfLogger.log('Applied Hugging Face token from shared link');
+
+                        // Store connection data for the connector to find
+                        const hfConnectionData = {
+                            type: 'token',
+                            accessToken: token,
+                            connectedAt: Date.now(),
+                            lastValidated: Date.now()
+                        };
+                        const connectionStorageKey = 'hacka.re.mcp_huggingface_connection';
+                        await window.CoreStorageService.setValue(connectionStorageKey, hfConnectionData);
+
+                        // Now establish the actual connection to Hugging Face MCP
+                        perfLogger.log('Attempting to establish Hugging Face MCP connection...');
+
+                        // Try to connect using the stored credentials
+                        if (window.mcpServiceManager) {
+                            try {
+                                const connected = await window.mcpServiceManager.connectService('huggingface');
+                                if (connected) {
+                                    perfLogger.log('Successfully connected to Hugging Face MCP service');
+                                } else {
+                                    console.warn('Failed to connect to Hugging Face MCP service');
+                                }
+                            } catch (error) {
+                                console.warn('Error connecting to Hugging Face MCP service:', error);
+                            }
+                        }
+
+                        perfLogger.log('Hugging Face credentials stored and connection attempted');
                     } else {
                         console.warn(`Unknown MCP service type: ${serviceKey}`, connectionData);
                         continue;

@@ -280,6 +280,7 @@ class HttpTransport extends Transport {
         super();
         this.config = config;
         this.connected = false;
+        this.sessionId = null; // Track MCP session ID for stateful servers
     }
 
     async connect() {
@@ -300,18 +301,57 @@ class HttpTransport extends Transport {
             const requestHeaders = {
                 'Content-Type': 'application/json',
                 'X-MCP-Toolsets': 'repos,issues,pull_requests,users',
-                ...this.config.headers
+                ...this.config.headers,
+                // Must be AFTER config.headers to ensure it's not overridden
+                'Accept': 'application/json, text/event-stream'
             };
-            
+
             console.log('[MCP Transport] Making request to:', this.config.url);
             console.log('[MCP Transport] Request headers:', requestHeaders);
             console.log('[MCP Transport] Request body:', JSON.stringify(initMessage, null, 2));
-            
+
             const testResponse = await fetch(this.config.url, {
                 method: 'POST',
                 headers: requestHeaders,
                 body: JSON.stringify(initMessage)
             });
+
+            // Extract session ID from response headers (for stateful MCP servers)
+            const sessionId = testResponse.headers.get('Mcp-Session-Id');
+            if (sessionId) {
+                this.sessionId = sessionId;
+                console.log('[MCP Transport] Session ID obtained:', sessionId);
+            }
+
+            // If we got 406 and received a session ID, retry with the session
+            if (testResponse.status === 406 && this.sessionId) {
+                console.log('[MCP Transport] Got 406 with session ID - retrying with session...');
+
+                // Add session ID to headers for retry
+                const retryHeaders = {
+                    ...requestHeaders,
+                    'Mcp-Session-Id': this.sessionId,
+                    // Ensure Accept header is included in retry
+                    'Accept': 'application/json, text/event-stream'
+                };
+
+                console.log('[MCP Transport] Retry headers:', retryHeaders);
+
+                const retryResponse = await fetch(this.config.url, {
+                    method: 'POST',
+                    headers: retryHeaders,
+                    body: JSON.stringify(initMessage)
+                });
+
+                if (retryResponse.ok) {
+                    console.log('[MCP Transport] Connection successful after session retry');
+                    this.connected = true;
+                    return;
+                }
+
+                // If retry also failed, fall through to error handling
+                throw new MCPTransportError(`HTTP connection failed after session retry: ${retryResponse.status} ${retryResponse.statusText}`);
+            }
 
             if (testResponse.ok) {
                 this.connected = true;
@@ -322,7 +362,7 @@ class HttpTransport extends Transport {
                 console.log('[MCP Transport] Generated curl command:', curlCommand);
                 console.log('[MCP Transport] Headers:', this.config.headers);
                 console.log('[MCP Transport] Request body:', JSON.stringify(initMessage, null, 2));
-                
+
                 const errorType = testResponse.status === 400 ? 'Request format error' : 'Authentication failed';
                 throw new MCPTransportError(
                     `${errorType}. Try manual connection with curl:\n\n${curlCommand}`,
@@ -359,12 +399,21 @@ class HttpTransport extends Transport {
             throw new MCPTransportError('HTTP transport not connected');
         }
 
+        const headers = {
+            'Content-Type': 'application/json',
+            ...this.config.headers,
+            // Must be AFTER config.headers to ensure it's not overridden
+            'Accept': 'application/json, text/event-stream'
+        };
+
+        // Include session ID if we have one (for stateful MCP servers)
+        if (this.sessionId) {
+            headers['Mcp-Session-Id'] = this.sessionId;
+        }
+
         const response = await fetch(this.config.url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...this.config.headers
-            },
+            headers: headers,
             body: JSON.stringify(message)
         });
 
@@ -384,6 +433,7 @@ class HttpTransport extends Transport {
 
     close() {
         this.connected = false;
+        this.sessionId = null; // Clear session on disconnect
     }
 }
 

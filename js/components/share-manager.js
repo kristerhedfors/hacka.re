@@ -666,13 +666,19 @@ window.ShareManager = (function() {
                     }
                     
                     // Check if Gmail is actually connected
-                    if (window.MCPServiceConnectors?.isConnected?.('gmail') || 
+                    if (window.MCPServiceConnectors?.isConnected?.('gmail') ||
                         window.mcpServiceManager?.isServiceConnected?.('gmail')) {
                         connections.push('Gmail');
                     }
-                    
+
+                    // Check if Hugging Face is actually connected
+                    if (window.MCPServiceConnectors?.isConnected?.('huggingface') ||
+                        window.mcpServiceManager?.isServiceConnected?.('huggingface')) {
+                        connections.push('Hugging Face');
+                    }
+
                     // Check if Shodan is actually connected
-                    if (window.MCPServiceConnectors?.isConnected?.('shodan') || 
+                    if (window.MCPServiceConnectors?.isConnected?.('shodan') ||
                         window.mcpServiceManager?.isServiceConnected?.('shodan')) {
                         connections.push('Shodan');
                     }
@@ -737,7 +743,12 @@ window.ShareManager = (function() {
                     if (gmailAuth) {
                         connections.push('Gmail');
                     }
-                    
+
+                    const huggingfaceToken = localStorage.getItem('mcp_huggingface_token');
+                    if (huggingfaceToken) {
+                        connections.push('Hugging Face');
+                    }
+
                     const shodanApiKey = localStorage.getItem('mcp_shodan_api_key');
                     if (shodanApiKey) {
                         connections.push('Shodan');
@@ -1235,7 +1246,14 @@ window.ShareManager = (function() {
                         mcpConnections.gmail = gmailAuth;
                         console.log('🔌 ShareManager: Found Gmail OAuth');
                     }
-                    
+
+                    // Check Hugging Face connection
+                    const huggingfaceToken = await window.CoreStorageService.getValue('mcp_huggingface_token');
+                    if (huggingfaceToken && typeof huggingfaceToken === 'string') {
+                        mcpConnections.huggingface = huggingfaceToken;
+                        console.log('🔌 ShareManager: Found Hugging Face token');
+                    }
+
                     if (Object.keys(mcpConnections).length > 0) {
                         console.log('🔌 ShareManager: Collected MCP connections:', Object.keys(mcpConnections));
                     } else {

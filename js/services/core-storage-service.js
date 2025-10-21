@@ -384,6 +384,8 @@ window.CoreStorageService = (function() {
                 'mcp-oauth-configs',
                 'mcp_github_token',
                 'mcp_gmail_oauth',
+                'mcp_huggingface_token',
+                'mcp_shodan_api_key',
                 'shodan_api_key',
                 'rag_regulations_data',
                 'rag_regulations_metadata', 

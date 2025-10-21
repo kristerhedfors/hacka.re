@@ -167,9 +167,23 @@ window.ShareService = (function() {
                         if (typeof githubToken === 'object' && githubToken !== null && githubToken.token) {
                             tokenToSave = githubToken.token;
                         }
-                        
+
                         mcpConnections.github = tokenToSave;
-                    } else {
+                    }
+
+                    const gmailAuth = await window.CoreStorageService.getValue('mcp_gmail_oauth');
+                    if (gmailAuth) {
+                        mcpConnections.gmail = gmailAuth;
+                    }
+
+                    const huggingfaceToken = await window.CoreStorageService.getValue('mcp_huggingface_token');
+                    if (huggingfaceToken) {
+                        mcpConnections.huggingface = huggingfaceToken;
+                    }
+
+                    const shodanApiKey = await window.CoreStorageService.getValue('mcp_shodan_api_key');
+                    if (shodanApiKey) {
+                        mcpConnections.shodan = shodanApiKey;
                     }
                 } catch (error) {
                     console.warn('❌ ShareService: Failed to collect MCP connections from storage:', error);
