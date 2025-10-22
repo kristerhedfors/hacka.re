@@ -16,6 +16,7 @@ window.FunctionToolsConfig = (function() {
     // Configuration
     const CONFIG = {
         EXECUTION_TIMEOUT: 60000, // 60 seconds - increased to handle slower API calls
+        IMAGE_GENERATION_TIMEOUT: 180000, // 180 seconds (3 minutes) - for image generation functions
         DEBUG_PREFIX: '[FunctionTools Debug]',
         LOG_LEVEL: 'ERROR' // 'DEBUG', 'INFO', 'WARN', 'ERROR' - set to ERROR to reduce console noise
     };

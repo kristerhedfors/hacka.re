@@ -309,21 +309,66 @@ window.FunctionToolsProcessor = (function() {
             // Ensure we always have a valid content string
             let content;
             if (result === null || result === undefined) {
-                content = JSON.stringify({ 
+                content = JSON.stringify({
                     result: null,
                     status: 'success',
                     message: 'Function executed successfully with no return value'
                 });
             } else {
-                content = JSON.stringify(result);
+                // Check if result contains image data (MCP format)
+                if (result && result.result && result.result.content && Array.isArray(result.result.content)) {
+                    const imageContent = result.result.content.find(item =>
+                        item.type === 'image' && item.data && item.data.length > 100
+                    );
+
+                    if (imageContent) {
+                        // Store the image data globally so the UI can access it
+                        if (!window.functionImageData) {
+                            window.functionImageData = {};
+                        }
+
+                        const imageId = `img_${toolCall.id}_${Date.now()}`;
+                        window.functionImageData[imageId] = {
+                            data: imageContent.data,
+                            mimeType: imageContent.mimeType || 'image/png',
+                            toolCallId: toolCall.id
+                        };
+
+                        Logger.debug(`Stored image data with ID: ${imageId}, size: ${imageContent.data.length} bytes`);
+
+                        // Return a reference instead of the full image data
+                        content = JSON.stringify({
+                            success: true,
+                            result: {
+                                content: [
+                                    {
+                                        type: 'image_ref',
+                                        imageId: imageId,
+                                        mimeType: imageContent.mimeType || 'image/png',
+                                        message: 'Image generated successfully'
+                                    }
+                                ]
+                            }
+                        });
+
+                        // Store the full result too for UI rendering
+                        window.functionImageData[imageId].fullResult = result;
+
+                        Logger.debug(`Created image reference for LLM: ${imageId}`);
+                    } else {
+                        content = JSON.stringify(result);
+                    }
+                } else {
+                    content = JSON.stringify(result);
+                }
             }
-            
+
             const toolResult = {
                 tool_call_id: toolCall.id,
                 role: "tool",
                 content: content
             };
-            
+
             Logger.debug(`Created tool result for "${name}" (${executionTime}ms):`, toolResult);
             return toolResult;
         },
