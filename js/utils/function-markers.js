@@ -244,6 +244,17 @@ window.FunctionMarkers = (function() {
                 resultValue = decodedResult;
             }
 
+            // Debug logging for image generation functions
+            if (functionName.includes('image')) {
+                console.log('[Function Markers] Processing image function:', functionName);
+                console.log('[Function Markers] decodedResult type:', typeof decodedResult);
+                console.log('[Function Markers] decodedResult:', decodedResult);
+                console.log('[Function Markers] resultValue type:', typeof resultValue);
+                console.log('[Function Markers] resultValue:', resultValue);
+                console.log('[Function Markers] resultType:', resultType);
+                console.log('[Function Markers] Has result.content?', resultValue && resultValue.result && resultValue.result.content);
+            }
+
             // Check if this is an image reference result
             if ((resultType === 'object' || resultType === 'array') && resultValue && resultValue.result && resultValue.result.content && Array.isArray(resultValue.result.content)) {
                 const imageRef = resultValue.result.content.find(item => item.type === 'image_ref');

@@ -382,7 +382,7 @@ window.FunctionToolsProcessor = (function() {
 
                         if (window.functionImageData[imageId]) {
                             // Return a reference instead of the full image data/URL
-                            content = JSON.stringify({
+                            const imageRefObject = {
                                 success: true,
                                 result: {
                                     content: [
@@ -393,12 +393,17 @@ window.FunctionToolsProcessor = (function() {
                                         }
                                     ]
                                 }
-                            });
+                            };
+
+                            content = JSON.stringify(imageRefObject);
 
                             // Store the full result too for UI rendering
                             window.functionImageData[imageId].fullResult = result;
 
                             Logger.debug(`Created image reference for LLM: ${imageId}`);
+                            Logger.debug(`Image ref object:`, imageRefObject);
+                            Logger.debug(`Content (stringified once):`, content);
+                            Logger.debug(`Content type:`, typeof content);
                         }
                     } else {
                         content = JSON.stringify(result);

@@ -302,7 +302,16 @@ window.ApiToolCallHandler = (function() {
             const encodedResult = encodeURIComponent(result.content);
             const executionTime = result.executionTime || 0;
             const functionResultMarker = `[FUNCTION_RESULT:${result.name}:${resultType}:${encodedResult}:${executionTime}:${result.tool_call_id}]`;
-            
+
+            // Debug logging for image results
+            if (result.name && result.name.includes('image')) {
+                console.log('[insertFunctionResultMarkers] Processing image result:', result.name);
+                console.log('[insertFunctionResultMarkers] result.content type:', typeof result.content);
+                console.log('[insertFunctionResultMarkers] result.content:', result.content);
+                console.log('[insertFunctionResultMarkers] resultValue:', resultValue);
+                console.log('[insertFunctionResultMarkers] resultType:', resultType);
+            }
+
             updatedContent += functionResultMarker;
             
             if (onContentUpdate) {
