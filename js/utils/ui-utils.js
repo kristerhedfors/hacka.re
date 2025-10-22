@@ -38,8 +38,8 @@ window.UIUtils = (function() {
             
             // DOMPurify is used to sanitize the HTML
             const htmlContent = DOMPurify.sanitize(markdownOutput, {
-                ADD_TAGS: ['span', 'br', 'strong'],
-                ADD_ATTR: ['class'],
+                ADD_TAGS: ['span', 'br', 'strong', 'img'],
+                ADD_ATTR: ['class', 'src', 'alt', 'style', 'crossorigin'],
                 ALLOW_DATA_ATTR: false
             });
             

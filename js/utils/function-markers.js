@@ -234,7 +234,7 @@ window.FunctionMarkers = (function() {
             // Use call ID for unique coloring if available, otherwise use function name
             const colorKey = callId ? callId : functionName;
             const colorClass = getColorClass(colorKey);
-            
+
             // Decode and parse the result value
             const decodedResult = decodeURIComponent(encodedResult);
             let resultValue;
@@ -243,7 +243,48 @@ window.FunctionMarkers = (function() {
             } catch (e) {
                 resultValue = decodedResult;
             }
-            
+
+            // Check if this is an image reference result
+            if ((resultType === 'object' || resultType === 'array') && resultValue && resultValue.result && resultValue.result.content && Array.isArray(resultValue.result.content)) {
+                const imageRef = resultValue.result.content.find(item => item.type === 'image_ref');
+
+                if (imageRef && imageRef.imageId && window.functionImageData && window.functionImageData[imageRef.imageId]) {
+                    const imageData = window.functionImageData[imageRef.imageId];
+                    console.log('[Function Markers] Rendering inline image for:', imageRef.imageId);
+
+                    // Create inline image HTML that will be rendered by marked.js
+                    let imageHtml;
+
+                    if (imageData.type === 'url') {
+                        // Image URL - render directly
+                        imageHtml = `<img src="${imageData.url}" style="max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0;" alt="Generated image" crossorigin="anonymous" />`;
+                    } else {
+                        // Base64 data
+                        const mimeType = imageData.mimeType || 'image/png';
+                        imageHtml = `<img src="data:${mimeType};base64,${imageData.data}" style="max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0;" alt="Generated image" />`;
+                    }
+
+                    // Return the actual image HTML to be rendered inline, plus the icon for modal access
+                    const executionTimeFormatted = formatExecutionTime(executionTime);
+
+                    if (window.FunctionCallRenderer) {
+                        const element = window.FunctionCallRenderer.createResultIndicator({
+                            functionName,
+                            resultType,
+                            resultValue,
+                            executionTime: parseInt(executionTime) || 0,
+                            colorClass
+                        });
+
+                        // Return image inline followed by the icon
+                        return `\n\n${imageHtml}\n\n${element.outerHTML}`;
+                    }
+
+                    // Fallback: return image inline with a simple icon
+                    return `\n\n${imageHtml}\n\n<span class="function-result-icon ${colorClass}" data-function-name="${escapeHTML(functionName)}" data-result-type="${escapeHTML(resultType)}" data-result-value="${escapeHTML(JSON.stringify(decodedResult))}" data-execution-time="${executionTime || 0}" data-type="result"><span class="function-icon-tooltip"><strong>Result:</strong> ${escapeHTML(functionName)}<br><strong>Type:</strong> object<br><strong>Time:</strong> ${executionTimeFormatted}<br><strong>Value:</strong> Image generated</span></span>`;
+                }
+            }
+
             // Use the new renderer if available, fallback to old method
             if (window.FunctionCallRenderer) {
                 // Removed excessive logging during streaming
@@ -256,12 +297,12 @@ window.FunctionMarkers = (function() {
                 });
                 return element.outerHTML;
             }
-            
+
             // Fallback for backward compatibility (add data attributes)
             // Removed excessive logging during streaming
             const { displayValue } = formatDisplayValue(decodedResult, resultType);
             const executionTimeFormatted = formatExecutionTime(executionTime);
-            
+
             return `<span class="function-result-icon ${colorClass}" data-function-name="${escapeHTML(functionName)}" data-result-type="${escapeHTML(resultType)}" data-result-value="${escapeHTML(JSON.stringify(decodedResult))}" data-execution-time="${executionTime || 0}" data-type="result"><span class="function-icon-tooltip"><strong>Result:</strong> ${escapeHTML(functionName)}<br><strong>Type:</strong> ${escapeHTML(resultType)}<br><strong>Time:</strong> ${executionTimeFormatted}<br><strong>Value:</strong> ${escapeHTML(displayValue)}</span></span>`;
         });
     }

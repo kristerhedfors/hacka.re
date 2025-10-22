@@ -217,8 +217,16 @@ window.FunctionDetailsModal = (function() {
 
                 if (imageRef && imageRef.imageId && window.functionImageData && window.functionImageData[imageRef.imageId]) {
                     const imageData = window.functionImageData[imageRef.imageId];
-                    const mimeType = imageData.mimeType || 'image/png';
-                    const imageHtml = `<img src="data:${mimeType};base64,${imageData.data}" style="max-width: 100%; height: auto; border-radius: 4px; margin-top: 10px;" alt="Generated image" />`;
+                    let imageHtml;
+
+                    if (imageData.type === 'url') {
+                        // Image URL - render directly
+                        imageHtml = `<img src="${imageData.url}" style="max-width: 100%; height: auto; border-radius: 4px; margin-top: 10px;" alt="Generated image" crossorigin="anonymous" />`;
+                    } else {
+                        // Base64 data
+                        const mimeType = imageData.mimeType || 'image/png';
+                        imageHtml = `<img src="data:${mimeType};base64,${imageData.data}" style="max-width: 100%; height: auto; border-radius: 4px; margin-top: 10px;" alt="Generated image" />`;
+                    }
 
                     elements.resultValue.innerHTML = `<div style="color: #666; margin-bottom: 10px;">Image generated successfully</div>${imageHtml}`;
                     return ''; // Return empty since we set innerHTML directly

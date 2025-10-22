@@ -315,46 +315,74 @@ window.FunctionToolsProcessor = (function() {
                     message: 'Function executed successfully with no return value'
                 });
             } else {
-                // Check if result contains image data (MCP format)
+                // Check if result contains image data or URL (MCP format)
                 if (result && result.result && result.result.content && Array.isArray(result.result.content)) {
-                    const imageContent = result.result.content.find(item =>
-                        item.type === 'image' && item.data && item.data.length > 100
-                    );
+                    // Look for image content (base64 data or URL)
+                    const imageContent = result.result.content.find(item => item.type === 'image');
+                    const textContent = result.result.content.find(item => item.type === 'text');
 
-                    if (imageContent) {
-                        // Store the image data globally so the UI can access it
+                    // Check if we have an image URL in the text content
+                    let imageUrl = null;
+                    if (textContent && textContent.text) {
+                        // Extract URL from markdown or plain text
+                        const urlMatch = textContent.text.match(/https?:\/\/[^\s\)]+?\.(?:png|jpg|jpeg|gif|webp)/i);
+                        if (urlMatch) {
+                            imageUrl = urlMatch[0];
+                        }
+                    }
+
+                    if (imageContent || imageUrl) {
+                        // Store the image data/URL globally so the UI can access it
                         if (!window.functionImageData) {
                             window.functionImageData = {};
                         }
 
                         const imageId = `img_${toolCall.id}_${Date.now()}`;
-                        window.functionImageData[imageId] = {
-                            data: imageContent.data,
-                            mimeType: imageContent.mimeType || 'image/png',
-                            toolCallId: toolCall.id
-                        };
 
-                        Logger.debug(`Stored image data with ID: ${imageId}, size: ${imageContent.data.length} bytes`);
+                        if (imageContent && imageContent.data && imageContent.data.length > 100) {
+                            // Base64 image data
+                            window.functionImageData[imageId] = {
+                                type: 'base64',
+                                data: imageContent.data,
+                                mimeType: imageContent.mimeType || 'image/png',
+                                toolCallId: toolCall.id
+                            };
+                            Logger.debug(`Stored base64 image data with ID: ${imageId}, size: ${imageContent.data.length} bytes`);
+                        } else if (imageUrl) {
+                            // Image URL
+                            window.functionImageData[imageId] = {
+                                type: 'url',
+                                url: imageUrl,
+                                mimeType: 'image/webp', // Assume webp for HF
+                                toolCallId: toolCall.id,
+                                fullText: textContent ? textContent.text : null
+                            };
+                            Logger.debug(`Stored image URL with ID: ${imageId}, url: ${imageUrl}`);
+                        } else {
+                            // No valid image data, fallback to regular JSON
+                            content = JSON.stringify(result);
+                        }
 
-                        // Return a reference instead of the full image data
-                        content = JSON.stringify({
-                            success: true,
-                            result: {
-                                content: [
-                                    {
-                                        type: 'image_ref',
-                                        imageId: imageId,
-                                        mimeType: imageContent.mimeType || 'image/png',
-                                        message: 'Image generated successfully'
-                                    }
-                                ]
-                            }
-                        });
+                        if (window.functionImageData[imageId]) {
+                            // Return a reference instead of the full image data/URL
+                            content = JSON.stringify({
+                                success: true,
+                                result: {
+                                    content: [
+                                        {
+                                            type: 'image_ref',
+                                            imageId: imageId,
+                                            message: 'Image generated successfully'
+                                        }
+                                    ]
+                                }
+                            });
 
-                        // Store the full result too for UI rendering
-                        window.functionImageData[imageId].fullResult = result;
+                            // Store the full result too for UI rendering
+                            window.functionImageData[imageId].fullResult = result;
 
-                        Logger.debug(`Created image reference for LLM: ${imageId}`);
+                            Logger.debug(`Created image reference for LLM: ${imageId}`);
+                        }
                     } else {
                         content = JSON.stringify(result);
                     }
