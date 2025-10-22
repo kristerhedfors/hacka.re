@@ -244,24 +244,19 @@ window.FunctionMarkers = (function() {
                 resultValue = decodedResult;
             }
 
-            // Debug logging for image generation functions
-            if (functionName.includes('image')) {
-                console.log('[Function Markers] Processing image function:', functionName);
-                console.log('[Function Markers] decodedResult type:', typeof decodedResult);
-                console.log('[Function Markers] decodedResult:', decodedResult);
-                console.log('[Function Markers] resultValue type:', typeof resultValue);
-                console.log('[Function Markers] resultValue:', resultValue);
-                console.log('[Function Markers] resultType:', resultType);
-                console.log('[Function Markers] Has result.content?', resultValue && resultValue.result && resultValue.result.content);
-            }
-
             // Check if this is an image reference result
             if ((resultType === 'object' || resultType === 'array') && resultValue && resultValue.result && resultValue.result.content && Array.isArray(resultValue.result.content)) {
                 const imageRef = resultValue.result.content.find(item => item.type === 'image_ref');
 
                 if (imageRef && imageRef.imageId && window.functionImageData && window.functionImageData[imageRef.imageId]) {
                     const imageData = window.functionImageData[imageRef.imageId];
-                    console.log('[Function Markers] Rendering inline image for:', imageRef.imageId);
+
+                    // Debounced logging - only log once per image ID
+                    if (!window._imageRenderLog) window._imageRenderLog = new Set();
+                    if (!window._imageRenderLog.has(imageRef.imageId)) {
+                        console.log('[Function Markers] Rendering inline image for:', imageRef.imageId);
+                        window._imageRenderLog.add(imageRef.imageId);
+                    }
 
                     // Create inline image HTML that will be rendered by marked.js
                     let imageHtml;
