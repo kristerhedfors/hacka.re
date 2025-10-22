@@ -102,8 +102,9 @@ window.FunctionToolsExecutor = (function() {
             const timeout = isImageGeneration ? CONFIG.IMAGE_GENERATION_TIMEOUT : CONFIG.EXECUTION_TIMEOUT;
             const timeoutSeconds = timeout / 1000;
 
+            let timeoutId;
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
+                timeoutId = setTimeout(() => {
                     Logger.error("Function execution timed out");
                     reject(new Error(`Function "${name}" execution timed out after ${timeoutSeconds} seconds`));
                 }, timeout);
@@ -111,7 +112,16 @@ window.FunctionToolsExecutor = (function() {
 
             const executionPromise = this._executeDirectly(name, args);
 
-            return Promise.race([executionPromise, timeoutPromise]);
+            try {
+                const result = await Promise.race([executionPromise, timeoutPromise]);
+                // Clear the timeout if execution succeeded
+                clearTimeout(timeoutId);
+                return result;
+            } catch (error) {
+                // Clear the timeout on error too
+                clearTimeout(timeoutId);
+                throw error;
+            }
         },
         
         async _executeDirectly(name, args) {

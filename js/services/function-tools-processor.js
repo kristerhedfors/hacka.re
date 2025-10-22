@@ -316,10 +316,17 @@ window.FunctionToolsProcessor = (function() {
                 });
             } else {
                 // Check if result contains image data or URL (MCP format)
-                if (result && result.result && result.result.content && Array.isArray(result.result.content)) {
+                // Handle both formats: result.content (direct MCP) and result.result.content (wrapped)
+                const contentArray = (result && result.content && Array.isArray(result.content))
+                    ? result.content
+                    : (result && result.result && result.result.content && Array.isArray(result.result.content))
+                        ? result.result.content
+                        : null;
+
+                if (contentArray) {
                     // Look for image content (base64 data or URL)
-                    const imageContent = result.result.content.find(item => item.type === 'image');
-                    const textContent = result.result.content.find(item => item.type === 'text');
+                    const imageContent = contentArray.find(item => item.type === 'image');
+                    const textContent = contentArray.find(item => item.type === 'text');
 
                     // Check if we have an image URL in the text content
                     let imageUrl = null;
@@ -335,6 +342,16 @@ window.FunctionToolsProcessor = (function() {
                         // Store the image data/URL globally so the UI can access it
                         if (!window.functionImageData) {
                             window.functionImageData = {};
+                        }
+
+                        // Clean up old image data to prevent memory bloat (keep last 10)
+                        const imageIds = Object.keys(window.functionImageData);
+                        if (imageIds.length > 10) {
+                            // Remove oldest entries
+                            imageIds.slice(0, imageIds.length - 10).forEach(id => {
+                                delete window.functionImageData[id];
+                            });
+                            Logger.debug(`Cleaned up old image data, kept ${Object.keys(window.functionImageData).length} entries`);
                         }
 
                         const imageId = `img_${toolCall.id}_${Date.now()}`;
