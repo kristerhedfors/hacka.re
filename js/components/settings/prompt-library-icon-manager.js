@@ -11,12 +11,12 @@ window.PromptLibraryIconManager = (function() {
 
     /**
      * Check if prompt library icon is enabled
-     * @returns {boolean} Whether prompt library icon is enabled (default: true)
+     * @returns {boolean} Whether prompt library icon is enabled (default: false)
      */
     function isPromptLibraryIconEnabled() {
-        // Default to true if not set (icon shown by default)
+        // Default to false if not set (icon hidden by default)
         const value = CoreStorageService.getValue(PROMPT_LIBRARY_ICON_KEY);
-        return value !== false; // Returns true if undefined/null or explicitly true
+        return value === true; // Returns true only if explicitly set to true
     }
 
     /**
