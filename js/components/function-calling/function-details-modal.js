@@ -113,7 +113,13 @@ window.FunctionDetailsModal = (function() {
             elements.resultGroup.style.display = 'block';
             elements.resultType.textContent = resultType || 'unknown';
             elements.executionTime.textContent = formatExecutionTime(executionTime);
-            elements.resultValue.textContent = formatResultValue(resultValue, resultType);
+
+            // Format the result value (may return empty string if it sets innerHTML directly)
+            const formattedResult = formatResultValue(resultValue, resultType);
+            if (formattedResult) {
+                elements.resultValue.textContent = formattedResult;
+            }
+            // If formattedResult is empty, formatResultValue already set innerHTML
         } else {
             elements.resultGroup.style.display = 'none';
         }
@@ -204,18 +210,78 @@ window.FunctionDetailsModal = (function() {
                     return cleanValue;
                 }
             }
-            
+
+            // Check for image reference (new format - lookup from global store)
+            if ((type === 'object' || type === 'array') && value && value.result && value.result.content && Array.isArray(value.result.content)) {
+                const imageRef = value.result.content.find(item => item.type === 'image_ref');
+
+                if (imageRef && imageRef.imageId && window.functionImageData && window.functionImageData[imageRef.imageId]) {
+                    const imageData = window.functionImageData[imageRef.imageId];
+                    let imageHtml;
+
+                    if (imageData.type === 'url') {
+                        // Image URL - render directly
+                        imageHtml = `<img src="${imageData.url}" style="max-width: 100%; height: auto; border-radius: 4px; margin-top: 10px;" alt="Generated image" crossorigin="anonymous" />`;
+                    } else {
+                        // Base64 data
+                        const mimeType = imageData.mimeType || 'image/png';
+                        imageHtml = `<img src="data:${mimeType};base64,${imageData.data}" style="max-width: 100%; height: auto; border-radius: 4px; margin-top: 10px;" alt="Generated image" />`;
+                    }
+
+                    elements.resultValue.innerHTML = `<div style="color: #666; margin-bottom: 10px;">Image generated successfully</div>${imageHtml}`;
+                    return ''; // Return empty since we set innerHTML directly
+                }
+            }
+
+            // Legacy: Check for MCP image content in objects/arrays (old format with base64 directly in result)
+            if ((type === 'object' || type === 'array') && value && value.content && Array.isArray(value.content)) {
+                // Look for image content
+                const imageContent = value.content.find(item =>
+                    item.type === 'image' ||
+                    (item.mimeType && item.mimeType.startsWith('image/'))
+                );
+
+                if (imageContent && imageContent.data) {
+                    // Create an image element with the data
+                    const mimeType = imageContent.mimeType || 'image/png';
+                    const imageHtml = `<img src="data:${mimeType};base64,${imageContent.data}" style="max-width: 100%; height: auto; border-radius: 4px; margin-top: 10px;" alt="Generated image" />`;
+
+                    // Check for text content to display along with the image
+                    const textContent = value.content.find(item => item.type === 'text');
+                    if (textContent && textContent.text) {
+                        // Use a special format that the modal can detect
+                        elements.resultValue.innerHTML = escapeHTML(textContent.text) + '<br><br>' + imageHtml;
+                        return ''; // Return empty since we set innerHTML directly
+                    }
+
+                    // Just show the image
+                    elements.resultValue.innerHTML = imageHtml;
+                    return ''; // Return empty since we set innerHTML directly
+                }
+            }
+
             // For actual objects/arrays, stringify with pretty formatting
             if (type === 'object' || type === 'array') {
                 return JSON.stringify(value, null, 2);
             }
-            
+
             // For other types, convert to string
             return String(value);
         } catch (e) {
             console.error('Error formatting result value:', e);
             return String(value);
         }
+    }
+
+    /**
+     * Escape HTML special characters
+     * @param {string} text - Text to escape
+     * @returns {string} - Escaped text
+     */
+    function escapeHTML(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     /**

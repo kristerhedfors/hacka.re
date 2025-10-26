@@ -11,20 +11,26 @@ window.FunctionToolsExecutor = (function() {
     const FunctionExecutor = {
         async execute(name, args) {
             Logger.logFunctionCall(name, args);
-            
+
             this._validateFunction(name);
             this._validateArguments(args, name);
-            
+
             const executionStartTime = Date.now();
             Logger.debug(`Starting function execution at: ${executionStartTime}`);
-            
+
+            // Determine if this is an image generation function
+            const isImageGeneration = this._isImageGenerationFunction(name);
+            if (isImageGeneration) {
+                Logger.debug(`Function ${name} detected as image generation, using extended timeout`);
+            }
+
             try {
-                const result = await this._executeWithTimeout(name, args);
+                const result = await this._executeWithTimeout(name, args, isImageGeneration);
                 const executionDuration = Date.now() - executionStartTime;
-                
+
                 Logger.logExecutionResult(name, result, executionDuration);
                 this._validateResult(result, name);
-                
+
                 // Return both result and execution time
                 return {
                     result: result,
@@ -80,17 +86,42 @@ window.FunctionToolsExecutor = (function() {
             }
         },
         
-        async _executeWithTimeout(name, args) {
+        _isImageGenerationFunction(name) {
+            // Check if function name contains patterns indicating image generation
+            const imageGenPatterns = [
+                'image', 'img', 'picture', 'photo',
+                'infer', 'draw', 'render',
+                'flux', 'stable', 'diffusion', 'dalle'
+            ];
+
+            const lowerName = name.toLowerCase();
+            return imageGenPatterns.some(pattern => lowerName.includes(pattern));
+        },
+
+        async _executeWithTimeout(name, args, isImageGeneration = false) {
+            const timeout = isImageGeneration ? CONFIG.IMAGE_GENERATION_TIMEOUT : CONFIG.EXECUTION_TIMEOUT;
+            const timeoutSeconds = timeout / 1000;
+
+            let timeoutId;
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
+                timeoutId = setTimeout(() => {
                     Logger.error("Function execution timed out");
-                    reject(new Error(`Function "${name}" execution timed out after ${CONFIG.EXECUTION_TIMEOUT/1000} seconds`));
-                }, CONFIG.EXECUTION_TIMEOUT);
+                    reject(new Error(`Function "${name}" execution timed out after ${timeoutSeconds} seconds`));
+                }, timeout);
             });
-            
+
             const executionPromise = this._executeDirectly(name, args);
-            
-            return Promise.race([executionPromise, timeoutPromise]);
+
+            try {
+                const result = await Promise.race([executionPromise, timeoutPromise]);
+                // Clear the timeout if execution succeeded
+                clearTimeout(timeoutId);
+                return result;
+            } catch (error) {
+                // Clear the timeout on error too
+                clearTimeout(timeoutId);
+                throw error;
+            }
         },
         
         async _executeDirectly(name, args) {

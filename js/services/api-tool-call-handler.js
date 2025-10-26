@@ -302,7 +302,7 @@ window.ApiToolCallHandler = (function() {
             const encodedResult = encodeURIComponent(result.content);
             const executionTime = result.executionTime || 0;
             const functionResultMarker = `[FUNCTION_RESULT:${result.name}:${resultType}:${encodedResult}:${executionTime}:${result.tool_call_id}]`;
-            
+
             updatedContent += functionResultMarker;
             
             if (onContentUpdate) {

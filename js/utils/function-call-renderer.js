@@ -242,9 +242,38 @@ ${escapeHTML(displayValue)}`;
     function formatResultValue(value, type) {
         try {
             if (type === 'object' || type === 'array') {
+                // Check if this is an image reference (new format - no base64 in result)
+                if (value && value.result && value.result.content && Array.isArray(value.result.content)) {
+                    const imageRef = value.result.content.find(item => item.type === 'image_ref');
+
+                    if (imageRef && imageRef.imageId) {
+                        // Return a marker indicating this is an image
+                        return `🖼️ Image generated`;
+                    }
+                }
+
+                // Legacy: Check if this is an MCP result with image content (old format with base64)
+                if (value && value.content && Array.isArray(value.content)) {
+                    const imageContent = value.content.find(item =>
+                        item.type === 'image' ||
+                        (item.mimeType && item.mimeType.startsWith('image/'))
+                    );
+
+                    if (imageContent && imageContent.data) {
+                        // Return a special marker for image content
+                        return `🖼️ Image (${(imageContent.data.length / 1024).toFixed(0)}KB)`;
+                    }
+
+                    // Check if there's text content to display along with the image
+                    const textContent = value.content.find(item => item.type === 'text');
+                    if (textContent && textContent.text) {
+                        return textContent.text;
+                    }
+                }
+
                 // Pretty-print JSON with proper indentation
                 const formatted = JSON.stringify(value, null, 2);
-                
+
                 // If too long, show first part with better truncation
                 if (formatted.length > 800) {
                     const lines = formatted.split('\n');
@@ -255,7 +284,7 @@ ${escapeHTML(displayValue)}`;
                 }
                 return formatted;
             }
-            
+
             // For primitives, show the value directly
             return String(value);
         } catch (e) {

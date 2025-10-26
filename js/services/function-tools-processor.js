@@ -309,21 +309,111 @@ window.FunctionToolsProcessor = (function() {
             // Ensure we always have a valid content string
             let content;
             if (result === null || result === undefined) {
-                content = JSON.stringify({ 
+                content = JSON.stringify({
                     result: null,
                     status: 'success',
                     message: 'Function executed successfully with no return value'
                 });
             } else {
-                content = JSON.stringify(result);
+                // Check if result contains image data or URL (MCP format)
+                // Handle both formats: result.content (direct MCP) and result.result.content (wrapped)
+                const contentArray = (result && result.content && Array.isArray(result.content))
+                    ? result.content
+                    : (result && result.result && result.result.content && Array.isArray(result.result.content))
+                        ? result.result.content
+                        : null;
+
+                if (contentArray) {
+                    // Look for image content (base64 data or URL)
+                    const imageContent = contentArray.find(item => item.type === 'image');
+                    const textContent = contentArray.find(item => item.type === 'text');
+
+                    // Check if we have an image URL in the text content
+                    let imageUrl = null;
+                    if (textContent && textContent.text) {
+                        // Extract URL from markdown or plain text
+                        const urlMatch = textContent.text.match(/https?:\/\/[^\s\)]+?\.(?:png|jpg|jpeg|gif|webp)/i);
+                        if (urlMatch) {
+                            imageUrl = urlMatch[0];
+                        }
+                    }
+
+                    if (imageContent || imageUrl) {
+                        // Store the image data/URL globally so the UI can access it
+                        if (!window.functionImageData) {
+                            window.functionImageData = {};
+                        }
+
+                        // Clean up old image data to prevent memory bloat (keep last 10)
+                        const imageIds = Object.keys(window.functionImageData);
+                        if (imageIds.length > 10) {
+                            // Remove oldest entries
+                            imageIds.slice(0, imageIds.length - 10).forEach(id => {
+                                delete window.functionImageData[id];
+                            });
+                            Logger.debug(`Cleaned up old image data, kept ${Object.keys(window.functionImageData).length} entries`);
+                        }
+
+                        const imageId = `img_${toolCall.id}_${Date.now()}`;
+
+                        if (imageContent && imageContent.data && imageContent.data.length > 100) {
+                            // Base64 image data
+                            window.functionImageData[imageId] = {
+                                type: 'base64',
+                                data: imageContent.data,
+                                mimeType: imageContent.mimeType || 'image/png',
+                                toolCallId: toolCall.id
+                            };
+                            Logger.debug(`Stored base64 image data with ID: ${imageId}, size: ${imageContent.data.length} bytes`);
+                        } else if (imageUrl) {
+                            // Image URL
+                            window.functionImageData[imageId] = {
+                                type: 'url',
+                                url: imageUrl,
+                                mimeType: 'image/webp', // Assume webp for HF
+                                toolCallId: toolCall.id,
+                                fullText: textContent ? textContent.text : null
+                            };
+                            Logger.debug(`Stored image URL with ID: ${imageId}, url: ${imageUrl}`);
+                        } else {
+                            // No valid image data, fallback to regular JSON
+                            content = JSON.stringify(result);
+                        }
+
+                        if (window.functionImageData[imageId]) {
+                            // Return a reference instead of the full image data/URL
+                            content = JSON.stringify({
+                                success: true,
+                                result: {
+                                    content: [
+                                        {
+                                            type: 'image_ref',
+                                            imageId: imageId,
+                                            message: 'Image generated successfully'
+                                        }
+                                    ]
+                                }
+                            });
+
+                            // Store the full result too for UI rendering
+                            window.functionImageData[imageId].fullResult = result;
+
+                            Logger.debug(`Created image reference for LLM: ${imageId}`);
+                        }
+                    } else {
+                        content = JSON.stringify(result);
+                    }
+                } else {
+                    content = JSON.stringify(result);
+                }
             }
-            
+
             const toolResult = {
                 tool_call_id: toolCall.id,
                 role: "tool",
                 content: content
             };
-            
+
             Logger.debug(`Created tool result for "${name}" (${executionTime}ms):`, toolResult);
             return toolResult;
         },

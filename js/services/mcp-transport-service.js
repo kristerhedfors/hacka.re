@@ -421,14 +421,89 @@ class HttpTransport extends Transport {
             throw new MCPTransportError(`HTTP error! status: ${response.status}`);
         }
 
-        const responseData = await response.json();
-        
+        // Check if the response is SSE (text/event-stream) or JSON
+        const contentType = response.headers.get('content-type') || '';
+        let responseData;
+
+        if (contentType.includes('text/event-stream')) {
+            // Handle SSE response - read all events and combine them
+            console.log('[MCP Transport] Handling SSE response for image generation');
+            responseData = await this._handleSSEResponse(response);
+        } else {
+            // Standard JSON response
+            responseData = await response.json();
+        }
+
         // Simulate the message callback for HTTP responses
         if (this.onMessage) {
             this.onMessage(responseData);
         }
 
         return responseData;
+    }
+
+    async _handleSSEResponse(response) {
+        // Parse Server-Sent Events from the response stream
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let resultData = null;
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    break;
+                }
+
+                buffer += decoder.decode(value, { stream: true });
+
+                // Process complete SSE messages
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+                let currentEvent = null;
+                let currentData = '';
+
+                for (const line of lines) {
+                    if (line.startsWith('event:')) {
+                        currentEvent = line.substring(6).trim();
+                    } else if (line.startsWith('data:')) {
+                        currentData += line.substring(5).trim();
+                    } else if (line === '' && currentData) {
+                        // Empty line signals end of event
+                        try {
+                            const data = JSON.parse(currentData);
+
+                            // Look for the result in the data
+                            if (data.result) {
+                                resultData = data;
+                            } else if (data.content) {
+                                // This might be the final result
+                                resultData = data;
+                            }
+
+                            console.log('[MCP Transport] SSE event:', currentEvent, 'data:', data);
+                        } catch (e) {
+                            console.warn('[MCP Transport] Failed to parse SSE data:', currentData);
+                        }
+
+                        currentData = '';
+                        currentEvent = null;
+                    }
+                }
+            }
+
+            // Return the last result we found
+            if (resultData) {
+                return resultData;
+            }
+
+            throw new MCPTransportError('No result found in SSE stream');
+        } finally {
+            reader.releaseLock();
+        }
     }
 
     close() {
