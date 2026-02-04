@@ -418,6 +418,3 @@ Key areas for contribution:
 - Function execution engine
 - MCP protocol support
 
-## License
-
-MIT License - See LICENSE file for details

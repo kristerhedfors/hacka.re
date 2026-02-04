@@ -423,10 +423,6 @@ This GitHub provider serves as a blueprint for creating other MCP providers. Key
 - `showSharingDialog()` - Display sharing interface
 - `connectToGitHub()` - Connect using saved token
 
-## License
-
-This provider is part of the hacka.re project and follows the same license terms.
-
 ## Contributing
 
 When contributing to this provider:

@@ -2,11 +2,10 @@
 
 <div align="center">
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![Tests](https://img.shields.io/badge/Tests-377+-blue.svg)](_tests/playwright/)
 [![Privacy](https://img.shields.io/badge/Privacy-First-purple.svg)](about/)
 
-*Free, open, för hackare, av hackare*
+*för hackare, av hackare*
 
 </div>
 
@@ -26,7 +25,6 @@
 12. [Performance & Optimization](#performance--optimization)
 13. [Troubleshooting](#troubleshooting)
 14. [Contributing](#contributing)
-15. [License](#license)
 
 ---
 
@@ -42,7 +40,7 @@
 2. **Zero Trust**: All sensitive data is encrypted client-side, no external services trusted
 3. **Zero Dependencies**: Minimal third-party libraries (only essential ones), all hosted locally - no CDN dependencies
 4. **Zero Infrastructure**: Pure static site, no backend servers required other than OpenAI-compatible LLM API
-5. **Transparency**: 100% open source, auditable code
+5. **Transparency**: Auditable code
 6. **No Telemetry**: Zero analytics, tracking, or phone-home functionality
 7. **Direct Communication**: Your browser talks directly to AI provider APIs
 8. **Local Interface**: The UI runs in your browser, AI models run on provider servers (unless using local LLMs)
@@ -1462,23 +1460,11 @@ Select debug information selectively from:
 
 ---
 
-## License
-
-MIT No Attribution
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
----
-
----
-
 <div align="center">
 
 **hacka.re**
 
-*Free, open, för hackare, av hackare*
+*för hackare, av hackare*
 
 [Website](https://hacka.re) | [GitHub](https://github.com/yourusername/hacka.re) 
 

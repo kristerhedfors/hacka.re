@@ -5,11 +5,10 @@ const ReadmePromptContent = `# hacka.re - The Privacy-First AI Chat Interface
 
 <div align="center">
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![Tests](https://img.shields.io/badge/Tests-377+-blue.svg)](_tests/playwright/)
 [![Privacy](https://img.shields.io/badge/Privacy-First-purple.svg)](about/)
 
-*Free, open, för hackare, av hackare*
+*för hackare, av hackare*
 
 </div>
 
@@ -29,7 +28,6 @@ const ReadmePromptContent = `# hacka.re - The Privacy-First AI Chat Interface
 12. [Performance & Optimization](#performance--optimization)
 13. [Troubleshooting](#troubleshooting)
 14. [Contributing](#contributing)
-15. [License](#license)
 
 ---
 
@@ -45,7 +43,7 @@ const ReadmePromptContent = `# hacka.re - The Privacy-First AI Chat Interface
 2. **Zero Trust**: All sensitive data is encrypted client-side, no external services trusted
 3. **Zero Dependencies**: Minimal third-party libraries (only essential ones), all hosted locally - no CDN dependencies
 4. **Zero Infrastructure**: Pure static site, no backend servers required other than OpenAI-compatible LLM API
-5. **Transparency**: 100% open source, auditable code
+5. **Transparency**: Auditable code
 6. **No Telemetry**: Zero analytics, tracking, or phone-home functionality
 7. **Direct Communication**: Your browser talks directly to AI provider APIs
 8. **Local Interface**: The UI runs in your browser, AI models run on provider servers (unless using local LLMs)

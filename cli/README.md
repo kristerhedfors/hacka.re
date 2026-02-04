@@ -607,10 +607,6 @@ The CLI demonstrates that complex web application features can be rapidly reimpl
 - Advanced automation
 - CLI-specific workflows
 
-## License
-
-MIT License - Same as the hacka.re web application
-
 ## Why a CLI?
 
 The hacka.re CLI serves multiple purposes:

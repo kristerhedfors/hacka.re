@@ -11,7 +11,6 @@ hacka.re is a privacy-focused, serverless chat interface for OpenAI-compatible A
 ├── index.html                          # Main application entry point
 ├── CLAUDE.md                          # Project instructions for Claude Code
 ├── README.md                          # Main project documentation
-├── LICENSE                            # MIT License
 ├── CNAME                             # GitHub Pages domain configuration
 └── _config.yml                       # Jekyll configuration
 ```
