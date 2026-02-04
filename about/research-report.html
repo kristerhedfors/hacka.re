@@ -127,7 +127,7 @@
     <div class="app-container" style="max-width: none; width: 100%;">
         <header style="position: relative;">
             <div class="logo">
-                <h1 class="header-title"><a href="../index.html" style="text-decoration: none; color: inherit; font-family: 'Courier New', monospace;">hacka.re</a><span class="header-subtitle">: serverless agency</span><br><span class="header-tagline">Free, open, för hackare, av hackare.</span></h1>
+                <h1 class="header-title"><a href="../index.html" style="text-decoration: none; color: inherit; font-family: 'Courier New', monospace;">hacka.re</a><span class="header-subtitle">: serverless agency</span><br><span class="header-tagline">för hackare, av hackare.</span></h1>
             </div>
         </header>
 
@@ -180,7 +180,7 @@
                 
                 <h4>Minimalistic and Extensible Design</h4>
                 <p>
-                    From a technical standpoint, hacka.re is intentionally lightweight. It uses no front-end framework – just vanilla JavaScript, with a few small libraries for Markdown rendering, encryption, and UI enhancements. This minimalism reduces complexity and may improve performance or security (smaller attack surface). The project's philosophy (it's even "vibe-coded" mostly by an AI co-pilot tool) makes it easy to modify or extend. This is novel in the sense that it demonstrates how far a purely static app can go in implementing features (like streaming API responses, token counters, etc.) that one might assume need backend support. Hacka.re proves that even tool integrations (it has some demonstration of calling tools) can be handled on the client side if the LLM provider supports it. The entire application being open-source (MIT No Attribution) and hackable encourages experimentation.
+                    From a technical standpoint, hacka.re is intentionally lightweight. It uses no front-end framework – just vanilla JavaScript, with a few small libraries for Markdown rendering, encryption, and UI enhancements. This minimalism reduces complexity and may improve performance or security (smaller attack surface). The project's philosophy (it's even "vibe-coded" mostly by an AI co-pilot tool) makes it easy to modify or extend. This is novel in the sense that it demonstrates how far a purely static app can go in implementing features (like streaming API responses, token counters, etc.) that one might assume need backend support. Hacka.re proves that even tool integrations (it has some demonstration of calling tools) can be handled on the client side if the LLM provider supports it. The entire application being hackable encourages experimentation.
                 </p>
                 
                 <p>
@@ -216,7 +216,7 @@
                 
                 <h4>Billing</h4>
                 <p>
-                    Hacka.re itself is free and open-source; there is no billing related to hacka.re usage. However, because it requires an API key for an LLM, the cost model is effectively pay-as-you-go to the chosen LLM provider. This aligns with serverless principles (pay for what you use) but the billing is external – e.g., if using OpenAI's API, the user is billed per token by OpenAI. If using a local backend (like Ollama for local models), then there's no cost per se, aside from running that local service. Hacka.re doesn't introduce any additional billing layer or subscription (unlike some platforms or even ChatGPT Plus subscription). It merely passes your requests to wherever you've pointed it.
+                    Hacka.re itself has no billing related to hacka.re usage. However, because it requires an API key for an LLM, the cost model is effectively pay-as-you-go to the chosen LLM provider. This aligns with serverless principles (pay for what you use) but the billing is external – e.g., if using OpenAI's API, the user is billed per token by OpenAI. If using a local backend (like Ollama for local models), then there's no cost per se, aside from running that local service. Hacka.re doesn't introduce any additional billing layer or subscription (unlike some platforms or even ChatGPT Plus subscription). It merely passes your requests to wherever you've pointed it.
                 </p>
                 
                 <p>
@@ -283,7 +283,7 @@
                     This flexibility means hacka.re can be a unified chat interface for various backends without code changes. Many other platforms require commitment to their ecosystem (e.g., if you build with Vercel's AI SDK, you'll likely use Vercel's hosting for the integration, and switch logic in code for different providers).
                 </p>
                 <p>
-                    It's worth noting, however, that hacka.re currently assumes the API is OpenAI-like (chat completion API). It may not natively support other paradigms (for example, a REST endpoint that returns a slightly different format would require modifying hacka.re's code). But given it's open source, one could extend it to new protocols. This stands in contrast to closed platforms where you cannot easily adapt the integration beyond what's supported.
+                    It's worth noting, however, that hacka.re currently assumes the API is OpenAI-like (chat completion API). It may not natively support other paradigms (for example, a REST endpoint that returns a slightly different format would require modifying hacka.re's code). But one could extend it to new protocols. This stands in contrast to closed platforms where you cannot easily adapt the integration beyond what's supported.
                 </p>
                 
                 <h4>4. Data Control and Privacy</h4>
@@ -335,7 +335,7 @@
                             <td>Pure client-side web app; no backend server. Uses external LLM APIs (OpenAI, etc.). Download and run entirely offline if needed.</td>
                             <td><strong>No server to deploy</strong> – scaling handled by client + API provider. Essentially a static site + browser runtime. No backend infra, aside from the LLM's own servers.</td>
                             <td>API keys & chats stored locally (browser storage). No data sent to any hacka.re server (only to chosen LLM API). Shareable links are end-to-end encrypted.</td>
-                            <td>Encrypted <strong>shareable GPT sessions</strong> (links). Multi-provider support out of the box. Token usage visualization. Entire app is hackable (MIT licensed) and modifiable.</td>
+                            <td>Encrypted <strong>shareable GPT sessions</strong> (links). Multi-provider support out of the box. Token usage visualization. Entire app is hackable and modifiable.</td>
                         </tr>
                         <tr>
                             <td><strong>OpenAI ChatGPT (web UI)</strong></td>
@@ -390,7 +390,7 @@
                 </table>
                 
                 <p>
-                    <strong>Key Differentiator Summary:</strong> Hacka.re's niche is providing a ready-to-use, privacy-first chat interface that does not tie you to any single model provider. It's essentially an open-source alternative to ChatGPT's interface that you control end-to-end. Unlike most platforms listed, hacka.re is not offering to host models or perform inference on your behalf – instead, it assumes you have access to an inference service and focuses on making the interaction and sharing of that interaction seamless and secure. Its unique features like encrypted session sharing set it apart from other open-source UIs, and its lack of a backend sets it apart from typical SaaS offerings.
+                    <strong>Key Differentiator Summary:</strong> Hacka.re's niche is providing a ready-to-use, privacy-first chat interface that does not tie you to any single model provider. It's an alternative to ChatGPT's interface that you control end-to-end. Unlike most platforms listed, hacka.re is not offering to host models or perform inference on your behalf – instead, it assumes you have access to an inference service and focuses on making the interaction and sharing of that interaction seamless and secure. Its unique features like encrypted session sharing set it apart from other chat UIs, and its lack of a backend sets it apart from typical SaaS offerings.
                 </p>
             </div>
 
@@ -427,7 +427,7 @@
                 </p>
                 
                 <p>
-                    In conclusion, hacka.re's "serverless agency" is a fresh take on deploying AI assistants. It embraces the ethos "for hackers, by hackers" – giving power users a toolkit to run and share GPT instances freely, with minimal overhead. Its success will likely depend on how the community adopts it and possibly extends it (since it's open source) to support more models and features. But it undeniably pushes forward the idea that serverless in AI can mean not just serverless inference, but also serverless interfaces and collaboration.
+                    In conclusion, hacka.re's "serverless agency" is a fresh take on deploying AI assistants. It embraces the ethos "for hackers, by hackers" – giving power users a toolkit to run and share GPT instances with minimal overhead. Its success will likely depend on how the community adopts it and possibly extends it to support more models and features. But it undeniably pushes forward the idea that serverless in AI can mean not just serverless inference, but also serverless interfaces and collaboration.
                 </p>
                 
                 <p>

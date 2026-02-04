@@ -682,10 +682,4 @@ hacka.re incorporates security awareness from the OWASP Top 10 for Large Languag
 
 ---
 
-## License
-
-MIT License - See project repository for full license text.
-
----
-
 *This documentation covers hacka.re as a privacy-focused, serverless chat interface for AI models. All features described are implemented and tested. For the most current information, refer to the project repository.*
