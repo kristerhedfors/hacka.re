@@ -1,0 +1,1544 @@
+<html lang="en" class="theme-modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hacka.re - Chat with AI Models</title>
+    <meta name="description" content="A simple chat interface for OpenAI-compatible APIs">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/mobile-unified.css">
+    <link rel="stylesheet" href="css/copy-code.css">
+    <link rel="stylesheet" href="css/default-prompts.css">
+    <link rel="stylesheet" href="css/function-calling-header-only.css">
+    <link rel="stylesheet" href="css/function-indicators-simple.css">
+    <link rel="stylesheet" href="css/default-functions.css">
+    <link rel="stylesheet" href="css/function-calling-modal.css">
+    <link rel="stylesheet" href="css/function-details-modal.css">
+    <link rel="stylesheet" href="css/function-execute-modal.css">
+    <link rel="stylesheet" href="css/rag-modal.css">
+    <link rel="stylesheet" href="css/checkbox-fix.css">
+    <link rel="stylesheet" href="css/horizontal-scroll-fix.css">
+    <link rel="stylesheet" href="css/message-scrollbar-fix.css">
+    <link rel="stylesheet" href="css/modal-width-fix.css">
+    <!-- Font Awesome for icons (local) -->
+    <link rel="stylesheet" href="lib/font-awesome/all.min.css">
+    <!-- Markdown parser (local) -->
+    <script src="lib/marked/marked.min.js"></script>
+    <script src="lib/dompurify/purify.min.js"></script>
+    <!-- TweetNaCl for encryption (local) -->
+    <script src="lib/tweetnacl/nacl-fast.min.js"></script>
+    <script src="lib/tweetnacl/nacl-util.min.js"></script>
+    <!-- QRCode.js for QR code generation (local) -->
+    <script src="lib/qrcode/qrcode.min.js"></script>
+    <!-- Highlight.js for syntax highlighting (local) -->
+    <link rel="stylesheet" href="lib/highlight.js/github.min.css">
+    <script src="lib/highlight.js/highlight.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="settings">
+                <button id="heart-btn" class="icon-btn">
+                    <span class="heart-logo">
+                        <svg width="24" height="24" viewBox="0 0 24 24" style="display: inline-block; vertical-align: middle;">
+                            <!-- Hat crown (rounded top) -->
+                            <ellipse cx="12" cy="10" rx="7" ry="5.5" fill="currentColor"/>
+                            <!-- Hat brim (oval) -->
+                            <ellipse cx="12" cy="15" rx="11" ry="3.5" fill="currentColor"/>
+                            <!-- Depth line following brim contour -->
+                            <path d="M 1 12 Q 12 15.5 23 12" stroke="var(--primary-color)" stroke-width="1.5" fill="none" opacity="0.7"/>
+                        </svg>
+                        <!-- SVG fallback for Firefox Focus -->
+                        <svg class="firefox-focus-fallback" width="16" height="6" viewBox="0 0 16 6" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3; display: none;">
+                            <circle cx="3" cy="3" r="1.5" fill="#22CC22" />
+                            <circle cx="8" cy="3" r="1.5" fill="#22CC22" />
+                            <circle cx="13" cy="3" r="1.5" fill="#22CC22" />
+                        </svg>
+                        <div class="typing-dots"></div>
+                        <div class="tooltip tree-menu">
+                            <div class="tree-content">
+                                <div class="logo-line hacka-re-font">hacka.re: serverless agency</div>
+                                <div class="logo-line">│</div>
+                                <div class="logo-line"><span class="tree-toggle" data-target="documentation">├─[+] Documentation</span></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/index.html" class="tree-link" target="_blank" rel="noopener noreferrer">About</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/philosophy.html" class="tree-link" target="_blank" rel="noopener noreferrer">Philosophy</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/development.html" class="tree-link" target="_blank" rel="noopener noreferrer">Development</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/architecture.html" class="tree-link" target="_blank" rel="noopener noreferrer">Architecture</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/local-llm-toolbox.html" class="tree-link" target="_blank" rel="noopener noreferrer">Local LLM Toolbox</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  ├─ <a href="about/research-report.html" class="tree-link" target="_blank" rel="noopener noreferrer">Research Report</a></div>
+                                <div class="logo-line documentation-item" style="display: none;">│  └─ <a href="about/disclaimer.html" class="tree-link" target="_blank" rel="noopener noreferrer">Disclaimer</a></div>
+                                <!-- Agents feature hidden from menu but functionality preserved for future use -->
+                                <!-- <div class="logo-line">├─ <span class="feature-link" data-feature="agents">Agents</span></div> -->
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="mcp-servers">Model Context Protocol</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="function-calling">Function Calling</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="rag">Knowledge Base</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="system-prompts">System Prompts</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="share">Share Configuration</span></div>
+                                <div class="logo-line">├─ <span class="feature-link" data-feature="theme">Theme Toggle</span></div>
+                                <div class="logo-line">└─ <span class="feature-link" data-feature="settings">Settings</span></div>
+                            </div>
+                        </div>
+                    </span>
+                </button>
+                <!-- Agent configuration button hidden from UI but functionality preserved for future use
+                     Agent configurations can still be saved/loaded programmatically via AgentManager 
+                <button id="agent-config-btn" class="icon-btn">
+                    <i class="fas fa-robot"></i>
+                </button>
+                -->
+                <button id="mcp-servers-btn" class="icon-btn">
+                    <span class="mcp-icon">MCP</span>
+                </button>
+                <button id="function-btn" class="icon-btn">
+                    <span class="function-icon">𝑓</span>
+                </button>
+                <button id="rag-btn" class="icon-btn">
+                    <span class="rag-icon">RAG</span>
+                </button>
+                <button id="prompts-btn" class="icon-btn">
+                    <i class="fas fa-list-alt"></i>
+                </button>
+                <button id="share-btn" class="icon-btn">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                <button id="theme-toggle-btn" class="icon-btn">
+                    <i class="fas fa-paint-brush"></i>
+                </button>
+                <button id="settings-btn" class="icon-btn">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+            <span class="beta-tag header-beta">BETA</span>
+            <div class="model-info">
+                <div class="model-name-display"></div>
+                <div class="model-stats">
+                    <span class="model-context"></span>
+                    <span class="context-usage">
+                        <div class="usage-bar">
+                            <div class="usage-fill" style="width: 0%"></div>
+                        </div>
+                        <span class="usage-text">0%</span>
+                    </span>
+                    <span class="token-speed">
+                        <span class="token-speed-text">0 t/s</span>
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <div id="api-key-modal" class="modal">
+            <div class="modal-content">
+                <h2>Enter your LLM API Key</h2>
+                <p>Your API key is stored locally in your browser and never sent to any server other than your configured OpenAI-compatible LLM API provider.</p>
+                <form id="api-key-form">
+                    <div class="form-group">
+                        <label for="api-key">LLM API Key</label>
+                        <input type="password" id="api-key" placeholder="Enter your LLM API key" required>
+                        <div id="api-key-detection" class="api-key-detection" style="display: none; margin-top: 5px; font-size: 0.9em; color: var(--text-color-secondary);">
+                            <i class="fas fa-check-circle" style="color: #28a745; margin-right: 5px;"></i>
+                            <span id="api-key-detection-text"></span>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary-btn">Save API Key</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="share-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>Share Link</h2>
+                    <span class="info-icon" id="share-link-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>Share Link Limits</strong>: Practical limits for shared links vary by platform and usage.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Browser Limits</strong>: Browser URL limit ~2000 bytes (may vary by browser). QR code limit ~1500 bytes for reliable scanning.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Platform Recommendations</strong>: Mobile devices: Keep under 1000 bytes for best compatibility. Email sharing: Under 2000 bytes to avoid truncation. SMS/messaging: Under 500 bytes recommended.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Link Length Bar</strong>: The link length bar below shows the estimated size relative to browser limits.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <form id="share-form">
+                    <div class="form-group">
+                        <label>What to share</label>
+                        <div class="link-length-container">
+                            <div class="link-length-label">
+                                Estimated link length: <span id="link-length-text">0</span> bytes
+                                <span id="link-length-warning" class="link-length-warning">Exceeds recommended limit</span>
+                            </div>
+                            <div class="link-length-bar">
+                                <div class="link-length-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="share-options">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-base-url">
+                                <label for="share-base-url">Base URL</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-api-key" checked>
+                                <label for="share-api-key">API key</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-model">
+                                <label for="share-model">Active model</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-prompt-library">
+                                <label for="share-prompt-library">Prompt library</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-function-library">
+                                <label for="share-function-library">Function library</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-mcp-connections">
+                                <label for="share-mcp-connections">MCP Connections</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-theme">
+                                <label for="share-theme">Theme</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-rag-settings">
+                                <label for="share-rag-settings">RAG Settings</label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-conversation">
+                                <label for="share-conversation">Conversation data</label>
+                            </div>
+                            
+                            <div class="message-history-container">
+                                <label for="message-history-count">Messages to include:</label>
+                                <input type="number" id="message-history-count" value="1" min="1" disabled>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="share-welcome-message-checkbox">
+                                <label for="share-welcome-message-checkbox">Welcome message</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="branding-options" style="margin-left: 24px;">
+                            <div class="input-group">
+                                <textarea id="share-welcome-message" 
+                                          placeholder="Welcome to hacka.re! Start a conversation with AI models."
+                                          rows="3"
+                                          style="font-family: inherit; resize: vertical; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; opacity: 0.5;"
+                                          disabled></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Password/Session Key Section - Always visible -->
+                <div class="form-group">
+                    <div class="settings-header">
+                        <h3>Password / Session Key</h3>
+                        <span class="info-icon" id="share-password-info-icon">
+                            <i class="fas fa-info-circle"></i>
+                            <div class="tooltip">
+                                <div class="tooltip-content">
+                                    <div class="important-notice">
+                                        <p><strong>Password / Session Key</strong>: A password/session key is used to encrypt shared links and local data. There are no accounts or login functions - hacka.re is a static client-side application with no server component.</p>
+                                    </div>
+                                    <div class="important-notice">
+                                        <p><strong>Privacy</strong>: Your API keys and data never leave your browser except when communicating directly with your chosen LLM provider. The encrypted data in shared links is processed entirely in the browser and never reaches any server.</p>
+                                    </div>
+                                    <div class="important-notice">
+                                        <p><strong>Security</strong>: All data stored in your browser's localStorage is also encrypted using this key. The security of your data relies entirely on the strength of this password/session key.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
+                    <label for="share-password" class="sr-only">Password/session key for encryption</label>
+                    <div class="password-input-container">
+                        <input type="password" id="share-password" placeholder="Password/session key for encryption">
+                        <button type="button" class="icon-btn" id="regenerate-password" title="Generate strong password/session key">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button type="button" class="icon-btn" id="toggle-password-visibility" title="Show/hide password/session key">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button type="button" class="icon-btn" id="copy-password" title="Copy password/session key">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Generate Link button moved below password section -->
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="button" class="btn primary-btn" id="generate-share-link-btn">Generate Link</button>
+                </div>
+                
+                <div id="generated-link-container" style="display: none;">
+                    <h3>Your Shareable Link</h3>
+                    <div class="link-display">
+                        <input type="text" id="generated-link" readonly>
+                        <button type="button" class="btn icon-btn" id="copy-generated-link" title="Copy to clipboard">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button type="button" class="btn icon-btn" id="print-share-link" title="Print share link with QR code">
+                            <i class="fas fa-print"></i>
+                        </button>
+                    </div>
+                    <div id="share-qr-code-container" style="margin-top: 15px; text-align: center;"></div>
+                    <div id="qr-code-warning" style="display: none; margin-top: 10px; color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 5px;"></div>
+                    <div id="share-print-info" style="display: none; margin-top: 10px; padding: 10px; background-color: #f0f8ff; border-radius: 5px; text-align: center; font-size: 0.9em; color: #333;">
+                        Self-contained encrypted link - scan QR or copy URL to share configuration
+                    </div>
+                </div>
+                
+                <!-- Cancel button always at the bottom -->
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="button" class="btn secondary-btn" id="close-share-modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Prompt Viewer Modal -->
+        <div id="system-prompt-viewer-modal" class="modal">
+            <div class="modal-content" style="max-width: 800px; max-height: 80vh;">
+                <div class="settings-header">
+                    <h2>System Prompt Viewer</h2>
+                    <button type="button" class="btn icon-btn" id="copy-system-prompt-viewer-btn" title="Copy system prompt to clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button type="button" class="tab-btn active" data-tab="raw">Raw Markdown</button>
+                        <button type="button" class="tab-btn" data-tab="rendered">Rendered</button>
+                    </div>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="raw-tab">
+                            <div class="scrollable-content">
+                                <pre id="raw-system-prompt" class="code-block"></pre>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane" id="rendered-tab">
+                            <div class="scrollable-content">
+                                <div id="rendered-system-prompt" class="markdown-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="agent-config-modal" class="modal">
+            <div class="modal-content">
+                <span class="experimental-tag">EXPERIMENTAL</span>
+                <div class="settings-header">
+                    <h2>Agent Management</h2>
+                    <span class="info-icon" id="agent-modal-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>Agent Management</strong>: Save and manage your hacka.re configurations as reusable agents.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Save Current</strong>: Save your current API settings, prompts, functions, and MCP connections as a named agent.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Load Agent</strong>: Apply a saved agent's configuration to quickly switch contexts.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                
+                <!-- Orchestration Section -->
+                <div class="agent-orchestration-section compact">
+                    <div class="orchestration-header">
+                        <span class="orchestration-label">🎭 Orchestration</span>
+                        <select id="orchestration-mode" class="orchestration-select" disabled onchange="window.aiHackare.handleOrchestrationChange(this.value)">
+                            <option value="none">Independent</option>
+                            <option value="auto">Auto-coordinate</option>
+                            <option value="manual">Manual</option>
+                        </select>
+                    </div>
+                    <div class="orchestration-status">
+                        <span id="orchestration-status-text" class="status-inactive">Enable 2+ agents to activate</span>
+                    </div>
+                </div>
+                
+                <!-- Quick Save Section -->
+                <div class="agent-quick-save-section">
+                    <h3>💾 Save Current Configuration</h3>
+                    <p class="form-help">Quickly save your current settings as a named agent</p>
+                    <div class="quick-save-form">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <div style="display: flex; gap: 0.75rem; align-items: end;">
+                                <div style="flex: 1;">
+                                    <label for="quick-agent-name">Agent Name</label>
+                                    <input type="text" id="quick-agent-name" placeholder="Enter agent name" class="quick-save-input">
+                                </div>
+                                <button type="button" id="quick-save-agent" class="btn primary-btn">Save Current</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Saved Agents Section -->
+                <div class="agent-items-section">
+                    <h3>🤖 Saved Agents</h3>
+                    <p class="form-help">Your saved agent configurations</p>
+                    <div id="saved-agents-list" class="agent-items-grid">
+                        <!-- Saved agents will be populated here by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Saved Agents Section -->
+                <div class="agent-items-section">
+                    <div class="agent-items-grid">
+                        <!-- Saved agents will be dynamically populated here -->
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="close-agent-config-modal" class="btn secondary-btn">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="prompts-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>System Prompt Menu</h2>
+                    <button type="button" id="show-system-prompt-btn" class="icon-btn" title="Show system prompt">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="prompts-container single-column">
+                    <h3>System prompt components</h3>
+                    <p class="form-help">Check the boxes for the prompts to include in system prompt</p>
+                    <div id="prompts-list">
+                        <!-- Prompts will be populated here -->
+                    </div>
+                    <div class="form-actions" style="margin-top: 15px;">
+                        <button type="button" id="close-prompts-modal" class="btn secondary-btn">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="function-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>Function Calling</h2>
+                    <span class="info-icon" id="function-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>Function Calling</strong>: Create JavaScript functions that can be called by AI models through the OpenAI-compatible API. (The underlying API mechanism is known as Tool Calling in OpenAI's architecture.)</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>JavaScript Functions</strong>: Define functions with parameters that the AI can call to perform actions or retrieve information.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Function Tagging</strong>: By default, all functions are callable. If any function is tagged with <code>@callable</code> or <code>@tool</code>, then only tagged functions will be callable.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Privacy</strong>: Functions are stored locally in your browser. No data is sent to external servers unless your function explicitly does so.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <div class="function-calling-container">
+                    <div class="function-list-section">
+                        <h3>Available Functions</h3>
+                        <p class="form-help">Check the boxes for the functions you want to enable for function calling (also known as tool calling or tool use).</p>
+                        <div id="function-list">
+                            <!-- Functions will be populated here -->
+                            <div class="empty-function-state" id="empty-function-state">
+                                <p>No functions defined. Create a function below.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="function-editor">
+                        <div class="function-editor-header">
+                            <h4 class="function-editor-title">Function Library</h4>
+                        </div>
+                        <form id="function-editor-form">
+                            <div class="form-group" style="display: none;">
+                                <label for="function-collection-name">Function collection name</label>
+                                <input type="text" id="function-collection-name" class="function-collection-name-input" placeholder="Enter a name for this collection">
+                            </div>
+                            <div class="form-group" style="display: none;">
+                                <label for="function-name">Function Name</label>
+                                <input type="text" id="function-name" class="function-name-input" placeholder="Enter a name for this function">
+                            </div>
+                            <div class="form-group">
+                                <label for="function-code">JavaScript Functions</label>
+                                <p class="form-help">Define multiple functions in one editor. By default, all functions are callable. If any function is tagged with <code>@callable</code> or <code>@tool</code> (at the beginning of a line or in JSDoc), then only tagged functions will be callable.</p>
+                                <div style="position: relative;">
+                                    <textarea id="function-code" class="function-code-editor" placeholder="/**
+ * Helper function that formats data (not exposed to LLM)
+ * @param {Object} data - The data to format
+ * @returns {string} Formatted data
+ */
+function formatData(data) {
+  return JSON.stringify(data, null, 2);
+}
+
+/**
+ * Gets the current time in Berlin
+ * @description Fetches the current time for Berlin timezone
+ * @returns {Object} Current time information
+ * @tool This function will be exposed to the LLM
+ */
+async function getCurrentTimeInBerlin() {
+  try {
+    const response = await fetch('https://worldtimeapi.org/api/timezone/Europe/Berlin');
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    const data = await response.json();
+    return {
+      time: data.datetime,
+      formatted: formatData(data)
+    };
+  } catch (error) {
+    return { error: error.message };
+  }
+}" required tabindex="2" style="height: 300px;"></textarea>
+                                    <button type="button" id="copy-function-code-btn" class="icon-btn" title="Copy function code" style="position: absolute; top: 8px; right: 8px; font-size: 12px; padding: 4px 6px; z-index: 10;">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div id="function-validation-result" class="function-validation-result">
+                                    Validation result will appear here
+                                </div>
+                                <div class="form-actions" style="margin-top: 10px; margin-bottom: 15px;">
+                                    <button type="submit" class="btn primary-btn" tabindex="3">Save</button>
+                                    <button type="button" id="function-execute-btn" class="btn execute-btn" tabindex="4" title="Test function execution">Run</button>
+                                    <button type="button" id="function-validate-btn" class="btn secondary-btn" tabindex="5">Validate</button>
+                                    <button type="button" id="function-clear-btn" class="btn secondary-btn" tabindex="6">Example</button>
+                                </div>
+                                <div class="form-actions" style="margin-bottom: 15px;">
+                                    <button type="button" id="copy-tool-definitions-btn" class="btn secondary-btn" tabindex="7" title="Copy tool definitions to clipboard">
+                                        Copy tool-definitions to clipboard <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="close-function-modal" class="btn secondary-btn" tabindex="6">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="function-details-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2 id="function-details-title">Function Call Details</h2>
+                </div>
+                <div class="function-details-container">
+                    <div class="function-details-section">
+                        <h3 id="function-details-function-name">Function Name</h3>
+                        <div class="function-details-content">
+                            <div class="function-details-group" id="function-details-parameters-group">
+                                <h4>Parameters</h4>
+                                <div class="function-details-value">
+                                    <pre id="function-details-parameters"></pre>
+                                    <button type="button" class="copy-btn" id="copy-parameters-btn" title="Copy parameters">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="function-details-group" id="function-details-result-group" style="display: none;">
+                                <h4>Result</h4>
+                                <div class="function-details-meta">
+                                    <span class="function-details-type">Type: <span id="function-details-result-type"></span></span>
+                                    <span class="function-details-time">Time: <span id="function-details-execution-time"></span></span>
+                                </div>
+                                <div class="function-details-value">
+                                    <pre id="function-details-result-value"></pre>
+                                    <button type="button" class="copy-btn" id="copy-result-btn" title="Copy result">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="close-function-details-modal" class="btn secondary-btn">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="function-execute-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2 id="function-execute-title">Execute Function</h2>
+                </div>
+                <div class="function-execute-container">
+                    <div class="function-execute-section">
+                        <div class="function-execute-function-info">
+                            <label for="function-execute-function-select" class="function-execute-label">Select Function:</label>
+                            <select id="function-execute-function-select" class="function-execute-function-select">
+                                <option value="">Loading functions...</option>
+                            </select>
+                            <div id="function-execute-function-description" class="function-execute-description"></div>
+                        </div>
+                        
+                        <div id="function-execute-parameters-section" class="function-execute-parameters">
+                            <h4>Parameters</h4>
+                            <div id="function-execute-parameters-container">
+                                <!-- Parameter inputs will be dynamically generated here -->
+                            </div>
+                        </div>
+                        
+                        <div class="function-execute-actions">
+                            <button type="button" id="function-execute-run-btn" class="btn execute-btn">
+                                <i id="function-execute-run-icon" class="fas fa-play"></i>
+                                <span id="function-execute-run-text">Execute</span>
+                            </button>
+                            <div id="function-execute-timing" class="function-execute-timing"></div>
+                        </div>
+                        
+                        <div id="function-execute-output-section" class="function-execute-output" style="display: none;">
+                            <div class="function-execute-output-header">
+                                <h4>Output</h4>
+                                <div class="function-execute-output-controls">
+                                    <button type="button" id="function-execute-output-toggle" class="btn secondary-btn small-btn">JSON</button>
+                                    <button type="button" class="copy-btn" id="function-execute-copy-output-btn" title="Copy output">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="function-execute-output-value">
+                                <pre id="function-execute-output-content"></pre>
+                            </div>
+                        </div>
+                        
+                        <div id="function-execute-error-section" class="function-execute-error" style="display: none;">
+                            <h4>Error</h4>
+                            <div class="function-execute-error-content">
+                                <pre id="function-execute-error-message"></pre>
+                                <button type="button" class="copy-btn" id="function-execute-copy-error-btn" title="Copy error">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="close-function-execute-modal" class="btn secondary-btn">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="mcp-servers-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>MCP Servers</h2>
+                    <span class="info-icon" id="mcp-servers-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>What is MCP?</strong>: Model Context Protocol (MCP) is an open standard for connecting AI models to external tools and data sources. It enables AI assistants to interact with local services, APIs, and databases through a standardized protocol.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>Built-in Servers</strong>: hacka.re includes MCP servers for GitHub, Gmail, and Shodan as proof-of-concept examples. These servers are not thoroughly tested but serve to demonstrate how hacka.re's architecture can be extended with external integrations.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                
+                <!-- Quick Connectors Section (outside expandables) -->
+                <div id="mcp-quick-connectors-placeholder">
+                    <!-- Quick connectors will be inserted here by JavaScript -->
+                </div>
+                
+                <!-- Advanced Section (Expandable) -->
+                <div class="mcp-advanced-section">
+                    <div class="mcp-advanced-header">
+                        <i class="fas fa-chevron-right"></i>
+                        <h4>Advanced</h4>
+                    </div>
+                    <div class="mcp-advanced-list" style="display: none;">
+                        <!-- Share Link MCP built-in tool -->
+                        <div id="mcp-share-link-section" class="mcp-built-in-tool">
+                            <div class="mcp-tool-header">
+                                <h4><i class="fas fa-share-alt"></i> Share Link MCP</h4>
+                                <button id="mcp-share-link-enable" class="btn btn-sm btn-primary">Enable</button>
+                            </div>
+                            <div class="mcp-tool-description">
+                                <p>Built-in MCP tool for creating secure share links with selected content.</p>
+                                <ul class="mcp-tool-features">
+                                    <li>Check available content (API keys, conversations, settings)</li>
+                                    <li>Generate secure encrypted share links</li>
+                                    <li>Create QR codes for easy sharing</li>
+                                    <li>Full control over what to include in shared links</li>
+                                </ul>
+                                <div id="mcp-share-link-status" class="mcp-tool-status" style="display: none;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Introspection MCP built-in tool -->
+                        <div id="mcp-introspection-section" class="mcp-built-in-tool">
+                            <div class="mcp-tool-header">
+                                <h4><i class="fas fa-code"></i> Introspection</h4>
+                                <button id="mcp-introspection-enable" class="btn btn-sm btn-primary">Enable</button>
+                            </div>
+                            <div class="mcp-tool-description">
+                                <p>Built-in MCP tool for exploring hacka.re source code and architecture.</p>
+                                <ul class="mcp-tool-features">
+                                    <li>Read source files via HTTP requests</li>
+                                    <li>Find class and function definitions</li>
+                                    <li>Search for code patterns</li>
+                                    <li>Understand component relationships</li>
+                                </ul>
+                                <div id="mcp-introspection-status" class="mcp-tool-status" style="display: none;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Proxy connection UI will be inserted here by JavaScript -->
+                        <div id="mcp-proxy-section-placeholder"></div>
+                        
+                        <div class="mcp-server-config">
+                            <div class="mcp-server-config-header">
+                                <h4>Add MCP Server</h4>
+                            </div>
+                            <form id="mcp-server-form" novalidate>
+                                <div class="form-group">
+                                    <label for="mcp-server-name">Server Name</label>
+                                    <input type="text" id="mcp-server-name" placeholder="Enter MCP server name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mcp-transport-type">Transport Type</label>
+                                    <select id="mcp-transport-type" class="mcp-select">
+                                        <option value="stdio">Stdio (Local via Proxy)</option>
+                                        <option value="sse">SSE (HTTP)</option>
+                                        <option value="oauth">OAuth (HTTP with OAuth 2.0)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group transport-stdio transport-oauth" style="display: none;">
+                                    <label for="mcp-server-command">Command</label>
+                                    <input type="text" id="mcp-server-command" placeholder="e.g., npx @modelcontextprotocol/server-filesystem">
+                                </div>
+                                <div class="form-group transport-sse transport-oauth" style="display: none;">
+                                    <label for="mcp-server-url">Server URL</label>
+                                    <input type="url" id="mcp-server-url" placeholder="Enter MCP server URL">
+                                </div>
+                                <div class="form-group">
+                                    <label for="mcp-server-description">Description (Optional)</label>
+                                    <textarea id="mcp-server-description" placeholder="Brief description of this MCP server" rows="2"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn primary-btn">Connect Server</button>
+                                    <button type="button" id="mcp-oauth-config-btn" class="btn secondary-btn transport-oauth" style="display: none;">Configure OAuth</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="mcp-command-history-section">
+                            <h3>Command History</h3>
+                            <p class="form-help">Previously executed MCP server commands. Click to start again.</p>
+                            <div id="mcp-command-history">
+                                <div class="empty-history-state" id="empty-history-state">
+                                    <p>No command history yet. Start a server to build your history.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mcp-oauth-section" id="mcp-oauth-section" style="display: none;">
+                            <!-- OAuth configuration will be inserted here by JavaScript -->
+                        </div>
+                        
+                        <div class="mcp-oauth-status-section" id="mcp-oauth-status-section" style="display: none;">
+                            <!-- OAuth status will be inserted here by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="close-mcp-servers-modal" class="btn secondary-btn">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="rag-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>Knowledge Base</h2>
+                    <span class="info-icon" id="rag-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice">
+                                    <p><strong>What is RAG?</strong>: Retrieval-Augmented Generation (RAG) enhances AI responses by searching through a knowledge base to find relevant context. It combines the power of semantic search with language models to provide more accurate and contextual answers.</p>
+                                </div>
+                                <div class="important-notice">
+                                    <p><strong>How it Works</strong>: hacka.re includes pre-generated embeddings for three example EU regulatory documents. To use this index, you need an OpenAI API key since the same embedding model must be used for queries as was used to generate the index. When enabled, RAG automatically searches these documents to include relevant regulatory context in AI responses.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                
+                <!-- RAG Enable/Disable Section -->
+                <div class="rag-section rag-enable-section">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="rag-enabled-checkbox">
+                            <span class="checkmark"></span>
+                            <strong>Enable RAG (Retrieval-Augmented Generation)</strong>
+                        </label>
+                        <p class="form-help" id="rag-help-text">When enabled, chat responses will be enhanced with relevant context from your indexed knowledge base.</p>
+                        <p class="form-help" id="rag-disabled-message" style="display: none; color: #f0ad4e;">
+                            <strong>⚠️ RAG is only available with OpenAI provider</strong><br>
+                            OpenAI provides the embeddings API required for vector search. Please switch to OpenAI in Settings to use RAG.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- EU Regulatory Documents Section -->
+                <div class="rag-section">
+                    <h3>📜 EU Regulatory Documents</h3>
+                    <p class="form-help">Pre-configured regulatory documents for testing RAG capabilities. Configure chunking parameters and refresh embeddings as needed.</p>
+                    
+                    <!-- AIA Document -->
+                    <div class="rag-document-item" data-doc-id="aia">
+                        <div class="rag-document-info">
+                            <input type="checkbox" id="rag-doc-aia" checked>
+                            <label for="rag-doc-aia">
+                                <div class="rag-document-title">AIA</div>
+                                <div class="rag-document-subtitle">EU's AI Act</div>
+                                <span class="rag-document-status" id="aia-status">Not indexed</span>
+                            </label>
+                        </div>
+                        <div class="rag-document-actions">
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.viewDocument('aia')" title="View indexed document">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.refreshDocument('aia')" title="Refresh embeddings">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.openDocumentSettings('aia')" title="Settings">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- CRA Document -->
+                    <div class="rag-document-item" data-doc-id="cra">
+                        <div class="rag-document-info">
+                            <input type="checkbox" id="rag-doc-cra" checked>
+                            <label for="rag-doc-cra">
+                                <div class="rag-document-title">CRA</div>
+                                <div class="rag-document-subtitle">EU's Cyber Resilience Act</div>
+                                <span class="rag-document-status" id="cra-status">Not indexed</span>
+                            </label>
+                        </div>
+                        <div class="rag-document-actions">
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.viewDocument('cra')" title="View indexed document">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.refreshDocument('cra')" title="Refresh embeddings">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.openDocumentSettings('cra')" title="Settings">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- DORA Document -->
+                    <div class="rag-document-item" data-doc-id="dora">
+                        <div class="rag-document-info">
+                            <input type="checkbox" id="rag-doc-dora" checked>
+                            <label for="rag-doc-dora">
+                                <div class="rag-document-title">DORA</div>
+                                <div class="rag-document-subtitle">EU's Digital Operational Resilience Act</div>
+                                <span class="rag-document-status" id="dora-status">Not indexed</span>
+                            </label>
+                        </div>
+                        <div class="rag-document-actions">
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.viewDocument('dora')" title="View indexed document">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.refreshDocument('dora')" title="Refresh embeddings">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="btn icon-btn" onclick="RAGManager.openDocumentSettings('dora')" title="Settings">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Advanced Section (Collapsible) -->
+                <div class="rag-section">
+                    <div class="rag-advanced-header" onclick="RAGManager.toggleAdvanced()">
+                        <i class="fas fa-chevron-right rag-advanced-toggle" id="rag-advanced-toggle"></i>
+                        <h3>Advanced</h3>
+                    </div>
+                    <div class="rag-advanced-content" id="rag-advanced-content" style="display: none;">
+                        <!-- Context Settings Section -->
+                        <div class="rag-subsection">
+                            <h4>Context Settings</h4>
+                            <div class="form-group">
+                                <label for="rag-token-limit">Maximum Context Tokens</label>
+                                <input type="number" id="rag-token-limit" min="500" max="50000" value="5000" step="500" class="form-control">
+                                <p class="form-help">Number of tokens to include in context. The system will select the best matching chunks up to this limit, automatically including gap-filling chunks for coherence.</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="rag-multi-query-enabled">
+                                    <input type="checkbox" id="rag-multi-query-enabled" checked>
+                                    Enable Multi-Query Search
+                                </label>
+                                <p class="form-help">Automatically derive multiple search terms from your question for better results.</p>
+                            </div>
+                            
+                            <div class="form-group" id="rag-expansion-model-group">
+                                <label for="rag-expansion-model">Query Expansion Model</label>
+                                <select id="rag-expansion-model" class="form-control">
+                                    <!-- Options will be populated dynamically based on current provider -->
+                                </select>
+                                <p class="form-help">Model used to derive search terms from your question.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search Interface -->
+                <div class="rag-section">
+                    <h3>🔍 Search Knowledge Base</h3>
+                    <div class="rag-search-container">
+                        <div class="form-group">
+                            <label for="rag-search-input">Search Query</label>
+                            <input type="text" id="rag-search-input" placeholder="Enter search query..." />
+                        </div>
+                        <div class="form-group">
+                            <label for="rag-search-limit">Max Results</label>
+                            <select id="rag-search-limit">
+                                <option value="3">3 results</option>
+                                <option value="5" selected>5 results</option>
+                                <option value="10">10 results</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" id="rag-search-btn" class="btn primary-btn" disabled>
+                                Search
+                            </button>
+                            <button type="button" id="rag-clear-search-btn" class="btn secondary-btn">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="rag-search-results" class="rag-search-results" style="display: none;">
+                        <!-- Search results will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="close-rag-modal" class="btn secondary-btn">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RAG Document Settings Modal -->
+        <div id="rag-document-settings-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="rag-settings-title">Document Settings</h2>
+                    <button type="button" class="close-btn" onclick="RAGManager.closeDocumentSettings()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rag-settings-doc-id" value="">
+                    
+                    <div class="form-group">
+                        <label for="rag-chunk-size">Chunk Size (tokens)</label>
+                        <input type="number" id="rag-chunk-size" min="100" max="2000" value="512" step="50">
+                        <p class="form-help">Number of tokens per chunk. Tokens are approximated as characters/4.</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rag-chunk-overlap">Chunk Overlap (%)</label>
+                        <input type="number" id="rag-chunk-overlap" min="0" max="50" value="10" step="5">
+                        <p class="form-help">Percentage of overlap between consecutive chunks.</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rag-embedding-model">Embedding Model</label>
+                        <select id="rag-embedding-model">
+                            <option value="text-embedding-3-small" selected>text-embedding-3-small</option>
+                            <option value="text-embedding-3-large">text-embedding-3-large</option>
+                            <option value="text-embedding-ada-002">text-embedding-ada-002</option>
+                        </select>
+                        <p class="form-help">OpenAI embedding model to use for vector generation.</p>
+                    </div>
+                    
+                    <div class="rag-settings-info">
+                        <div class="info-item">
+                            <span class="info-label">Current Chunks:</span>
+                            <span id="rag-settings-chunk-count">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Indexed:</span>
+                            <span id="rag-settings-last-indexed">Never</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" onclick="RAGManager.closeDocumentSettings()">Cancel</button>
+                    <button type="button" class="btn primary-btn" onclick="RAGManager.saveDocumentSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RAG Document Viewer Modal -->
+        <div id="rag-document-viewer-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="rag-viewer-title">Document Viewer</h2>
+                    <button type="button" class="close-btn" onclick="RAGManager.closeDocumentViewer()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="rag-viewer-info">
+                        <div class="rag-viewer-stats">
+                            <span>Chunks: <strong id="rag-viewer-chunks">0</strong></span>
+                            <span>Chunk Size: <strong id="rag-viewer-chunk-size">512 tokens</strong></span>
+                            <span>Overlap: <strong id="rag-viewer-overlap">10%</strong></span>
+                        </div>
+                        <div class="rag-viewer-legend">
+                            <span class="legend-item">
+                                <span class="chunk-overlap-example"></span>
+                                Overlap regions (between chunks)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="rag-document-content" id="rag-document-content">
+                        <!-- Document content with chunk boundaries will be rendered here -->
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" onclick="RAGManager.closeDocumentViewer()">Close</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Model selection modal with live search -->
+        <div id="model-selection-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Select Model</h2>
+                    <button type="button" class="close-btn" id="close-model-selection-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="model-selection-body">
+                    <div class="model-search-container">
+                        <input type="text" id="model-search-input" class="model-search-input" placeholder="Type to search models..." autocomplete="off">
+                    </div>
+                    <div id="model-list-container" class="model-list-container">
+                        <div class="loading-models">Loading models...</div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" id="model-selection-cancel">Cancel</button>
+                    <button type="button" class="btn primary-btn" id="model-selection-select">Select Model</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prompt library selection modal with live search -->
+        <div id="prompt-library-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Select Prompt</h2>
+                    <button type="button" class="close-btn" id="close-prompt-library-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="model-selection-body">
+                    <div class="model-search-container">
+                        <input type="text" id="prompt-library-search-input" class="model-search-input" placeholder="Type to search prompts..." autocomplete="off">
+                    </div>
+                    <div id="prompt-library-list-container" class="model-list-container">
+                        <div class="loading-models">Loading prompts...</div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary-btn" id="prompt-library-cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="modal">
+            <div class="modal-content">
+                <div class="settings-header">
+                    <h2>Settings</h2>
+                    <span class="info-icon" id="settings-info-icon">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="tooltip">
+                            <div class="tooltip-content">
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                                    <p><strong><span style="font-family: 'Courier New', monospace;">hacka.re</span></strong>: Privacy-focused chat client that stores API keys, conversations, and settings locally in your browser.</p>
+                                </div>
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                                    <p><strong>Features</strong>: Serverless, offline-capable. Create encrypted, password-protected GPTs with custom prompts.</p>
+                                </div>
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+                                    <p><strong>Get started</strong>: Configure with base URL (OpenAI-compatible) and API key.</p>
+                                </div>
+                                <div class="important-notice" style="background-color: var(--system-msg-bg); border-left: 4px solid var(--accent-color); padding: 10px; margin-bottom: 0; border-radius: 8px;">
+                                    <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><i class="fas fa-magic"></i> <strong>Vibe-Coded</strong> with Claude Sonnet | <a href="about/index.html" target="_blank" rel="noopener noreferrer">About</a> | <a href="about/development.html" target="_blank" rel="noopener noreferrer">Development</a> | <a href="about/disclaimer.html" target="_blank" rel="noopener noreferrer">Disclaimer</a> | <a href="../app/" target="_blank" rel="noopener noreferrer">Next hacka.re</a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label for="base-url-select">API Provider</label>
+                        <select id="base-url-select">
+                            <option value="openai">🇺🇸 OpenAI (api.openai.com/v1)</option>
+                            <option value="berget">🇸🇪 Berget.AI (api.berget.ai/v1)</option>
+                            <option value="groq">🇸🇦 Groq Cloud (api.groq.com/openai/v1)</option>
+                            <option value="ollama">Ollama (localhost:11434/v1)</option>
+                            <option value="llamafile">Llamafile (localhost:8080/v1)</option>
+                            <option value="gpt4all">GPT4All (localhost:4891/v1)</option>
+                            <option value="lmstudio">LM Studio (localhost:1234/v1)</option>
+                            <option value="localai">LocalAI (localhost:8080/v1)</option>
+                            <option value="custom">User-defined</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="custom-base-url-group" style="display: none;">
+                        <label for="base-url">Custom Base URL</label>
+                        <input type="text" id="base-url" placeholder="Enter custom API base URL">
+                    </div>
+                    <div class="form-group">
+                        <label for="api-key-update">API Key</label>
+                        <input type="password" id="api-key-update" name="api-key-update" placeholder="Update your API key" aria-label="API Key Input">
+                        <div id="api-key-update-detection" class="api-key-detection" style="display: none; margin-top: 5px; font-size: 0.9em; color: var(--text-color-secondary);">
+                            <i class="fas fa-check-circle" style="color: #28a745; margin-right: 5px;"></i>
+                            <span id="api-key-update-detection-text"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="model-select">Model</label>
+                        <div style="display: flex; align-items: center;">
+                            <select id="model-select" style="flex-grow: 1;"></select>
+                            <button type="button" id="model-reload-btn" class="icon-btn" title="Reload models from API" style="margin-left: 8px;">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>System Prompt</label>
+            <div class="form-help">
+                The system prompt is composed of the checked prompts in the prompt library of the <a href="#" id="open-prompts-config" class="function-library-link">System Prompt Menu</a>.
+            </div>
+                        <div id="system-prompt-preview" style="background-color: var(--bg-color-secondary); padding: 10px; border-radius: 5px; max-height: 100px; overflow-y: auto; display: none;">
+                            <p style="margin: 0; font-style: italic; color: var(--text-color-secondary);">Current system prompt preview</p>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <a href="#" id="clear-all-settings" class="function-library-link" style="margin-right: auto;">Delete current namespace and settings</a>
+                        <button type="button" class="btn secondary-btn" id="close-settings" name="close-settings" aria-label="Close Button">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <main>
+            <div id="chat-container">
+                <div id="chat-header">
+                    <button id="copy-chat-btn" class="icon-btn chat-action-btn">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div id="chat-messages">
+                    <div class="message system">
+                        <div class="message-content">
+                            <p>Welcome to <span style="font-family: 'Courier New', monospace;">hacka.re</span>! Start a conversation with AI models.</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="chat-input-container">
+                    <div class="input-with-actions">
+                        <button id="clear-chat-btn" class="icon-btn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button id="prompt-library-btn" class="icon-btn" style="display: none;">
+                            <i class="fas fa-book"></i>
+                        </button>
+                        <form id="chat-form">
+                            <div id="message-input-wrapper" class="message-input-wrapper">
+                                <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
+                            </div>
+                            <button type="submit" id="send-btn" class="icon-btn" name="send-message-button" aria-label="Send Message Button">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/utils/performance-logger.js"></script>
+    <script src="js/utils/confirm-dialog.js"></script>
+    <script src="js/utils/crypto-utils.js"></script>
+    <script src="js/utils/compression-utils.js"></script>
+    <script src="js/utils/accurate-size-calculator.js"></script>
+    <script src="js/utils/model-compatibility.js"></script>
+    
+    <!-- Configuration -->
+    <script src="js/config/default-models.js"></script>
+    
+    <!-- CRITICAL: Shared link detection must run before ANY namespace operations -->
+    <script>
+    (function() {
+        // Early shared link detection - must run before namespace service loads
+        const hash = window.location.hash;
+        if (!hash || (!hash.includes('#gpt=') && !hash.includes('#shared='))) {
+            return; // No shared link
+        }
+        
+        console.log('[CRITICAL] Shared link detected - blocking namespace creation until password provided');
+        
+        // Check if we already have the session key
+        let encryptedData = null;
+        if (hash.includes('#gpt=')) {
+            encryptedData = hash.split('#gpt=')[1];
+        } else if (hash.includes('#shared=')) {
+            encryptedData = hash.split('#shared=')[1];
+        }
+        
+        if (encryptedData && window.CryptoUtils) {
+            const linkHash = window.CryptoUtils.hashString(encryptedData);
+            const storageKey = `__hacka_re_session_key_${linkHash.substring(0, 16)}`;
+            const existingKey = sessionStorage.getItem(storageKey);
+            
+            if (existingKey) {
+                console.log('[CRITICAL] Found existing session key - no password prompt needed');
+                return;
+            }
+        }
+        
+        // We need to prompt for password - set flag IMMEDIATELY
+        window._waitingForSharedLinkPassword = true;
+        console.log('[CRITICAL] Set _waitingForSharedLinkPassword = true');
+        
+        // Store the encrypted data for later use
+        window._sharedLinkEncryptedData = encryptedData;
+    })();
+    </script>
+    
+    <script src="js/utils/rc4-utils.js"></script>
+    <script src="js/services/models-dev-data.js"></script>
+    <script src="js/services/model-info.js"></script>
+    <script src="js/services/encryption-service.js"></script>
+    <script src="js/services/storage-type-service.js"></script>
+    <script src="js/services/namespace-service.js"></script>
+    <script src="js/services/core-storage-service.js"></script>
+    <script src="js/services/data-service.js"></script>
+    <script src="js/services/storage-service.js"></script>
+    <script src="js/services/cross-tab-sync-service.js"></script>
+    <script src="js/services/context-usage-service.js"></script>
+    <script src="js/services/system-prompt-coordinator.js"></script>
+    <script src="js/services/debug-service.js"></script>
+    <script src="js/utils/debug-code-tooltip.js"></script>
+    <!-- API Service Components (refactored) -->
+    <script src="js/services/api-debugger.js"></script>
+    <script src="js/services/api-response-parser.js"></script>
+    <script src="js/services/api-request-builder.js"></script>
+    <script src="js/services/api-stream-processor.js"></script>
+    <script src="js/services/api-tool-call-handler.js"></script>
+    <script src="js/services/model-cache.js"></script>
+    <script src="js/services/api-service.js"></script>
+    <script src="js/services/api-tools-service.js"></script>
+    <!-- Function Tools System (refactored into multiple modules) -->
+    <script src="js/services/function-tools-config.js"></script>
+    <script src="js/services/function-tools-logger.js"></script>
+    <script src="js/services/function-tools-storage.js"></script>
+    <script src="js/services/function-tools-parser.js"></script>
+    <script src="js/services/function-tools-executor.js"></script>
+    <script src="js/services/function-tools-registry.js"></script>
+    <script src="js/services/function-tools-processor.js"></script>
+    <script src="js/services/function-tools-service.js"></script>
+    <!-- MCP Service Components (refactored) -->
+    <script src="js/services/mcp-metadata-discovery.js"></script>
+    <script src="js/services/mcp-client-registration.js"></script>
+    <script src="js/services/mcp-oauth-service.js"></script>
+    <script src="js/services/mcp-transport-service.js"></script>
+    <script src="js/services/mcp-request-manager.js"></script>
+    <script src="js/services/mcp-provider-interface.js"></script>
+    <script src="js/services/mcp-auth-strategies.js?v=20250723-1945-github-auth-fix"></script>
+    <script src="js/services/mcp-provider-factory.js"></script>
+    <script src="js/services/mcp-tool-registry.js"></script>
+    <!-- GitHub Provider (modular structure - file:// compatible) -->
+    <script src="js/providers/github/github-auth.js?v=20250723-1945-github-auth-fix"></script>
+    <script src="js/providers/github/github-tools.js?v=20250723-1945-github-auth-fix"></script>
+    <script src="js/providers/github/github-provider.js"></script>
+    <script src="js/providers/github/github-ui.js?v=20250723-1945-github-auth-fix"></script>
+    <script src="js/providers/github/index.js"></script>
+    <script src="js/providers/github/github-provider-loader.js"></script>
+    <script src="js/services/mcp-connection-manager.js"></script>
+    <script src="js/services/mcp-client-core.js"></script>
+    <!-- New refactored MCP service architecture -->
+    <script src="js/services/mcp-base-service-connector.js"></script>
+    <script src="js/services/mcp-oauth-connector.js"></script>
+    <script src="js/services/mcp-github-connector.js"></script>
+    <script src="js/services/mcp-shodan-connector.js"></script>
+<script src="js/services/mcp-huggingface-connector.js"></script>
+    <script src="js/services/mcp-service-manager.js"></script>
+    <script src="js/services/mcp-service-ui-helper.js"></script>
+    <!-- Orchestration Services -->
+    <script src="js/services/orchestration-mcp-server.js"></script>
+    <script src="js/services/orchestration-agent-service.js"></script>
+<script src="js/services/link-sharing-service.js"></script>
+    <script src="js/services/share-service.js"></script>
+    <!-- Agent Services -->
+    <script src="js/services/configuration-service.js"></script>
+    <script src="js/services/agent-context-manager.js"></script>
+  <script src="js/services/agent-service.js"></script>
+    <script src="js/services/agent-cache.js"></script>
+    <script src="js/services/agent-orchestrator.js"></script>
+    <script src="js/services/agent-interface.js"></script>
+    <script src="js/services/agent-loader.js"></script>
+    <!-- Share Components -->
+    <script src="js/components/share/mcp-connections-share-item.js"></script>
+    <!-- Default prompts -->
+    <script src="js/default-prompts/hacka-re-project.js"></script>
+    <script src="js/default-prompts/function-calling.js"></script>
+    <script src="js/default-prompts/owasp-llm-top10.js"></script>
+    <script src="js/default-prompts/llm-security-literacy.js"></script>
+    <script src="js/default-prompts/advanced-section.js"></script>
+    <script src="js/default-prompts/function-library.js"></script>
+    <script src="js/default-prompts/agent-orchestration.js"></script>
+    <script src="js/default-prompts/api-auth-libsodium.js"></script>
+    <script src="js/default-prompts/openai-proxies-python.js"></script>
+    <script src="js/default-prompts/mcp-sdk-readme.js"></script>
+
+    <script src="js/default-prompts/code-section.js"></script>
+    <script src="js/default-prompts/huggingface-integration-guide.js"></script>
+
+
+    <script src="js/default-prompts/github-integration-guide.js"></script>
+    <script src="js/default-prompts/shodan-integration-guide.js"></script>
+    <script src="js/default-prompts/share-link-mcp-guide.js"></script>
+    <script src="js/default-prompts/introspection-mcp-guide.js"></script>
+    <!-- Agent Examples Section -->
+    <script src="js/default-prompts/agent-examples-section.js"></script>
+    <script src="js/default-prompts/agent-planning-specialist.js"></script>
+    <script src="js/default-prompts/agent-research-specialist.js"></script>
+    <script src="js/default-prompts/agent-coding-specialist.js"></script>
+    <script src="js/default-prompts/agent-testing-specialist.js"></script>
+    <script src="js/default-prompts/agent-documentation-specialist.js"></script>
+    <script src="js/default-prompts/agent-security-analyst.js"></script>
+    <script src="js/default-prompts/agent-data-analyst.js"></script>
+    <script src="js/default-prompts/agent-project-manager.js"></script>
+    <!-- OpenAI Prompt Packs - loaded for standalone Prompt Library, NOT included in Default Prompts -->
+    <script src="js/default-prompts/openai-prompt-packs-section.js"></script>
+    <script src="js/services/default-prompts-service.js"></script>
+    <!-- Default functions -->
+    <script src="js/default-functions/rc4-encryption.js"></script>
+    <script src="js/default-functions/math-utilities.js"></script>
+    <script src="js/default-functions/mcp-example.js"></script>
+    <script src="js/default-functions/api-auth-client.js"></script>
+    <script src="js/services/default-functions-service.js"></script>
+    <script src="js/services/prompts-service.js"></script>
+    <script src="js/services/model-country-mapping.js"></script>
+    <script src="js/services/settings-info-modal-service.js"></script>
+    <!-- RAG Services -->
+    <script src="js/services/rag-storage-service.js"></script>
+    <script src="js/services/rag-indexing-service.js"></script>
+    <script src="js/services/vector-rag-service.js"></script>
+    <script src="js/services/rag-query-expansion-service.js"></script>
+    <!-- UI Utilities (modular) -->
+    <!-- <script src="js/utils/function-icon-fix.js"></script> -->
+    <script src="js/utils/function-call-renderer.js"></script>
+    <script src="js/utils/function-markers.js"></script>
+    <script src="js/utils/smart-tooltip-positioner.js"></script>
+    <script src="js/utils/clipboard-utils.js"></script>
+    <script src="js/utils/context-utils.js"></script>
+    <!-- <script src="js/utils/tooltip-utils.js"></script> -->
+    <script src="js/utils/ui-utils.js"></script>
+    <script src="js/utils/mcp-size-estimator-global.js"></script>
+    <!-- Component modules -->
+    <script src="js/components/dom-elements.js"></script>
+    <!-- UI sub-components -->
+    <script src="js/components/ui/modal-manager.js"></script>
+    <script src="js/components/ui/context-usage-display.js"></script>
+    <script src="js/components/ui/model-info-display.js"></script>
+    <script src="js/components/ui/model-selection-manager.js"></script>
+    <script src="js/components/ui/prompt-library-selector.js"></script>
+    <script src="js/components/ui/share-ui-manager.js"></script>
+    <script src="js/components/ui/ui-coordinator.js"></script>
+    <!-- Legacy UI manager wrapper -->
+    <script src="js/components/ui-manager.js"></script>
+    <!-- Agent Management Components -->
+    <script src="js/components/agent-manager.js"></script>
+    <!-- Function Calling Components -->
+    <script src="js/components/function-calling/function-modal-manager.js"></script>
+    <script src="js/components/function-calling/function-details-modal.js"></script>
+    <script src="js/components/function-calling/function-details-tabbed-modal.js"></script>
+    <script src="js/components/function-calling/function-execute-modal.js"></script>
+    <script src="js/components/function-execution-modal.js"></script>
+    <script src="js/components/function-approval-memory-modal.js"></script>
+    <script src="js/components/function-calling/mcp-server-manager.js"></script>
+    <script src="js/components/function-calling/function-list-renderer.js"></script>
+    <!-- Modular function editor components (load in dependency order) -->
+    <script src="js/components/function-calling/function-parser.js"></script>
+    <script src="js/components/function-calling/function-validator.js"></script>
+    <script src="js/components/function-calling/function-code-editor.js"></script>
+    <script src="js/components/function-calling/function-library-manager.js"></script>
+    <script src="js/components/function-calling/function-executor.js"></script>
+    <script src="js/components/function-calling/function-editor-manager.js"></script>
+    <script src="js/components/function-calling/function-copy-manager.js"></script>
+    <script src="js/components/function-calling/default-functions-manager.js"></script>
+    <script src="js/components/function-calling-manager.js"></script>
+    <!-- MCP Components (refactored into multiple modules) -->
+    <script src="js/components/mcp/mcp-utils.js"></script>
+    <script src="js/components/mcp/mcp-modal-renderer.js"></script>
+    <script src="js/services/mcp-share-link-service.js"></script>
+    <script src="js/components/mcp/mcp-share-link-ui.js"></script>
+    <script src="js/services/mcp-introspection-service.js"></script>
+    <script src="js/components/mcp/mcp-introspection-ui.js"></script>
+    <script src="js/components/mcp/mcp-ui-manager.js"></script>
+    <script src="js/components/mcp/mcp-proxy-manager.js"></script>
+    <script src="js/components/mcp/mcp-command-history.js"></script>
+    <script src="js/components/mcp/mcp-tools-manager.js"></script>
+    <script src="js/components/mcp/mcp-server-manager.js"></script>
+    <script src="js/components/mcp/mcp-oauth-config.js"></script>
+    <script src="js/components/mcp/mcp-oauth-flow.js"></script>
+    <script src="js/components/mcp/mcp-oauth-integration.js"></script>
+    <script src="js/components/mcp/mcp-quick-connectors.js"></script>
+    <script src="js/components/mcp-manager.js"></script>
+    <!-- Chat Services -->
+    <script src="js/services/chat-tools-service.js"></script>
+    <script src="js/services/chat-streaming-service.js"></script>
+    <script src="js/services/chat-ui-service.js"></script>
+    <script src="js/components/chat-manager.js"></script>
+    <!-- Settings Manager Components -->
+    <script src="js/utils/api-key-detector.js"></script>
+    <script src="js/components/settings/api-key-manager.js"></script>
+    <script src="js/components/settings/api-key-input-handler.js"></script>
+    <script src="js/components/settings/model-manager.js"></script>
+    <script src="js/components/settings/system-prompt-manager.js"></script>
+    <script src="js/components/settings/yolo-mode-manager.js"></script>
+    <script src="js/components/settings/prompt-library-icon-manager.js"></script>
+    <script src="js/components/settings/debug-manager.js"></script>
+    <script src="js/components/settings/voice-control-manager.js"></script>
+    <script src="js/components/settings/base-url-manager.js"></script>
+    <script src="js/components/settings/title-subtitle-manager.js"></script>
+    <script src="js/components/settings/welcome-manager.js"></script>
+    <script src="js/components/settings/shared-link-modal-manager.js"></script>
+    <script src="js/components/settings/shared-link-data-processor.js"></script>
+    <script src="js/components/settings/shared-link-manager.js"></script>
+    <script src="js/components/settings/tool-calling-manager.js"></script>
+    <!-- Settings Manager Modular Components (load before main settings-manager.js) -->
+    <script src="js/components/settings/settings-coordinator.js"></script>
+    <script src="js/components/settings/settings-state-manager.js"></script>
+    <script src="js/components/settings/settings-initialization.js"></script>
+    <script src="js/components/settings/settings-manager.js"></script>
+    <script src="js/components/share-manager.js"></script>
+    <script src="js/components/api-tools-manager.js"></script>
+    <script src="js/components/prompts-modal-renderer.js"></script>
+    <script src="js/components/prompts-event-handlers.js"></script>
+    <!-- Prompts Manager Modular Components (load before main prompts-manager.js) -->
+    <script src="js/components/prompts/prompts-token-manager.js"></script>
+    <script src="js/components/prompts/prompts-list-manager.js"></script>
+    <script src="js/components/prompts-manager.js"></script>
+    <!-- RAG Components -->
+    <!-- EU Regulation Data (must load before rag-regulations-service.js) -->
+    <script src="js/data/regulations/eu-regulation-ai-act.js"></script>
+    <script src="js/data/regulations/eu-regulation-dora.js"></script>
+    <script src="js/data/regulations/eu-regulation-cra.js"></script>
+    <!-- Pre-cached embeddings for RAG (production) -->
+    <script src="js/data/precached-embeddings.js"></script>
+    <script src="js/services/rag-regulations-service.js"></script>
+    <script src="js/components/rag/rag-user-bundles.js"></script>
+    <!-- RAG Components (modular architecture) -->
+    <script src="js/components/rag/rag-modal-manager.js"></script>
+    <script src="js/components/rag/rag-search-manager.js"></script>
+    <script src="js/components/rag/rag-index-stats-manager.js"></script>
+    <script src="js/components/rag/rag-file-knowledge-manager.js"></script>
+    <script src="js/components/rag/rag-user-bundles-manager.js"></script>
+    <script src="js/components/rag/rag-coordinator.js"></script>
+    <script src="js/components/ai-hackare.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/themes.js"></script>
+    <script src="js/copy-code.js"></script>
+    <script src="js/logo-animation.js"></script>
+    <script src="js/ascii-tree-menu.js"></script>
+    <!-- <script src="js/logo-tooltip-modal.js"></script> -->
+    <script src="js/settings-tooltip.js"></script>
+    <script src="js/function-tooltip.js"></script>
+    <!-- <script src="js/default-functions-tooltip.js"></script> -->
+    <script src="js/link-sharing-tooltip.js"></script>
+    <script src="js/button-tooltips.js"></script>
+    <script src="js/mobile-utils.js"></script>
+    <script src="js/utils/mobile-viewport-fix.js"></script>
+    <script src="js/utils/mobile-layout-handler.js"></script>
+    <script src="js/modal-effects.js"></script>
+    <script>
+        // Initialize highlight.js when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof hljs !== 'undefined') {
+                // Configure highlight.js
+                hljs.configure({
+                    ignoreUnescapedHTML: true
+                });
+                
+                // Highlight any existing code blocks
+                hljs.highlightAll();
+                
+                console.log('Highlight.js initialized successfully');
+            } else {
+                console.warn('Highlight.js not loaded');
+            }
+        });
+    </script>
+</body>
+</html>
