@@ -54,6 +54,7 @@ describe("App shell", () => {
 
   it("updates settings and persists them", async () => {
     const user = userEvent.setup();
+    vi.spyOn(window, "fetch").mockRejectedValue(new Error("offline"));
     render(<App />);
 
     await user.click(screen.getAllByRole("button", { name: /settings/i })[0]);
@@ -80,6 +81,7 @@ describe("App shell", () => {
       expect(saved.settings.customBaseUrl).toContain("https://proxy.example/v1");
       expect(saved.settings.apiKey).toContain("sk-live-example");
       expect(saved.settings.model).toBe("gpt-4o");
+      expect(saved.version).toBe(3);
     });
 
     expect(document.documentElement.dataset.theme).toBe("signal");
@@ -103,10 +105,63 @@ describe("App shell", () => {
 
     await waitFor(() => {
       const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}");
-      expect(saved.version).toBe(2);
+      expect(saved.version).toBe(3);
       expect(saved.prompts.customPrompts).toHaveLength(1);
       expect(saved.prompts.selectedCustomPromptIds).toContain(saved.prompts.customPrompts[0].id);
     });
+  });
+
+  it("auto-detects the provider from the API key and exposes the prompts shortcut", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.spyOn(window, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [{ id: "moonshotai/kimi-k2-instruct" }, { id: "llama-3.3-70b-versatile" }],
+      }),
+    } as Response);
+
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /settings/i }));
+    await user.type(screen.getByLabelText(/api key/i), "gsk_12345678901234567890123456789012");
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/api provider/i)).toHaveValue("groq");
+    });
+
+    expect(screen.getByText(/GroqCloud API key detected and auto-selected/i)).toBeVisible();
+    expect(screen.getByRole("button", { name: /open system prompt configuration/i })).toBeVisible();
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://api.groq.com/openai/v1/models",
+        expect.objectContaining({
+          method: "GET",
+        }),
+      );
+    });
+  });
+
+  it("reloads the available model list on demand", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.spyOn(window, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [{ id: "gpt-5" }, { id: "gpt-4.1-mini" }],
+      }),
+    } as Response);
+
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /settings/i }));
+    await user.type(screen.getByLabelText(/api key/i), "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890ABCDE");
+    await user.click(screen.getByRole("button", { name: /reload models/i }));
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(0);
+    });
+
+    expect(screen.getByRole("option", { name: "gpt-4.1-mini" })).toBeVisible();
   });
 
   it("includes the composed system prompt in chat requests", async () => {

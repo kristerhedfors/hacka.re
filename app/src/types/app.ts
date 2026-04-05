@@ -1,5 +1,5 @@
 export type ThemeName = "terminal" | "paper" | "signal";
-export type ProviderId = "openai" | "groq" | "ollama" | "custom";
+export type ProviderId = "openai" | "groq" | "berget" | "ollama" | "custom";
 
 export type ModalId =
   | "settings"
@@ -25,6 +25,15 @@ export interface SettingsState {
   model: string;
 }
 
+export interface SettingsRuntimeState {
+  availableModels: string[];
+  isRefreshingModels: boolean;
+  modelRefreshError: string | null;
+  lastModelRefreshAt: string | null;
+  apiKeyDetection: string | null;
+  modelRefreshNonce: number;
+}
+
 export interface PromptDraft {
   id: string;
   name: string;
@@ -48,6 +57,7 @@ export interface AppState {
   tokenSpeed: string;
   messages: ChatMessage[];
   settings: SettingsState;
+  settingsRuntime: SettingsRuntimeState;
   prompts: PromptState;
 }
 
@@ -59,6 +69,10 @@ export type AppAction =
   | { type: "cycleTheme" }
   | { type: "setTheme"; theme: ThemeName }
   | { type: "patchSettings"; value: Partial<SettingsState> }
+  | { type: "setAvailableModels"; models: string[]; lastUpdatedAt: string | null }
+  | { type: "setModelRefreshState"; isRefreshing: boolean; errorMessage: string | null }
+  | { type: "setApiKeyDetection"; value: string | null }
+  | { type: "requestModelRefresh" }
   | { type: "toggleDefaultPrompt"; id: string }
   | { type: "toggleCustomPrompt"; id: string }
   | { type: "saveCustomPrompt"; prompt: PromptDraft }

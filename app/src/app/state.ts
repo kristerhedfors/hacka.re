@@ -35,6 +35,14 @@ export const initialAppState: AppState = {
     apiKey: "",
     model: "gpt-5",
   },
+  settingsRuntime: {
+    availableModels: ["gpt-5", "gpt-5-nano", "gpt-5-mini", "gpt-4o", "o4-mini"],
+    isRefreshingModels: false,
+    modelRefreshError: null,
+    lastModelRefreshAt: null,
+    apiKeyDetection: null,
+    modelRefreshNonce: 0,
+  },
   prompts: createEmptyPromptState(),
 };
 
@@ -53,6 +61,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         settings: {
           ...state.settings,
           ...action.state.settings,
+        },
+        settingsRuntime: {
+          ...state.settingsRuntime,
+          ...action.state.settingsRuntime,
         },
         prompts: normalizePromptState({
           ...state.prompts,
@@ -102,6 +114,40 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         modelContext: getModelContextLabel(nextSettings.model),
       };
     }
+    case "setAvailableModels":
+      return {
+        ...state,
+        settingsRuntime: {
+          ...state.settingsRuntime,
+          availableModels: action.models,
+          lastModelRefreshAt: action.lastUpdatedAt,
+        },
+      };
+    case "setModelRefreshState":
+      return {
+        ...state,
+        settingsRuntime: {
+          ...state.settingsRuntime,
+          isRefreshingModels: action.isRefreshing,
+          modelRefreshError: action.errorMessage,
+        },
+      };
+    case "setApiKeyDetection":
+      return {
+        ...state,
+        settingsRuntime: {
+          ...state.settingsRuntime,
+          apiKeyDetection: action.value,
+        },
+      };
+    case "requestModelRefresh":
+      return {
+        ...state,
+        settingsRuntime: {
+          ...state.settingsRuntime,
+          modelRefreshNonce: state.settingsRuntime.modelRefreshNonce + 1,
+        },
+      };
     case "toggleDefaultPrompt": {
       const selected = new Set(state.prompts.selectedDefaultPromptIds);
       if (selected.has(action.id)) {

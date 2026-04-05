@@ -1,5 +1,11 @@
 import { getModelContextLabel } from "../config/models";
-import type { AppState, ProviderId, SettingsState, ThemeName } from "../types/app";
+import type {
+  AppState,
+  ProviderId,
+  SettingsRuntimeState,
+  SettingsState,
+  ThemeName,
+} from "../types/app";
 import { createEmptyPromptState, isPromptState, normalizePromptState } from "../features/prompts/library";
 
 const STORAGE_KEY = "hackare_next_shell_v1";
@@ -17,12 +23,26 @@ interface PersistedAppStateV2 {
   prompts: AppState["prompts"];
 }
 
+interface PersistedAppStateV3 {
+  version: 3;
+  theme: ThemeName;
+  settings: SettingsState;
+  settingsRuntime: Pick<SettingsRuntimeState, "availableModels" | "lastModelRefreshAt">;
+  prompts: AppState["prompts"];
+}
+
 function isThemeName(value: unknown): value is ThemeName {
   return value === "terminal" || value === "paper" || value === "signal";
 }
 
 function isProviderId(value: unknown): value is ProviderId {
-  return value === "openai" || value === "groq" || value === "ollama" || value === "custom";
+  return (
+    value === "openai" ||
+    value === "groq" ||
+    value === "berget" ||
+    value === "ollama" ||
+    value === "custom"
+  );
 }
 
 function isSettingsState(value: unknown): value is SettingsState {
@@ -37,6 +57,19 @@ function isSettingsState(value: unknown): value is SettingsState {
     typeof settings.customBaseUrl === "string" &&
     typeof settings.apiKey === "string" &&
     typeof settings.model === "string"
+  );
+}
+
+function isSettingsRuntimeState(value: unknown): value is PersistedAppStateV3["settingsRuntime"] {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const runtime = value as Record<string, unknown>;
+  return (
+    Array.isArray(runtime.availableModels) &&
+    runtime.availableModels.every((model) => typeof model === "string") &&
+    (typeof runtime.lastModelRefreshAt === "string" || runtime.lastModelRefreshAt === null)
   );
 }
 
@@ -62,13 +95,26 @@ export function loadPersistedAppState(): Partial<AppState> | null {
         ? normalizePromptState(parsed.prompts)
         : createEmptyPromptState();
 
-    if (parsed.version !== 1 && parsed.version !== 2) {
+    if (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3) {
       return null;
     }
+
+    const settingsRuntime =
+      parsed.version === 3 && isSettingsRuntimeState(parsed.settingsRuntime)
+        ? {
+            availableModels: parsed.settingsRuntime.availableModels,
+            isRefreshingModels: false,
+            modelRefreshError: null,
+            lastModelRefreshAt: parsed.settingsRuntime.lastModelRefreshAt,
+            apiKeyDetection: null,
+            modelRefreshNonce: 0,
+          }
+        : undefined;
 
     return {
       theme: parsed.theme,
       settings: parsed.settings,
+      settingsRuntime,
       modelContext: getModelContextLabel(parsed.settings.model),
       prompts,
     };
@@ -82,10 +128,14 @@ export function savePersistedAppState(state: AppState): void {
     return;
   }
 
-  const payload: PersistedAppStateV2 = {
-    version: 2,
+  const payload: PersistedAppStateV3 = {
+    version: 3,
     theme: state.theme,
     settings: state.settings,
+    settingsRuntime: {
+      availableModels: state.settingsRuntime.availableModels,
+      lastModelRefreshAt: state.settingsRuntime.lastModelRefreshAt,
+    },
     prompts: normalizePromptState(state.prompts),
   };
 
