@@ -1,4 +1,5 @@
 import type { Dispatch } from "react";
+import { McpModal } from "../features/mcp/McpModal";
 import { PromptsModal } from "../features/prompts/PromptsModal";
 import { SettingsModal } from "../features/settings/SettingsModal";
 import type { AppAction, AppState, ModalId } from "../types/app";
@@ -11,18 +12,9 @@ interface ModalLayerProps {
 }
 
 const modalContent: Record<
-  Exclude<ModalId, "prompts">,
+  Exclude<ModalId, "prompts" | "settings" | "mcp">,
   { title: string; body: string; checkpoints: string[] }
 > = {
-  settings: {
-    title: "Settings",
-    body: "This slot owns provider selection, API key storage, base URL management, model selection, and theme persistence.",
-    checkpoints: [
-      "Typed settings state and storage schema",
-      "Provider/base URL controls",
-      "Immediate local persistence",
-    ],
-  },
   share: {
     title: "Share Configuration",
     body: "Encrypted share-link generation and legacy-compatible payload handling still need to be ported from the original app.",
@@ -39,15 +31,6 @@ const modalContent: Record<
       "Function schema and registry",
       "Editor and list views",
       "Execution pipeline integration",
-    ],
-  },
-  mcp: {
-    title: "Model Context Protocol",
-    body: "MCP connection management, OAuth flows, and tool exposure into chat are not yet ported.",
-    checkpoints: [
-      "Connection model and storage",
-      "OAuth and registration adapters",
-      "Tool registry bridge",
     ],
   },
   rag: {
@@ -67,11 +50,17 @@ export function ModalLayer({ activeModal, state, dispatch, onClose }: ModalLayer
   }
 
   const modal =
-    activeModal === "prompts" || activeModal === "settings"
+    activeModal === "prompts" || activeModal === "settings" || activeModal === "mcp"
       ? null
-      : modalContent[activeModal as Exclude<ModalId, "prompts" | "settings">];
+      : modalContent[activeModal as Exclude<ModalId, "prompts" | "settings" | "mcp">];
   const modalTitle =
-    activeModal === "prompts" ? "System Prompts" : activeModal === "settings" ? "Settings" : modal!.title;
+    activeModal === "prompts"
+      ? "System Prompts"
+      : activeModal === "settings"
+        ? "Settings"
+        : activeModal === "mcp"
+          ? "Model Context Protocol"
+          : modal!.title;
 
   return (
     <div className="modal active app-modal" role="presentation" onClick={onClose}>
@@ -85,7 +74,9 @@ export function ModalLayer({ activeModal, state, dispatch, onClose }: ModalLayer
         <div className="settings-header">
           <div className="app-modal-title">
             <p className="app-section-kicker">
-              {activeModal === "prompts" || activeModal === "settings" ? "Live Feature" : "Port target"}
+              {activeModal === "prompts" || activeModal === "settings" || activeModal === "mcp"
+                ? "Live Feature"
+                : "Port target"}
             </p>
             <h2 id="modal-title">{modalTitle}</h2>
           </div>
@@ -96,6 +87,8 @@ export function ModalLayer({ activeModal, state, dispatch, onClose }: ModalLayer
 
         {activeModal === "settings" ? (
           <SettingsModal state={state} dispatch={dispatch} onClose={onClose} />
+        ) : activeModal === "mcp" ? (
+          <McpModal state={state} dispatch={dispatch} />
         ) : activeModal === "prompts" ? (
           <PromptsModal state={state} dispatch={dispatch} />
         ) : (

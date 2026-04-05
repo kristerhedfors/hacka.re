@@ -349,6 +349,68 @@ a {
   flex-wrap: wrap;
 }
 
+.checkbox-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.checkbox-row input {
+  margin-top: 4px;
+}
+
+.mcp-server-card,
+.mcp-grid {
+  margin-top: 16px;
+}
+
+.mcp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.mcp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--secondary-color);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mcp-status-pill.is-active {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.mcp-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 14px;
+}
+
+.mcp-link-row a {
+  text-decoration: underline;
+}
+
+.mcp-capability-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mcp-capability-row span {
+  color: var(--secondary-color);
+  line-height: 1.45;
+}
+
 @media (max-width: 768px) {
   .app-modal {
     padding: 12px;

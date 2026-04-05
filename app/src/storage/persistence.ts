@@ -1,12 +1,14 @@
 import { getModelContextLabel } from "../config/models";
 import type {
   AppState,
+  McpState,
   ProviderId,
   SettingsRuntimeState,
   SettingsState,
   ThemeName,
 } from "../types/app";
 import { createEmptyPromptState, isPromptState, normalizePromptState } from "../features/prompts/library";
+import { createEmptyMcpState, normalizeMcpState } from "../features/mcp/catalog";
 
 const STORAGE_KEY = "hackare_next_shell_v1";
 
@@ -29,6 +31,15 @@ interface PersistedAppStateV3 {
   settings: SettingsState;
   settingsRuntime: Pick<SettingsRuntimeState, "availableModels" | "lastModelRefreshAt">;
   prompts: AppState["prompts"];
+}
+
+interface PersistedAppStateV4 {
+  version: 4;
+  theme: ThemeName;
+  settings: SettingsState;
+  settingsRuntime: Pick<SettingsRuntimeState, "availableModels" | "lastModelRefreshAt">;
+  prompts: AppState["prompts"];
+  mcp: McpState;
 }
 
 function isThemeName(value: unknown): value is ThemeName {
@@ -73,6 +84,21 @@ function isSettingsRuntimeState(value: unknown): value is PersistedAppStateV3["s
   );
 }
 
+function isMcpState(value: unknown): value is McpState {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const servers = candidate.servers as Record<string, unknown> | undefined;
+  const huggingface = servers?.huggingface as Record<string, unknown> | undefined;
+
+  return !!huggingface &&
+    typeof huggingface.enabled === "boolean" &&
+    typeof huggingface.promptEnabled === "boolean" &&
+    typeof huggingface.accessToken === "string";
+}
+
 export function loadPersistedAppState(): Partial<AppState> | null {
   if (typeof window === "undefined") {
     return null;
@@ -91,16 +117,16 @@ export function loadPersistedAppState(): Partial<AppState> | null {
     }
 
     const prompts =
-      parsed.version === 2 && isPromptState(parsed.prompts)
+      (parsed.version === 2 || parsed.version === 3 || parsed.version === 4) && isPromptState(parsed.prompts)
         ? normalizePromptState(parsed.prompts)
         : createEmptyPromptState();
 
-    if (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3) {
+    if (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3 && parsed.version !== 4) {
       return null;
     }
 
     const settingsRuntime =
-      parsed.version === 3 && isSettingsRuntimeState(parsed.settingsRuntime)
+      (parsed.version === 3 || parsed.version === 4) && isSettingsRuntimeState(parsed.settingsRuntime)
         ? {
             availableModels: parsed.settingsRuntime.availableModels,
             isRefreshingModels: false,
@@ -111,12 +137,16 @@ export function loadPersistedAppState(): Partial<AppState> | null {
           }
         : undefined;
 
+    const mcp =
+      parsed.version === 4 && isMcpState(parsed.mcp) ? normalizeMcpState(parsed.mcp) : createEmptyMcpState();
+
     return {
       theme: parsed.theme,
       settings: parsed.settings,
       settingsRuntime,
       modelContext: getModelContextLabel(parsed.settings.model),
       prompts,
+      mcp,
     };
   } catch {
     return null;
@@ -128,8 +158,8 @@ export function savePersistedAppState(state: AppState): void {
     return;
   }
 
-  const payload: PersistedAppStateV3 = {
-    version: 3,
+  const payload: PersistedAppStateV4 = {
+    version: 4,
     theme: state.theme,
     settings: state.settings,
     settingsRuntime: {
@@ -137,6 +167,7 @@ export function savePersistedAppState(state: AppState): void {
       lastModelRefreshAt: state.settingsRuntime.lastModelRefreshAt,
     },
     prompts: normalizePromptState(state.prompts),
+    mcp: normalizeMcpState(state.mcp),
   };
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));

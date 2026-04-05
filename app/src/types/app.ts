@@ -1,5 +1,6 @@
 export type ThemeName = "terminal" | "paper" | "signal";
 export type ProviderId = "openai" | "groq" | "berget" | "ollama" | "custom";
+export type McpServerId = "huggingface";
 
 export type ModalId =
   | "settings"
@@ -46,6 +47,16 @@ export interface PromptState {
   selectedDefaultPromptIds: string[];
 }
 
+export interface McpServerState {
+  enabled: boolean;
+  promptEnabled: boolean;
+  accessToken: string;
+}
+
+export interface McpState {
+  servers: Record<McpServerId, McpServerState>;
+}
+
 export interface AppState {
   theme: ThemeName;
   activeModal: ModalId | null;
@@ -59,6 +70,7 @@ export interface AppState {
   settings: SettingsState;
   settingsRuntime: SettingsRuntimeState;
   prompts: PromptState;
+  mcp: McpState;
 }
 
 export type AppAction =
@@ -77,6 +89,7 @@ export type AppAction =
   | { type: "toggleCustomPrompt"; id: string }
   | { type: "saveCustomPrompt"; prompt: PromptDraft }
   | { type: "deleteCustomPrompt"; id: string }
+  | { type: "patchMcpServer"; serverId: McpServerId; value: Partial<McpServerState> }
   | { type: "beginAssistantTurn"; userMessage: ChatMessage }
   | { type: "finishAssistantTurn"; assistantMessage: ChatMessage }
   | { type: "failAssistantTurn"; errorMessage: string }

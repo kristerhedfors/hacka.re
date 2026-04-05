@@ -1,6 +1,7 @@
 import type { AppAction, AppState } from "../types/app";
 import { getModelContextLabel } from "../config/models";
 import { createEmptyPromptState, normalizePromptState } from "../features/prompts/library";
+import { createEmptyMcpState, normalizeMcpState } from "../features/mcp/catalog";
 
 const initialMessages = [
   {
@@ -44,6 +45,7 @@ export const initialAppState: AppState = {
     modelRefreshNonce: 0,
   },
   prompts: createEmptyPromptState(),
+  mcp: createEmptyMcpState(),
 };
 
 function cycleTheme(theme: AppState["theme"]): AppState["theme"] {
@@ -75,6 +77,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           selectedDefaultPromptIds:
             action.state.prompts?.selectedDefaultPromptIds ??
             state.prompts.selectedDefaultPromptIds,
+        }),
+        mcp: normalizeMcpState({
+          ...state.mcp,
+          ...action.state.mcp,
+          servers: {
+            ...state.mcp.servers,
+            ...action.state.mcp?.servers,
+          },
         }),
       };
     case "setComposerText":
@@ -212,6 +222,20 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             (id) => id !== action.id,
           ),
           selectedDefaultPromptIds: state.prompts.selectedDefaultPromptIds,
+        }),
+      };
+    case "patchMcpServer":
+      return {
+        ...state,
+        mcp: normalizeMcpState({
+          ...state.mcp,
+          servers: {
+            ...state.mcp.servers,
+            [action.serverId]: {
+              ...state.mcp.servers[action.serverId],
+              ...action.value,
+            },
+          },
         }),
       };
     case "beginAssistantTurn":
