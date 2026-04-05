@@ -2,6 +2,12 @@
 
 Guidance for Claude Code (claude.ai/code) when working with this repository.
 
+## CRITICAL: Branch Policy
+**Work only on branch `2.0` until version 2.0 is complete.**
+- Create commits on `2.0`.
+- Push straight to `2.0` when asked to push.
+- Do not target `main` or any other branch for ongoing 2.0 work unless the user explicitly changes this policy.
+
 ## CRITICAL: Working Directory Management
 **ALWAYS run `pwd` as the FIRST command when starting any task that involves file system operations or relative paths.** The working directory may not be where you expect, especially after context switches or when working with subprojects.
 
