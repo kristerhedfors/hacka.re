@@ -43,33 +43,35 @@ function PromptEditor({
   }
 
   return (
-    <section className="prompts-editor">
-      <div className="section-heading">
+    <section className="prompts-editor app-panel-section">
+      <div className="app-section-heading">
         <div>
-          <p className="section-kicker">Editor</p>
+          <p className="app-section-kicker">Editor</p>
           <h3>{activePrompt ? "Edit custom prompt" : "New custom prompt"}</h3>
         </div>
         {activePrompt ? (
-          <button className="text-button" type="button" onClick={onCancel}>
+          <button className="btn secondary-btn" type="button" onClick={onCancel}>
             New Prompt
           </button>
         ) : null}
       </div>
 
-      <label className="field">
-        <span>Name</span>
+      <div className="form-group">
+        <label htmlFor="prompt-name-input">Name</label>
         <input
+          id="prompt-name-input"
           aria-label="Prompt Name"
           type="text"
           placeholder="Prompt name"
           value={name}
           onChange={(event) => setName(event.target.value)}
         />
-      </label>
+      </div>
 
-      <label className="field">
-        <span>Content</span>
+      <div className="form-group">
+        <label htmlFor="prompt-content-input">Content</label>
         <textarea
+          id="prompt-content-input"
           className="prompt-editor-textarea"
           aria-label="Prompt Content"
           rows={10}
@@ -77,21 +79,21 @@ function PromptEditor({
           value={content}
           onChange={(event) => setContent(event.target.value)}
         />
-      </label>
+      </div>
 
-      <div className="modal-footer prompts-editor-actions">
-        <p className="modal-footnote">New prompts are auto-enabled to match the legacy behavior.</p>
-        <div className="button-row">
+      <div className="form-actions app-form-actions prompts-editor-actions">
+        <p className="app-modal-note">New prompts are auto-enabled to match the legacy behavior.</p>
+        <div className="app-button-row">
           {activePrompt ? (
             <button
-              className="text-button danger-button"
+              className="btn secondary-btn"
               type="button"
               onClick={() => onDelete(activePrompt.id)}
             >
               Delete
             </button>
           ) : null}
-          <button className="primary-button" type="button" onClick={handleSave}>
+          <button className="btn primary-btn" type="button" onClick={handleSave}>
             {activePrompt ? "Save Changes" : "Save Prompt"}
           </button>
         </div>
@@ -139,17 +141,17 @@ export function PromptsModal({ state, dispatch }: PromptsModalProps) {
         the legacy organization: custom prompts first, default prompts second, editor third.
       </p>
 
-      <section className="prompt-preview-card">
-        <div className="section-heading">
+      <section className="prompt-preview-card app-panel-section">
+        <div className="app-section-heading">
           <div>
-            <p className="section-kicker">Active System Prompt</p>
+            <p className="app-section-kicker">Active System Prompt</p>
             <h3>Composed prompt preview</h3>
           </div>
-          <button className="text-button" type="button" onClick={handleCopyPreview}>
+          <button className="btn secondary-btn" type="button" onClick={handleCopyPreview}>
             Copy
           </button>
         </div>
-        <p className="modal-footnote">
+        <p className="app-modal-note">
           {state.prompts.selectedDefaultPromptIds.length + state.prompts.selectedCustomPromptIds.length}{" "}
           prompt selections active.
         </p>
@@ -157,10 +159,10 @@ export function PromptsModal({ state, dispatch }: PromptsModalProps) {
       </section>
 
       <div className="prompts-layout">
-        <section className="prompts-section">
-          <div className="section-heading">
+        <section className="prompts-section app-panel-section">
+          <div className="app-section-heading">
             <div>
-              <p className="section-kicker">Custom Prompts</p>
+              <p className="app-section-kicker">Custom Prompts</p>
               <h3>Your Custom Prompts</h3>
             </div>
           </div>
@@ -190,7 +192,7 @@ export function PromptsModal({ state, dispatch }: PromptsModalProps) {
                       </span>
                     </label>
                     <button
-                      className="text-button"
+                      className="btn secondary-btn"
                       type="button"
                       onClick={() => setEditingPromptId(prompt.id)}
                     >
@@ -203,10 +205,10 @@ export function PromptsModal({ state, dispatch }: PromptsModalProps) {
           </div>
         </section>
 
-        <section className="prompts-section">
-          <div className="section-heading">
+        <section className="prompts-section app-panel-section">
+          <div className="app-section-heading">
             <div>
-              <p className="section-kicker">Default Prompts</p>
+              <p className="app-section-kicker">Default Prompts</p>
               <h3>Legacy Seed Prompts</h3>
             </div>
           </div>

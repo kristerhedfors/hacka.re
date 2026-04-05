@@ -15,12 +15,31 @@ const controlButtons: Array<{
   label: string;
   symbol: ReactNode;
   modal?: ModalId;
+  kind?: "text" | "svg";
 }> = [
-  { id: "mcp-servers-btn", label: "Model Context Protocol", symbol: <span>MCP</span>, modal: "mcp" },
-  { id: "function-btn", label: "Function Calling", symbol: <span>𝑓</span>, modal: "functions" },
-  { id: "rag-btn", label: "Knowledge Base", symbol: <span>RAG</span>, modal: "rag" },
-  { id: "prompts-btn", label: "System Prompts", symbol: <ListIcon />, modal: "prompts" },
-  { id: "share-btn", label: "Share Configuration", symbol: <ShareIcon />, modal: "share" },
+  {
+    id: "mcp-servers-btn",
+    label: "Model Context Protocol",
+    symbol: <span className="mcp-icon">MCP</span>,
+    modal: "mcp",
+    kind: "text",
+  },
+  {
+    id: "function-btn",
+    label: "Function Calling",
+    symbol: <span className="function-icon">𝑓</span>,
+    modal: "functions",
+    kind: "text",
+  },
+  {
+    id: "rag-btn",
+    label: "Knowledge Base",
+    symbol: <span className="rag-icon">RAG</span>,
+    modal: "rag",
+    kind: "text",
+  },
+  { id: "prompts-btn", label: "System Prompts", symbol: <ListIcon />, modal: "prompts", kind: "svg" },
+  { id: "share-btn", label: "Share Configuration", symbol: <ShareIcon />, modal: "share", kind: "svg" },
 ];
 
 function HatMark() {
@@ -30,7 +49,7 @@ function HatMark() {
       <ellipse cx="12" cy="15" rx="11" ry="3.5" fill="currentColor" />
       <path
         d="M 1 12 Q 12 15.5 23 12"
-        stroke="var(--bg-strong)"
+        stroke="var(--primary-color)"
         strokeWidth="1.5"
         fill="none"
         opacity="0.7"
@@ -108,6 +127,53 @@ function CogIcon() {
   );
 }
 
+function CopyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="9" y="9" width="10" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M9 7V5h6v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="M8 7l.8 11a2 2 0 0 0 2 1.8h2.4a2 2 0 0 0 2-1.8L16 7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M4 11.5 20 4l-4.8 16-2.8-6-6.4-2.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path d="M20 4 12.4 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function AppShell({ state, dispatch, onSubmitMessage }: AppShellProps) {
   const usageBarStyle = {
     width: `${state.contextUsagePercent}%`,
@@ -122,158 +188,188 @@ export function AppShell({ state, dispatch, onSubmitMessage }: AppShellProps) {
 
   return (
     <>
-      <main className="shell-page">
-        <section className="shell-frame">
-          <header className="topbar">
-            <div className="settings-strip">
+      <div className="app-container">
+        <header>
+          <div className="settings" aria-label="primary controls">
+            <button id="heart-btn" className="icon-btn" type="button" aria-label="hacka.re" title="hacka.re">
+              <span className="heart-logo">
+                <HatMark />
+                <div className="tooltip tree-menu">
+                  <div className="tree-content">
+                    <div className="logo-line hacka-re-font">hacka.re: serverless agency</div>
+                    <div className="logo-line">│</div>
+                    <div className="logo-line">├─ <a href="../legacy/" className="tree-link">Legacy</a></div>
+                    <div className="logo-line">├─ <a href="../legacy/about/index.html" className="tree-link">About</a></div>
+                    <div className="logo-line">├─ <span className="feature-link">TypeScript rewrite</span></div>
+                    <div className="logo-line">├─ <span className="feature-link">Static deploy</span></div>
+                    <div className="logo-line">├─ <span className="feature-link">Local-first settings</span></div>
+                    <div className="logo-line">└─ <span className="feature-link">Workflow parity</span></div>
+                  </div>
+                </div>
+              </span>
+            </button>
+
+            {controlButtons.map((button) => (
               <button
-                id="heart-btn"
-                className="brand-button icon-control"
+                key={button.id}
+                id={button.id}
+                className={`icon-btn ${button.kind === "text" ? "header-text-btn" : "header-svg-btn"}`}
                 type="button"
-                aria-label="hacka.re"
-                title="hacka.re"
+                onClick={() => button.modal && dispatch({ type: "openModal", modal: button.modal })}
+                aria-label={button.label}
+                title={button.label}
               >
-                <span className="brand-mark">
-                  <HatMark />
-                </span>
+                {button.symbol}
               </button>
+            ))}
 
-              <div className="control-row" aria-label="primary controls">
-                {controlButtons.map((button) => (
-                  <button
-                    key={button.id}
-                    id={button.id}
-                    className="icon-control"
-                    type="button"
-                    onClick={() =>
-                      button.modal && dispatch({ type: "openModal", modal: button.modal })
-                    }
-                    aria-label={button.label}
-                    title={button.label}
-                  >
-                    {button.symbol}
-                  </button>
-                ))}
+            <button
+              id="theme-toggle-btn"
+              className="icon-btn"
+              type="button"
+              onClick={() => dispatch({ type: "cycleTheme" })}
+              aria-label="Cycle theme"
+              title="Cycle theme"
+            >
+              <BrushIcon />
+            </button>
 
-                <button
-                  id="theme-toggle-btn"
-                  className="icon-control"
-                  type="button"
-                  onClick={() => dispatch({ type: "cycleTheme" })}
-                  aria-label="Cycle theme"
-                  title="Cycle theme"
-                >
-                  <BrushIcon />
-                </button>
-
-                <button
-                  id="settings-btn"
-                  className="icon-control"
-                  type="button"
-                  onClick={() => dispatch({ type: "openModal", modal: "settings" })}
-                  aria-label="Settings"
-                  title="Settings"
-                >
-                  <CogIcon />
-                </button>
-              </div>
-            </div>
-
-            <span className="beta-pill">BETA</span>
-
-            <div className="model-panel">
-              <div className="model-name">{state.settings.model}</div>
-              <div className="model-stats">
-                <span>{state.modelContext}</span>
-                <span className="usage-meter" aria-label="context usage">
-                  <span className="usage-meter-fill" style={usageBarStyle} />
-                </span>
-                <span>{state.contextUsagePercent}%</span>
-                <span>{state.tokenSpeed}</span>
-              </div>
-            </div>
-          </header>
-
-          <div className="workspace">
-            <section className="chat-surface" aria-label="chat surface">
-              <h1 className="sr-only">hacka.re chat</h1>
-
-              <div id="chat-messages" className="message-list">
-                {state.messages.map((message) => (
-                  <article
-                    key={message.id}
-                    className={`message-card role-${message.role}`}
-                    data-role={message.role}
-                  >
-                    <div className="message-meta">
-                      <span className="message-role">{message.role}</span>
-                      {message.meta ? <span className="message-tag">{message.meta}</span> : null}
-                    </div>
-                    <p>{message.content}</p>
-                  </article>
-                ))}
-              </div>
-
-              <form
-                className="composer-shell"
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  await handleComposerSubmit();
-                }}
-              >
-                <div id="message-input-wrapper" className="composer-input">
-                  <label className="sr-only" htmlFor="message-input">
-                    Message input
-                  </label>
-                  <textarea
-                    id="message-input"
-                    rows={3}
-                    placeholder="Type your message..."
-                    value={state.composerText}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" && !event.shiftKey) {
-                        event.preventDefault();
-                        void handleComposerSubmit();
-                      }
-                    }}
-                    onChange={(event) =>
-                      dispatch({ type: "setComposerText", value: event.target.value })
-                    }
-                  />
-                </div>
-
-                {state.errorMessage ? (
-                  <div className="error-banner" role="alert">
-                    <span>{state.errorMessage}</span>
-                    <button
-                      className="text-button"
-                      type="button"
-                      onClick={() => dispatch({ type: "clearError" })}
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                ) : null}
-
-                <div className="composer-actions">
-                  <div className="composer-status">
-                    <span>{state.isGenerating ? "Waiting for OpenAI..." : state.settings.provider}</span>
-                    <span>{getBaseUrl(state.settings) || "No base URL configured yet."}</span>
-                    <span>
-                      {hasSystemPrompt
-                        ? `${activePromptCount} prompt${activePromptCount === 1 ? "" : "s"} active`
-                        : "No system prompts active"}
-                    </span>
-                  </div>
-                  <button className="primary-button" type="submit" disabled={state.isGenerating}>
-                    {state.isGenerating ? "Sending..." : "Send"}
-                  </button>
-                </div>
-              </form>
-            </section>
+            <button
+              id="settings-btn"
+              className="icon-btn"
+              type="button"
+              onClick={() => dispatch({ type: "openModal", modal: "settings" })}
+              aria-label="Settings"
+              title="Settings"
+            >
+              <CogIcon />
+            </button>
           </div>
-        </section>
-      </main>
+
+          <span className="beta-tag header-beta">BETA</span>
+
+          <div className="model-info">
+            <div className="model-name-display">{state.settings.model}</div>
+            <div className="model-stats">
+              <span className="model-context">{state.modelContext}</span>
+              <span className="context-usage">
+                <span className="usage-bar" aria-label="context usage">
+                  <span className="usage-fill" style={usageBarStyle} />
+                </span>
+                <span className="usage-text">{state.contextUsagePercent}%</span>
+              </span>
+              <span className="token-speed">
+                <span className="token-speed-text">{state.tokenSpeed}</span>
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <main>
+          <div id="chat-container">
+            <div id="chat-header">
+              <button
+                id="copy-chat-btn"
+                className="icon-btn chat-action-btn"
+                type="button"
+                aria-label="Copy chat"
+                title="Copy chat"
+              >
+                <CopyIcon />
+              </button>
+              <div className="chat-runtime-meta">
+                <span>{state.isGenerating ? "Waiting for OpenAI..." : state.settings.provider}</span>
+                <span>{getBaseUrl(state.settings) || "No base URL configured yet."}</span>
+                <span>
+                  {hasSystemPrompt
+                    ? `${activePromptCount} prompt${activePromptCount === 1 ? "" : "s"} active`
+                    : "No system prompts active"}
+                </span>
+              </div>
+            </div>
+
+            <div id="chat-messages">
+              {state.messages.map((message) => (
+                <div key={message.id} className={`message ${message.role}`}>
+                  <div className="message-content">
+                    {message.meta ? <div className="message-meta-label">{message.meta}</div> : null}
+                    <p>{message.content}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div id="chat-input-container">
+              <div className="input-with-actions">
+                <button
+                  id="clear-chat-btn"
+                  className="icon-btn"
+                  type="button"
+                  aria-label="Clear chat"
+                  title="Clear chat"
+                >
+                  <TrashIcon />
+                </button>
+                <button
+                  id="prompt-library-btn"
+                  className="icon-btn"
+                  type="button"
+                  style={{ display: "none" }}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+                <form
+                  id="chat-form"
+                  onSubmit={async (event) => {
+                    event.preventDefault();
+                    await handleComposerSubmit();
+                  }}
+                >
+                  <div id="message-input-wrapper" className="message-input-wrapper">
+                    <label className="sr-only" htmlFor="message-input">
+                      Message input
+                    </label>
+                    <textarea
+                      id="message-input"
+                      rows={1}
+                      placeholder="Type your message..."
+                      value={state.composerText}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          void handleComposerSubmit();
+                        }
+                      }}
+                      onChange={(event) =>
+                        dispatch({ type: "setComposerText", value: event.target.value })
+                      }
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    id="send-btn"
+                    className="icon-btn"
+                    name="send-message-button"
+                    aria-label={state.isGenerating ? "Sending..." : "Send"}
+                    disabled={state.isGenerating}
+                  >
+                    <SendIcon />
+                  </button>
+                </form>
+              </div>
+
+              {state.errorMessage ? (
+                <div className="app-error-banner" role="alert">
+                  <span>{state.errorMessage}</span>
+                  <button className="btn secondary-btn" type="button" onClick={() => dispatch({ type: "clearError" })}>
+                    Dismiss
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </main>
+      </div>
 
       <ModalLayer
         activeModal={state.activeModal}

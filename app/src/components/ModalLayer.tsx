@@ -74,20 +74,22 @@ export function ModalLayer({ activeModal, state, dispatch, onClose }: ModalLayer
     activeModal === "prompts" ? "System Prompts" : activeModal === "settings" ? "Settings" : modal!.title;
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal active app-modal" role="presentation" onClick={onClose}>
       <section
-        className={`modal-card${activeModal === "prompts" ? " modal-card-wide" : ""}`}
+        className={`modal-content${activeModal === "prompts" ? " modal-content-wide" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="modal-header">
-          <div>
-            <p className="section-kicker">{activeModal === "prompts" ? "Live Feature" : "Port target"}</p>
+        <div className="settings-header">
+          <div className="app-modal-title">
+            <p className="app-section-kicker">
+              {activeModal === "prompts" || activeModal === "settings" ? "Live Feature" : "Port target"}
+            </p>
             <h2 id="modal-title">{modalTitle}</h2>
           </div>
-          <button className="icon-control modal-close" type="button" onClick={onClose}>
+          <button className="icon-btn app-modal-close" type="button" onClick={onClose} title="Close">
             ×
           </button>
         </div>
