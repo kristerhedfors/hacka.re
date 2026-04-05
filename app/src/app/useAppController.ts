@@ -38,19 +38,19 @@ function applyLegacyTheme(theme: "terminal" | "paper" | "signal") {
 }
 
 export function useAppController() {
-  const [state, dispatch] = useReducer(appReducer, initialAppState);
+  const [state, dispatch] = useReducer(
+    appReducer,
+    initialAppState,
+    (baseState) => {
+      const persisted = loadPersistedAppState();
+      return persisted ? appReducer(baseState, { type: "hydrate", state: persisted }) : baseState;
+    },
+  );
   const latestRefreshRequestRef = useRef(0);
 
   useEffect(() => {
     applyLegacyTheme(state.theme);
   }, [state.theme]);
-
-  useEffect(() => {
-    const persisted = loadPersistedAppState();
-    if (persisted) {
-      dispatch({ type: "hydrate", state: persisted });
-    }
-  }, []);
 
   useEffect(() => {
     savePersistedAppState(state);
@@ -200,7 +200,7 @@ export function useAppController() {
       const assistantContent = await generateAssistantReply({
         settings: state.settings,
         messages: [...state.messages, userMessage],
-        systemPrompt: composeSystemPrompt(state.prompts),
+        systemPrompt: composeSystemPrompt(state.prompts, state.mcp),
         defaultApiKey,
         defaultBaseUrl,
         defaultModel,

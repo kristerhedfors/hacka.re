@@ -180,7 +180,10 @@ export function AppShell({ state, dispatch, onSubmitMessage }: AppShellProps) {
   };
   const activePromptCount =
     state.prompts.selectedCustomPromptIds.length + state.prompts.selectedDefaultPromptIds.length;
-  const hasSystemPrompt = composeSystemPrompt(state.prompts).length > 0;
+  const activeMcpPromptCount = Object.values(state.mcp.servers).filter(
+    (server) => server.enabled && server.promptEnabled,
+  ).length;
+  const hasSystemPrompt = composeSystemPrompt(state.prompts, state.mcp).length > 0;
 
   async function handleComposerSubmit() {
     await onSubmitMessage();
@@ -282,7 +285,7 @@ export function AppShell({ state, dispatch, onSubmitMessage }: AppShellProps) {
                 <span>{getBaseUrl(state.settings) || "No base URL configured yet."}</span>
                 <span>
                   {hasSystemPrompt
-                    ? `${activePromptCount} prompt${activePromptCount === 1 ? "" : "s"} active`
+                    ? `${activePromptCount} prompt${activePromptCount === 1 ? "" : "s"} + ${activeMcpPromptCount} MCP guide${activeMcpPromptCount === 1 ? "" : "s"} active`
                     : "No system prompts active"}
                 </span>
               </div>

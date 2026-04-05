@@ -114,7 +114,7 @@ export function PromptsModal({ state, dispatch }: PromptsModalProps) {
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
   const activePrompt =
     state.prompts.customPrompts.find((prompt) => prompt.id === editingPromptId) ?? null;
-  const systemPrompt = composeSystemPrompt(state.prompts);
+  const systemPrompt = composeSystemPrompt(state.prompts, state.mcp);
 
   function handleSave(prompt: PromptDraft) {
     dispatch({ type: "saveCustomPrompt", prompt });
@@ -153,7 +153,7 @@ export function PromptsModal({ state, dispatch }: PromptsModalProps) {
         </div>
         <p className="app-modal-note">
           {state.prompts.selectedDefaultPromptIds.length + state.prompts.selectedCustomPromptIds.length}{" "}
-          prompt selections active.
+          prompt library selections active. MCP server prompts are appended separately when enabled.
         </p>
         <pre className="prompt-preview">{renderPromptPreview(systemPrompt)}</pre>
       </section>

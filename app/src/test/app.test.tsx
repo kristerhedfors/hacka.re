@@ -24,6 +24,7 @@ describe("App shell", () => {
     expect(screen.getByRole("button", { name: /settings/i })).toBeVisible();
     expect(screen.getByRole("button", { name: /cycle theme/i })).toBeVisible();
     expect(screen.getByLabelText(/message input/i)).toBeVisible();
+    expect(screen.getByText(/0 prompt.*1 MCP guide active/i)).toBeVisible();
   });
 
   it("hydrates persisted theme and settings from local storage", async () => {
@@ -81,7 +82,8 @@ describe("App shell", () => {
       expect(saved.settings.customBaseUrl).toContain("https://proxy.example/v1");
       expect(saved.settings.apiKey).toContain("sk-live-example");
       expect(saved.settings.model).toBe("gpt-4o");
-      expect(saved.version).toBe(3);
+      expect(saved.version).toBe(4);
+      expect(saved.mcp.servers.huggingface.enabled).toBe(true);
     });
 
     expect(document.documentElement.dataset.theme).toBe("signal");
@@ -105,9 +107,31 @@ describe("App shell", () => {
 
     await waitFor(() => {
       const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}");
-      expect(saved.version).toBe(3);
+      expect(saved.version).toBe(4);
       expect(saved.prompts.customPrompts).toHaveLength(1);
       expect(saved.prompts.selectedCustomPromptIds).toContain(saved.prompts.customPrompts[0].id);
+    });
+  });
+
+  it("renders the Hugging Face MCP server modal and persists local server settings", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /model context protocol/i }));
+
+    expect(screen.getByRole("heading", { name: /Hugging Face MCP Server/i })).toBeVisible();
+    expect(screen.getByDisplayValue("https://huggingface.co/mcp")).toBeVisible();
+    expect(screen.getAllByText(/Spaces Semantic Search/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Run and Manage Jobs/i).length).toBeGreaterThan(0);
+
+    await user.type(screen.getByLabelText(/hugging face access token/i), "hf_test_token");
+    await user.click(screen.getByRole("checkbox", { name: /include the hugging face mcp guide/i }));
+
+    await waitFor(() => {
+      const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}");
+      expect(saved.version).toBe(4);
+      expect(saved.mcp.servers.huggingface.accessToken).toContain("hf_test_token");
+      expect(saved.mcp.servers.huggingface.promptEnabled).toBe(false);
     });
   });
 
@@ -191,6 +215,7 @@ describe("App shell", () => {
     const request = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
     expect(request.messages[0].role).toBe("system");
     expect(request.messages[0].content).toContain("Privacy-first AI chat interface");
+    expect(request.messages[0].content).toContain("Hugging Face MCP server guide loaded");
   });
 
   it("submits the composer on enter", async () => {

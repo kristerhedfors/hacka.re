@@ -1,4 +1,6 @@
 import type { PromptDraft, PromptState } from "../../types/app";
+import { getEnabledMcpPromptSections } from "../mcp/catalog";
+import type { McpState } from "../../types/app";
 
 export interface DefaultPromptDefinition {
   id: string;
@@ -133,13 +135,16 @@ export function getSelectedCustomPrompts(state: PromptState) {
   return state.customPrompts.filter((prompt) => selected.has(prompt.id));
 }
 
-export function composeSystemPrompt(state: PromptState): string {
+export function composeSystemPrompt(state: PromptState, mcpState?: McpState): string {
   const selectedPrompts = [
     ...getSelectedDefaultPrompts(state),
     ...getSelectedCustomPrompts(state),
   ];
 
-  return selectedPrompts.map((prompt) => prompt.content.trim()).filter(Boolean).join("\n\n---\n\n");
+  const promptSections = selectedPrompts.map((prompt) => prompt.content.trim()).filter(Boolean);
+  const mcpSections = mcpState ? getEnabledMcpPromptSections(mcpState) : [];
+
+  return [...promptSections, ...mcpSections].join("\n\n---\n\n");
 }
 
 export function createPromptId(): string {
