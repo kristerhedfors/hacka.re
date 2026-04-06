@@ -21,6 +21,22 @@ interface OpenAIChatResponse {
   };
 }
 
+async function readResponsePayload<T>(response: Response): Promise<T> {
+  const text = await response.text();
+
+  if (!text.trim()) {
+    return {} as T;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      `The provider returned a non-JSON response (status ${response.status}).`,
+    );
+  }
+}
+
 export async function generateAssistantReply({
   settings,
   messages,
@@ -70,7 +86,7 @@ export async function generateAssistantReply({
     }),
   });
 
-  const payload = (await response.json()) as OpenAIChatResponse;
+  const payload = await readResponsePayload<OpenAIChatResponse>(response);
 
   if (!response.ok) {
     throw new Error(payload.error?.message || `OpenAI request failed with status ${response.status}.`);

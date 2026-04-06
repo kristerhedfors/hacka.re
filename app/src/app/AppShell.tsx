@@ -1,6 +1,6 @@
 import type { Dispatch, ReactNode } from "react";
 import { ModalLayer } from "../components/ModalLayer";
-import { composeSystemPrompt } from "../features/prompts/library";
+import { composeSystemPrompt, getActiveMcpPromptCount } from "../features/prompts/library";
 import { getBaseUrl } from "../config/providers";
 import type { AppAction, AppState, ModalId } from "../types/app";
 
@@ -22,6 +22,13 @@ const controlButtons: Array<{
     label: "Model Context Protocol",
     symbol: <span className="mcp-icon">MCP</span>,
     modal: "mcp",
+    kind: "text",
+  },
+  {
+    id: "hf-lab-btn",
+    label: "Hugging Face Lab",
+    symbol: <span className="hf-icon">HF</span>,
+    modal: "hfLab",
     kind: "text",
   },
   {
@@ -180,9 +187,7 @@ export function AppShell({ state, dispatch, onSubmitMessage }: AppShellProps) {
   };
   const activePromptCount =
     state.prompts.selectedCustomPromptIds.length + state.prompts.selectedDefaultPromptIds.length;
-  const activeMcpPromptCount = Object.values(state.mcp.servers).filter(
-    (server) => server.enabled && server.promptEnabled,
-  ).length;
+  const activeMcpPromptCount = getActiveMcpPromptCount(state.mcp);
   const hasSystemPrompt = composeSystemPrompt(state.prompts, state.mcp).length > 0;
 
   async function handleComposerSubmit() {

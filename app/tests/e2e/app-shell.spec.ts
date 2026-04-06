@@ -31,6 +31,7 @@ test.describe("2.0 browser smoke", () => {
     await page.getByLabel("API Provider").selectOption("custom");
     await page.getByLabel("Custom Base URL").fill("https://proxy.example/v1");
     await page.getByLabel("API Key").fill("sk-live-example");
+    await page.getByLabel("Hugging Face Token").fill("hf_live_example");
     await page.getByLabel("Model", { exact: true }).selectOption("gpt-4o");
     await page.getByLabel("Theme", { exact: true }).selectOption("signal");
     await closeModal(page);
@@ -59,7 +60,7 @@ test.describe("2.0 browser smoke", () => {
           : null;
       })
       .toEqual({
-        version: 4,
+        version: 6,
         theme: "signal",
         provider: "custom",
         customBaseUrl: "https://proxy.example/v1",
@@ -139,5 +140,41 @@ test.describe("2.0 browser smoke", () => {
     }>(page);
     expect(saved?.prompts.customPrompts).toHaveLength(1);
     expect(saved?.prompts.selectedCustomPromptIds).toContain(saved?.prompts.customPrompts[0]?.id);
+  });
+
+  test("opens the Hugging Face lab and applies the router preset", async ({ page }) => {
+    await gotoApp(page);
+
+    await page.getByRole("button", { name: /settings/i }).click();
+    await page.getByLabel("Hugging Face Token").fill("hf_test_token");
+    await page.getByRole("button", { name: /open hugging face test lab/i }).click();
+    await expect(page.getByRole("heading", { name: /hugging Face Lab/i })).toBeVisible();
+
+    await page.getByLabel("Inference Model").fill("Qwen/Qwen2.5-Coder-32B-Instruct:fireworks-ai");
+    await page.getByLabel("HF OAuth with PKCE status").selectOption("validated");
+    await page.getByRole("button", { name: /apply router preset to chat settings/i }).click();
+
+    await expect(page.getByText("Qwen/Qwen2.5-Coder-32B-Instruct:fireworks-ai")).toBeVisible();
+    await expect(page.getByText("https://router.huggingface.co/v1")).toBeVisible();
+
+    const saved = await readStoredState<{
+      version: number;
+      settings: {
+        provider: string;
+        customBaseUrl: string;
+        apiKey: string;
+        model: string;
+      };
+      hfLab: {
+        checks: Record<string, string>;
+      };
+    }>(page);
+
+    expect(saved?.version).toBe(6);
+    expect(saved?.settings.provider).toBe("custom");
+    expect(saved?.settings.customBaseUrl).toBe("https://router.huggingface.co/v1");
+    expect(saved?.settings.apiKey).toBe("hf_test_token");
+    expect(saved?.settings.model).toBe("Qwen/Qwen2.5-Coder-32B-Instruct:fireworks-ai");
+    expect(saved?.hfLab.checks["oauth-pkce"]).toBe("validated");
   });
 });

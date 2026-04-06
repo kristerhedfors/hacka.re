@@ -2,6 +2,8 @@ import type { AppAction, AppState } from "../types/app";
 import { getModelContextLabel } from "../config/models";
 import { createEmptyPromptState, normalizePromptState } from "../features/prompts/library";
 import { createEmptyMcpState, normalizeMcpState } from "../features/mcp/catalog";
+import { createEmptyHfLabState, normalizeHfLabState } from "../features/hf-lab/catalog";
+import { createEmptyFunctionState, normalizeFunctionState } from "../features/functions/library";
 
 const initialMessages = [
   {
@@ -35,6 +37,7 @@ export const initialAppState: AppState = {
     customBaseUrl: "",
     apiKey: "",
     model: "gpt-5",
+    systemPrompt: "",
   },
   settingsRuntime: {
     availableModels: ["gpt-5", "gpt-5-nano", "gpt-5-mini", "gpt-4o", "o4-mini"],
@@ -45,7 +48,13 @@ export const initialAppState: AppState = {
     modelRefreshNonce: 0,
   },
   prompts: createEmptyPromptState(),
+  functions: createEmptyFunctionState(),
   mcp: createEmptyMcpState(),
+  hfLab: createEmptyHfLabState(),
+  legacyShare: {
+    welcomeMessage: "",
+    rawPayload: {},
+  },
 };
 
 function cycleTheme(theme: AppState["theme"]): AppState["theme"] {
@@ -78,6 +87,24 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             action.state.prompts?.selectedDefaultPromptIds ??
             state.prompts.selectedDefaultPromptIds,
         }),
+        functions: normalizeFunctionState({
+          ...state.functions,
+          ...action.state.functions,
+          userFunctions: {
+            ...state.functions.userFunctions,
+            ...action.state.functions?.userFunctions,
+          },
+          functionCollections: {
+            ...state.functions.functionCollections,
+            ...action.state.functions?.functionCollections,
+          },
+          selectedDefaultFunctionIds:
+            action.state.functions?.selectedDefaultFunctionIds ??
+            state.functions.selectedDefaultFunctionIds,
+          selectedDefaultFunctionCollectionIds:
+            action.state.functions?.selectedDefaultFunctionCollectionIds ??
+            state.functions.selectedDefaultFunctionCollectionIds,
+        }),
         mcp: normalizeMcpState({
           ...state.mcp,
           ...action.state.mcp,
@@ -86,6 +113,26 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             ...action.state.mcp?.servers,
           },
         }),
+        hfLab: normalizeHfLabState({
+          ...state.hfLab,
+          ...action.state.hfLab,
+          hfToken:
+            typeof action.state.hfLab?.hfToken === "string"
+              ? action.state.hfLab.hfToken
+              : action.state.mcp?.servers?.huggingface?.accessToken ?? state.hfLab.hfToken,
+          checks: {
+            ...state.hfLab.checks,
+            ...action.state.hfLab?.checks,
+          },
+        }),
+        legacyShare: {
+          ...state.legacyShare,
+          ...action.state.legacyShare,
+          rawPayload: {
+            ...state.legacyShare.rawPayload,
+            ...action.state.legacyShare?.rawPayload,
+          },
+        },
       };
     case "setComposerText":
       return {
@@ -224,19 +271,112 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           selectedDefaultPromptIds: state.prompts.selectedDefaultPromptIds,
         }),
       };
-    case "patchMcpServer":
+    case "saveFunction": {
+      const nextFunctions = { ...state.functions.userFunctions };
+      const nextCollections = { ...state.functions.functionCollections };
+
+      if (action.previousName && action.previousName !== action.functionDraft.name) {
+        delete nextFunctions[action.previousName];
+        delete nextCollections[action.previousName];
+      }
+
+      nextFunctions[action.functionDraft.name] = action.functionDraft;
+      if (action.collectionName) {
+        nextCollections[action.functionDraft.name] = action.collectionName;
+      } else {
+        delete nextCollections[action.functionDraft.name];
+      }
+
       return {
         ...state,
-        mcp: normalizeMcpState({
-          ...state.mcp,
-          servers: {
-            ...state.mcp.servers,
-            [action.serverId]: {
-              ...state.mcp.servers[action.serverId],
-              ...action.value,
+        functions: normalizeFunctionState({
+          ...state.functions,
+          userFunctions: nextFunctions,
+          functionCollections: nextCollections,
+        }),
+      };
+    }
+    case "deleteFunction": {
+      const nextFunctions = { ...state.functions.userFunctions };
+      const nextCollections = { ...state.functions.functionCollections };
+      delete nextFunctions[action.name];
+      delete nextCollections[action.name];
+
+      return {
+        ...state,
+        functions: normalizeFunctionState({
+          ...state.functions,
+          userFunctions: nextFunctions,
+          functionCollections: nextCollections,
+        }),
+      };
+    }
+    case "setSelectedDefaultFunctionIds":
+      return {
+        ...state,
+        functions: normalizeFunctionState({
+          ...state.functions,
+          selectedDefaultFunctionIds: action.ids,
+        }),
+      };
+    case "setSelectedDefaultFunctionCollectionIds":
+      return {
+        ...state,
+        functions: normalizeFunctionState({
+          ...state.functions,
+          selectedDefaultFunctionCollectionIds: action.ids,
+        }),
+      };
+    case "patchMcpServer":
+      {
+        const currentServer = state.mcp.servers[action.serverId];
+        const nextServer = {
+          ...currentServer,
+          ...action.value,
+        };
+
+        if (action.value.enabled === true) {
+          nextServer.promptEnabled = action.value.promptEnabled ?? true;
+        }
+
+        if (action.value.enabled === false) {
+          nextServer.promptEnabled = false;
+        }
+
+        return {
+          ...state,
+          mcp: normalizeMcpState({
+            ...state.mcp,
+            servers: {
+              ...state.mcp.servers,
+              [action.serverId]: nextServer,
             },
+          }),
+        };
+      }
+    case "patchHfLab":
+      return {
+        ...state,
+        hfLab: normalizeHfLabState({
+          ...state.hfLab,
+          ...action.value,
+        }),
+      };
+    case "setHfCapabilityStatus":
+      return {
+        ...state,
+        hfLab: normalizeHfLabState({
+          ...state.hfLab,
+          checks: {
+            ...state.hfLab.checks,
+            [action.checkId]: action.status,
           },
         }),
+      };
+    case "setLegacySharePassthrough":
+      return {
+        ...state,
+        legacyShare: action.value,
       };
     case "beginAssistantTurn":
       return {

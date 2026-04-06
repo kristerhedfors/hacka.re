@@ -1,5 +1,5 @@
 import type { PromptDraft, PromptState } from "../../types/app";
-import { getEnabledMcpPromptSections } from "../mcp/catalog";
+import { getEnabledMcpPromptSections, getMcpPromptDefinitions } from "../mcp/catalog";
 import type { McpState } from "../../types/app";
 
 export interface DefaultPromptDefinition {
@@ -114,14 +114,11 @@ export function isPromptState(value: unknown): value is PromptState {
 
 export function normalizePromptState(state: PromptState): PromptState {
   const customIds = new Set(state.customPrompts.map((prompt) => prompt.id));
-  const defaultIds = new Set(defaultPromptCatalog.map((prompt) => prompt.id));
 
   return {
     customPrompts: state.customPrompts,
     selectedCustomPromptIds: uniq(state.selectedCustomPromptIds).filter((id) => customIds.has(id)),
-    selectedDefaultPromptIds: uniq(state.selectedDefaultPromptIds).filter((id) =>
-      defaultIds.has(id),
-    ),
+    selectedDefaultPromptIds: uniq(state.selectedDefaultPromptIds),
   };
 }
 
@@ -145,6 +142,20 @@ export function composeSystemPrompt(state: PromptState, mcpState?: McpState): st
   const mcpSections = mcpState ? getEnabledMcpPromptSections(mcpState) : [];
 
   return [...promptSections, ...mcpSections].join("\n\n---\n\n");
+}
+
+export function composeCompleteSystemPrompt(
+  state: PromptState,
+  directSystemPrompt: string,
+  mcpState?: McpState,
+): string {
+  return [directSystemPrompt.trim(), composeSystemPrompt(state, mcpState)]
+    .filter(Boolean)
+    .join("\n\n---\n\n");
+}
+
+export function getActiveMcpPromptCount(mcpState: McpState): number {
+  return getMcpPromptDefinitions(mcpState).filter((prompt) => prompt.enabled).length;
 }
 
 export function createPromptId(): string {

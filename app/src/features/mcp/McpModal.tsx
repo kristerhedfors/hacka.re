@@ -14,7 +14,7 @@ export function McpModal({ state, dispatch }: McpModalProps) {
     <>
       <p className="modal-copy">
         The 2.0 app now carries its first live MCP server definition. This Hugging Face entry is based
-        on the current Hugging Face Hub documentation and keeps server settings local in the browser.
+        on the current Hugging Face Hub documentation and uses the central Hugging Face token from Settings.
       </p>
 
       <section className="app-panel-section mcp-server-card">
@@ -47,24 +47,10 @@ export function McpModal({ state, dispatch }: McpModalProps) {
               />
               <span>Enable Hugging Face MCP server in 2.0</span>
             </label>
-          </div>
-
-          <div className="form-group">
-            <label className="checkbox-row" htmlFor="hf-mcp-prompt-enabled">
-              <input
-                id="hf-mcp-prompt-enabled"
-                type="checkbox"
-                checked={server.promptEnabled}
-                onChange={(event) =>
-                  dispatch({
-                    type: "patchMcpServer",
-                    serverId: "huggingface",
-                    value: { promptEnabled: event.target.checked },
-                  })
-                }
-              />
-              <span>Include the Hugging Face MCP guide in the system prompt</span>
-            </label>
+            <p className="app-inline-status">
+              Prompt and function entries now appear in their own modals and follow this server
+              toggle automatically.
+            </p>
           </div>
 
           <div className="form-group">
@@ -73,20 +59,13 @@ export function McpModal({ state, dispatch }: McpModalProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="hf-mcp-token">Access Token</label>
+            <label htmlFor="hf-mcp-token-source">Access Token Source</label>
             <input
-              id="hf-mcp-token"
-              aria-label="Hugging Face Access Token"
-              type="password"
-              placeholder="hf_... stored locally in your browser"
-              value={server.accessToken}
-              onChange={(event) =>
-                dispatch({
-                  type: "patchMcpServer",
-                  serverId: "huggingface",
-                  value: { accessToken: event.target.value },
-                })
-              }
+              id="hf-mcp-token-source"
+              aria-label="Hugging Face Access Token Source"
+              type="text"
+              readOnly
+              value={state.hfLab.hfToken ? "Using token from Settings" : "No Hugging Face token configured in Settings"}
             />
             <p className="app-inline-status" role="status">
               {huggingFaceMcpDefinition.tokenRequirement}
@@ -142,7 +121,9 @@ export function McpModal({ state, dispatch }: McpModalProps) {
       <section className="app-panel-section">
         <div className="app-label-row">
           <h3>Server prompt</h3>
-          <span className="app-inline-status">{huggingFaceMcpDefinition.promptName}</span>
+          <span className="app-inline-status">
+            {server.promptEnabled && server.enabled ? "Enabled in prompts modal" : "Disabled in prompts modal"}
+          </span>
         </div>
         <p className="app-modal-note">{huggingFaceMcpDefinition.promptSummary}</p>
         <pre className="prompt-preview">{huggingFaceMcpDefinition.promptContent}</pre>

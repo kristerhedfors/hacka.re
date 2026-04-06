@@ -25,7 +25,7 @@ export function SettingsModal({ state, dispatch, onClose }: SettingsModalProps) 
   return (
     <>
       <p className="modal-copy">
-        Provider, base URL, API key, model, and theme persist locally in the browser.
+        Provider, base URL, API key, Hugging Face token, model, direct system prompt, and theme persist locally in the browser.
       </p>
 
       <form className="app-settings-grid">
@@ -94,6 +94,26 @@ export function SettingsModal({ state, dispatch, onClose }: SettingsModalProps) 
               {state.settingsRuntime.apiKeyDetection}
             </p>
           ) : null}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="hf-token-update">Hugging Face Token</label>
+          <input
+            id="hf-token-update"
+            aria-label="Hugging Face Token"
+            type="password"
+            placeholder="hf_... used for router, Hub, and HF test lab"
+            value={state.hfLab.hfToken}
+            onChange={(event) =>
+              dispatch({
+                type: "patchHfLab",
+                value: { hfToken: event.target.value },
+              })
+            }
+          />
+          <p className="app-inline-status" role="status">
+            Central Hugging Face credential for router inference, Hub calls, and MCP-related validation.
+          </p>
         </div>
 
         <div className="form-group">
@@ -167,6 +187,23 @@ export function SettingsModal({ state, dispatch, onClose }: SettingsModalProps) 
         </div>
 
         <div className="form-group">
+          <label htmlFor="direct-system-prompt">Direct System Prompt</label>
+          <textarea
+            id="direct-system-prompt"
+            aria-label="Direct System Prompt"
+            rows={5}
+            placeholder="Legacy-compatible standalone system prompt"
+            value={state.settings.systemPrompt}
+            onChange={(event) =>
+              dispatch({
+                type: "patchSettings",
+                value: { systemPrompt: event.target.value },
+              })
+            }
+          />
+        </div>
+
+        <div className="form-group">
           <label htmlFor="open-prompts-config">System Prompt</label>
           <button
             id="open-prompts-config"
@@ -176,6 +213,19 @@ export function SettingsModal({ state, dispatch, onClose }: SettingsModalProps) 
             onClick={() => dispatch({ type: "openModal", modal: "prompts" })}
           >
             Open System Prompt Configuration
+          </button>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="open-hf-lab">Hugging Face Tests</label>
+          <button
+            id="open-hf-lab"
+            className="btn secondary-btn"
+            type="button"
+            aria-label="Open Hugging Face Test Lab"
+            onClick={() => dispatch({ type: "openModal", modal: "hfLab" })}
+          >
+            Open Hugging Face Test Lab
           </button>
         </div>
       </form>

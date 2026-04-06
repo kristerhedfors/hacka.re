@@ -27,6 +27,31 @@ export interface McpServerDefinition {
   promptContent: string;
 }
 
+export interface McpPromptDefinition {
+  serverId: McpServerId;
+  id: string;
+  name: string;
+  summary: string;
+  enabled: boolean;
+  available: boolean;
+}
+
+export interface McpFunctionDefinition {
+  id: string;
+  name: string;
+  summary: string;
+  enabled: boolean;
+}
+
+export interface McpFunctionCollectionDefinition {
+  serverId: McpServerId;
+  id: string;
+  name: string;
+  summary: string;
+  enabled: boolean;
+  functions: McpFunctionDefinition[];
+}
+
 export const huggingFaceMcpDefinition: McpServerDefinition = {
   id: "huggingface",
   name: "Hugging Face MCP Server",
@@ -162,6 +187,48 @@ export function getEnabledMcpPromptSections(mcpState: McpState): string[] {
   return Object.entries(mcpState.servers)
     .filter(([, serverState]) => serverState.enabled && serverState.promptEnabled)
     .map(([serverId]) => mcpServerCatalog[serverId as McpServerId].promptContent.trim());
+}
+
+export function getMcpPromptDefinitions(mcpState: McpState): McpPromptDefinition[] {
+  return (Object.keys(mcpServerCatalog) as McpServerId[]).map((serverId) => {
+    const definition = mcpServerCatalog[serverId];
+    const serverState = mcpState.servers[serverId];
+
+    return {
+      serverId,
+      id: `${serverId}-prompt`,
+      name: definition.promptName,
+      summary: definition.promptSummary,
+      enabled: serverState.enabled && serverState.promptEnabled,
+      available: serverState.enabled,
+    };
+  });
+}
+
+function slugifyToolName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+export function getMcpFunctionCollections(mcpState: McpState): McpFunctionCollectionDefinition[] {
+  return (Object.keys(mcpServerCatalog) as McpServerId[]).map((serverId) => {
+    const definition = mcpServerCatalog[serverId];
+    const serverState = mcpState.servers[serverId];
+    const enabled = serverState.enabled;
+
+    return {
+      serverId,
+      id: `${serverId}-functions`,
+      name: definition.name,
+      summary: definition.shortDescription,
+      enabled,
+      functions: definition.builtInTools.map((tool) => ({
+        id: `${serverId}-${slugifyToolName(tool.name)}`,
+        name: tool.name,
+        summary: tool.summary,
+        enabled,
+      })),
+    };
+  });
 }
 
 export function getMcpServerState(mcpState: McpState, serverId: McpServerId): McpServerState {

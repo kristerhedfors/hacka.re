@@ -1,8 +1,14 @@
 import { useEffect, useReducer, useRef } from "react";
 import { appReducer, initialAppState } from "./state";
-import { composeSystemPrompt } from "../features/prompts/library";
+import { composeCompleteSystemPrompt } from "../features/prompts/library";
 import { generateAssistantReply } from "../services/chat";
 import { getFallbackModelList, fetchAvailableModels } from "../services/models";
+import {
+  clearLegacyShareFragment,
+  decryptLegacyShareFragment,
+  getLegacyShareFragment,
+  mapLegacyPayloadToPartialState,
+} from "../services/share";
 import {
   detectProviderFromApiKey,
   getDefaultModelForProvider,
@@ -55,6 +61,45 @@ export function useAppController() {
   useEffect(() => {
     savePersistedAppState(state);
   }, [state]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function importSharedLink() {
+      const fragment = getLegacyShareFragment();
+      if (!fragment) {
+        return;
+      }
+
+      const password = window.prompt("Enter the shared-link password");
+      if (!password) {
+        return;
+      }
+
+      try {
+        const decrypted = await decryptLegacyShareFragment(password, fragment);
+        if (!decrypted || cancelled) {
+          return;
+        }
+
+        dispatch({ type: "hydrate", state: mapLegacyPayloadToPartialState(decrypted.payload) });
+        clearLegacyShareFragment();
+      } catch (error) {
+        if (!cancelled) {
+          dispatch({
+            type: "failAssistantTurn",
+            errorMessage: error instanceof Error ? error.message : "Failed to import shared link.",
+          });
+        }
+      }
+    }
+
+    void importSharedLink();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const detection = detectProviderFromApiKey(state.settings.apiKey);
@@ -200,7 +245,11 @@ export function useAppController() {
       const assistantContent = await generateAssistantReply({
         settings: state.settings,
         messages: [...state.messages, userMessage],
-        systemPrompt: composeSystemPrompt(state.prompts, state.mcp),
+        systemPrompt: composeCompleteSystemPrompt(
+          state.prompts,
+          state.settings.systemPrompt,
+          state.mcp,
+        ),
         defaultApiKey,
         defaultBaseUrl,
         defaultModel,

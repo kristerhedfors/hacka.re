@@ -4,6 +4,7 @@ import {
   createPromptId,
   defaultPromptCatalog,
 } from "./library";
+import { getMcpPromptDefinitions } from "../mcp/catalog";
 import type { AppAction, AppState, PromptDraft } from "../../types/app";
 
 interface PromptsModalProps {
@@ -115,6 +116,7 @@ export function PromptsModal({ state, dispatch }: PromptsModalProps) {
   const activePrompt =
     state.prompts.customPrompts.find((prompt) => prompt.id === editingPromptId) ?? null;
   const systemPrompt = composeSystemPrompt(state.prompts, state.mcp);
+  const mcpPrompts = getMcpPromptDefinitions(state.mcp);
 
   function handleSave(prompt: PromptDraft) {
     dispatch({ type: "saveCustomPrompt", prompt });
@@ -233,6 +235,44 @@ export function PromptsModal({ state, dispatch }: PromptsModalProps) {
                 </article>
               );
             })}
+          </div>
+        </section>
+
+        <section className="prompts-section app-panel-section">
+          <div className="app-section-heading">
+            <div>
+              <p className="app-section-kicker">MCP Prompts</p>
+              <h3>Server Guides</h3>
+            </div>
+          </div>
+
+          <div className="prompt-list">
+            {mcpPrompts.map((prompt) => (
+              <article key={prompt.id} className={`prompt-row${prompt.available ? "" : " is-disabled"}`}>
+                <label className="prompt-toggle">
+                  <input
+                    type="checkbox"
+                    checked={prompt.enabled}
+                    disabled={!prompt.available}
+                    onChange={(event) =>
+                      dispatch({
+                        type: "patchMcpServer",
+                        serverId: prompt.serverId,
+                        value: { promptEnabled: event.target.checked },
+                      })
+                    }
+                  />
+                  <span>
+                    <strong>{prompt.name}</strong>
+                    <span>
+                      {prompt.available
+                        ? prompt.summary
+                        : "Enable the MCP server first to load this guide into the composed system prompt."}
+                    </span>
+                  </span>
+                </label>
+              </article>
+            ))}
           </div>
         </section>
 

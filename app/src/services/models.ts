@@ -12,6 +12,22 @@ interface ModelsApiResponse {
   data?: Array<{ id?: string | null }>;
 }
 
+async function readResponsePayload<T>(response: Response): Promise<T> {
+  const text = await response.text();
+
+  if (!text.trim()) {
+    return {} as T;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      `The provider returned a non-JSON response while loading models (status ${response.status}).`,
+    );
+  }
+}
+
 export async function fetchAvailableModels({
   settings,
   defaultApiKey,
@@ -38,9 +54,9 @@ export async function fetchAvailableModels({
     headers,
   });
 
-  const payload = (await response.json()) as ModelsApiResponse & {
+  const payload = await readResponsePayload<ModelsApiResponse & {
     error?: { message?: string };
-  };
+  }>(response);
 
   if (!response.ok) {
     throw new Error(

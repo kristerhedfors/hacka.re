@@ -69,6 +69,9 @@ describe("App shell", () => {
     const apiKeyInput = screen.getByLabelText(/api key/i);
     await user.type(apiKeyInput, "sk-live-example");
 
+    const hfTokenInput = screen.getByLabelText(/hugging face token/i);
+    await user.type(hfTokenInput, "hf_live_example");
+
     const modelSelect = screen.getByLabelText(/^model$/i);
     await user.selectOptions(modelSelect, "gpt-4o");
 
@@ -82,7 +85,8 @@ describe("App shell", () => {
       expect(saved.settings.customBaseUrl).toContain("https://proxy.example/v1");
       expect(saved.settings.apiKey).toContain("sk-live-example");
       expect(saved.settings.model).toBe("gpt-4o");
-      expect(saved.version).toBe(4);
+      expect(saved.version).toBe(6);
+      expect(saved.hfLab.hfToken).toContain("hf_live_example");
       expect(saved.mcp.servers.huggingface.enabled).toBe(true);
     });
 
@@ -107,15 +111,19 @@ describe("App shell", () => {
 
     await waitFor(() => {
       const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}");
-      expect(saved.version).toBe(4);
+      expect(saved.version).toBe(6);
       expect(saved.prompts.customPrompts).toHaveLength(1);
       expect(saved.prompts.selectedCustomPromptIds).toContain(saved.prompts.customPrompts[0].id);
     });
   });
 
-  it("renders the Hugging Face MCP server modal and persists local server settings", async () => {
+  it("renders the Hugging Face MCP server modal and reads the central Hugging Face token from settings", async () => {
     const user = userEvent.setup();
     render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /settings/i }));
+    await user.type(screen.getByLabelText(/hugging face token/i), "hf_test_token");
+    await user.click(screen.getByRole("button", { name: "Close Settings" }));
 
     await user.click(screen.getByRole("button", { name: /model context protocol/i }));
 
@@ -123,15 +131,96 @@ describe("App shell", () => {
     expect(screen.getByDisplayValue("https://huggingface.co/mcp")).toBeVisible();
     expect(screen.getAllByText(/Spaces Semantic Search/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Run and Manage Jobs/i).length).toBeGreaterThan(0);
-
-    await user.type(screen.getByLabelText(/hugging face access token/i), "hf_test_token");
-    await user.click(screen.getByRole("checkbox", { name: /include the hugging face mcp guide/i }));
+    expect(screen.getAllByRole("checkbox")).toHaveLength(1);
+    expect(screen.getByDisplayValue("Using token from Settings")).toBeVisible();
 
     await waitFor(() => {
       const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}");
-      expect(saved.version).toBe(4);
-      expect(saved.mcp.servers.huggingface.accessToken).toContain("hf_test_token");
+      expect(saved.version).toBe(6);
+      expect(saved.hfLab.hfToken).toContain("hf_test_token");
+      expect(saved.mcp.servers.huggingface.promptEnabled).toBe(true);
+    });
+  });
+
+  it("renders the Hugging Face lab, applies the router preset, and persists capability status", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /hugging face lab/i }));
+
+    expect(screen.getByRole("heading", { name: /Hugging Face Lab/i })).toBeVisible();
+    expect(screen.getByDisplayValue("https://router.huggingface.co/v1")).toBeVisible();
+    expect(screen.getByLabelText(/HF OAuth with PKCE status/i)).toHaveValue("planned");
+
+    await user.type(screen.getByLabelText(/^hugging face token$/i), "hf_test_token");
+    await user.clear(screen.getByLabelText(/inference model/i));
+    await user.type(
+      screen.getByLabelText(/inference model/i),
+      "Qwen/Qwen2.5-Coder-32B-Instruct:fireworks-ai",
+    );
+    await user.selectOptions(screen.getByLabelText(/HF OAuth with PKCE status/i), "validating");
+    await user.click(screen.getByRole("button", { name: /apply router preset to chat settings/i }));
+
+    expect(screen.getByText("Qwen/Qwen2.5-Coder-32B-Instruct:fireworks-ai")).toBeVisible();
+    expect(screen.getByText("https://router.huggingface.co/v1")).toBeVisible();
+
+    await waitFor(() => {
+      const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}");
+      expect(saved.version).toBe(6);
+      expect(saved.settings.provider).toBe("custom");
+      expect(saved.settings.customBaseUrl).toBe("https://router.huggingface.co/v1");
+      expect(saved.settings.apiKey).toBe("hf_test_token");
+      expect(saved.settings.model).toBe("Qwen/Qwen2.5-Coder-32B-Instruct:fireworks-ai");
+      expect(saved.hfLab.checks["oauth-pkce"]).toBe("validating");
+    });
+  });
+
+  it("opens the Hugging Face lab from regular settings", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /settings/i }));
+    await user.click(screen.getByRole("button", { name: /open hugging face test lab/i }));
+
+    expect(screen.getByRole("heading", { name: /Hugging Face Lab/i })).toBeVisible();
+  });
+
+  it("shows the Hugging Face MCP guide in the prompts modal and persists prompt toggles there", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /system prompts/i }));
+
+    const mcpPromptToggle = screen.getByRole("checkbox", { name: /hugging face mcp server guide/i });
+    expect(mcpPromptToggle).toBeChecked();
+
+    await user.click(mcpPromptToggle);
+
+    await waitFor(() => {
+      const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}");
       expect(saved.mcp.servers.huggingface.promptEnabled).toBe(false);
+    });
+  });
+
+  it("renders the editable functions modal and persists custom functions", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /function calling/i }));
+
+    expect(screen.getByRole("heading", { name: /function calling/i })).toBeVisible();
+    await user.type(screen.getByLabelText(/function name/i), "ping");
+    await user.type(screen.getByLabelText(/collection name/i), "Utilities");
+    await user.click(screen.getByLabelText(/function code/i));
+    await user.paste("function ping() { return 'pong'; }");
+    await user.click(screen.getByRole("button", { name: /save function/i }));
+
+    expect(screen.getByText("ping")).toBeVisible();
+
+    await waitFor(() => {
+      const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}");
+      expect(saved.functions.userFunctions.ping.code).toContain("pong");
+      expect(saved.functions.functionCollections.ping).toBe("Utilities");
     });
   });
 
@@ -185,7 +274,8 @@ describe("App shell", () => {
       expect(fetchMock.mock.calls.length).toBeGreaterThan(0);
     });
 
-    expect(screen.getByRole("option", { name: "gpt-4.1-mini" })).toBeVisible();
+    expect(screen.getByLabelText(/^model$/i)).toBeEnabled();
+    expect(screen.queryByText(/non-JSON response while loading models/i)).not.toBeInTheDocument();
   });
 
   it("includes the composed system prompt in chat requests", async () => {
